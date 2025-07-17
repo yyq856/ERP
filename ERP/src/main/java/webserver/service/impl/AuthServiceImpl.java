@@ -37,6 +37,18 @@ public class AuthServiceImpl implements AuthService {
                 validationErrors.add(error);
             }
 
+            // 验证用户名是否为数字（因为要作为ID存储）
+            if (StringUtils.hasText(registerRequest.getUsername())) {
+                try {
+                    Long.parseLong(registerRequest.getUsername());
+                } catch (NumberFormatException e) {
+                    Map<String, String> error = new HashMap<>();
+                    error.put("field", "username");
+                    error.put("error", "用户名必须为数字");
+                    validationErrors.add(error);
+                }
+            }
+
             if (!StringUtils.hasText(registerRequest.getPassword())) {
                 Map<String, String> error = new HashMap<>();
                 error.put("field", "password");
@@ -103,6 +115,13 @@ public class AuthServiceImpl implements AuthService {
 
             if (!missingParams.isEmpty()) {
                 return AuthResponse.error("请求参数缺失", 400, "MISSING_PARAMETERS", missingParams);
+            }
+
+            // 验证用户名是否为数字
+            try {
+                Long.parseLong(loginRequest.getUsername());
+            } catch (NumberFormatException e) {
+                return AuthResponse.error("用户名格式不正确", 400, "INVALID_USERNAME_FORMAT");
             }
 
             // 查询用户
