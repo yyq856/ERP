@@ -216,14 +216,14 @@ CREATE TABLE erp_relation (
     bp2 BIGINT NOT NULL COMMENT '联系人ID',
     management INT NOT NULL COMMENT 'VIP等级',
     department VARCHAR(10) NOT NULL,
-    function VARCHAR(10) NOT NULL,
+    `function` VARCHAR(10) NOT NULL,
     valid_from DATE NOT NULL,
     valid_to DATE NOT NULL,
     FOREIGN KEY (bp1) REFERENCES erp_customer(customer_id),
     FOREIGN KEY (bp2) REFERENCES erp_contact(contact_id),
     FOREIGN KEY (management) REFERENCES erp_management(level_id),
     FOREIGN KEY (department) REFERENCES erp_department(dept_id),
-    FOREIGN KEY (function) REFERENCES erp_function(function_id)
+    FOREIGN KEY (`function`) REFERENCES erp_function(function_id)
 );
 
 CREATE TABLE erp_material (
