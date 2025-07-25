@@ -34,5 +34,46 @@
         </where>
         ORDER BY so.so_id DESC
     </select>
+    <!-- ✅ 新增销售订单详情查询 -->
+    <select id="getSalesOrderDetails" resultType="map">
+        SELECT
+            so.so_id AS soId,
+            so.quote_id AS quotationId,
+            c1.name AS soldToParty,
+            c2.name AS shipToParty,
+            q.cust_ref AS customerReference,
+            DATE_FORMAT(q.customer_reference_date, '%Y-%m-%d') AS customerReferenceDate,
+            DATE_FORMAT(so.req_delivery_date, '%Y-%m-%d') AS reqDeliveryDate,
+            FORMAT(so.net_value, 2) AS netValue,
+            so.currency
+        FROM
+            erp_sales_order_hdr so
+                LEFT JOIN erp_customer c1 ON so.customer_no = c1.customer_id
+                LEFT JOIN erp_contact cont ON so.contact_id = cont.contact_id
+                LEFT JOIN erp_customer c2 ON cont.contact_id = c2.customer_id
+                LEFT JOIN erp_quotation q ON so.quote_id = q.quotation_id
+        WHERE so.so_id = #{soId}
+    </select>
 
+    <!-- ✅ 新增销售订单项目查询 -->
+    <select id="getSalesOrderItems" resultType="map">
+        SELECT
+            si.item_no AS item,
+            m.mat_id AS material,
+            si.quantity AS orderQuantity,
+            m.base_uom AS orderQuantityUnit,
+            m.mat_desc AS description,
+            DATE_FORMAT(so.req_delivery_date, '%Y-%m-%d') AS reqDelivDate,
+            FORMAT(si.net_price * si.quantity, 2) AS netValue,
+            so.currency AS netValueUnit,
+            FORMAT((si.net_price * si.quantity) * 0.1, 2) AS taxValue,
+            so.currency AS taxValueUnit,
+            DATE_FORMAT(so.doc_date, '%Y-%m-%d') AS pricingDate,
+            '100%' AS orderProbability
+        FROM
+            erp_sales_item si
+                JOIN erp_sales_order_hdr so ON si.so_id = so.so_id
+                JOIN erp_material m ON si.mat_id = m.mat_id
+        WHERE si.so_id = #{soId}
+    </select>
 </mapper>
