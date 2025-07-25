@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="webserver.mapper.SalesOrderMapper">
+    <select id="searchSalesOrders" resultType="map">
+        SELECT
+        so.so_id AS soId,
+        c.name AS soldToPartyName,
+        so.customer_no AS customerNo,
+        q.cust_ref AS customerReference,  <!-- 从报价单表获取客户参考 -->
+        DATE_FORMAT(so.req_delivery_date, '%Y-%m-%d') AS reqDeliveryDate,
+        so.status AS status,
+        FORMAT(so.net_value, 2) AS netValue,
+        so.currency AS currency,
+        DATE_FORMAT(so.doc_date, '%Y-%m-%d') AS docDate
+        FROM
+        erp_sales_order_hdr so
+        LEFT JOIN
+        erp_customer c ON so.customer_no = c.customer_id
+        LEFT JOIN
+        erp_quotation q ON so.quote_id = q.quotation_id  <!-- 关键关联 -->
+        <where>
+            <if test="request.soId != null and request.soId != ''">
+                AND so.so_id = #{request.soId}
+            </if>
+            <if test="request.status != null and request.status != ''">
+                AND so.status = #{request.status}
+            </if>
+            <if test="request.customerNo != null and request.customerNo != ''">
+                AND so.customer_no = #{request.customerNo}
+            </if>
+            <if test="request.customerReference != null and request.customerReference != ''">
+                AND q.cust_ref LIKE CONCAT('%', #{request.customerReference}, '%')
+            </if>
+        </where>
+        ORDER BY so.so_id DESC
+    </select>
+
+</mapper>

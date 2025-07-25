@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="webserver.mapper.SearchMapper">
+
+    <select id="dynamicSearch" resultType="map" parameterType="map">
+        SELECT
+        <choose>
+            <when test="fields != null and fields.size() > 0">
+                <foreach collection="fields" item="field" separator=",">
+                    ${field}
+                </foreach>
+            </when>
+            <otherwise>
+                *
+            </otherwise>
+        </choose>
+        FROM ${table}
+        <where>
+            <if test="conditions != null and conditions.size() > 0">
+                <foreach collection="conditions" item="value" index="key" separator="AND">
+                    <choose>
+                        <when test="value.regex != null">
+                            ${key} REGEXP #{value.regex}
+                        </when>
+                        <when test="value.gte != null">
+                            ${key} &gt;= #{value.gte}
+                        </when>
+                        <when test="value.lte != null">
+                            ${key} &lt;= #{value.lte}
+                        </when>
+                        <when test="value.eq != null">
+                            ${key} = #{value.eq}
+                        </when>
+                    </choose>
+                </foreach>
+
+            </if>
+        </where>
+
+        <if test="limit != null">
+            LIMIT #{limit}
+        </if>
+    </select>
+
+</mapper>
