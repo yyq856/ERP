@@ -22,6 +22,31 @@
 - API文档：SpringDoc OpenAPI (Swagger UI)
 - 其他：Lombok、JWT、Druid连接池
 
-## 项目结构
+## 运行环境要求
 
-```
+- Java 22
+- MySQL 8.0或更高版本
+- Maven 3.6或更高版本
+
+## 如何在新电脑上运行项目
+
+### 1. 环境准备
+
+#### 安装JDK 22
+1. 从Oracle官网或OpenJDK下载JDK 22
+2. 安装JDK并配置环境变量：
+    - 设置`JAVA_HOME`环境变量指向JDK安装目录
+    - 将`%JAVA_HOME%\bin`添加到`PATH`环境变量
+
+#### 安装Maven（可选，项目包含Maven Wrapper）
+1. 从Apache Maven官网下载最新版本
+2. 解压到指定目录
+3. 设置`MAVEN_HOME`环境变量
+4. 将`%MAVEN_HOME%\bin`添加到`PATH`环境变量
+
+#### 安装MySQL 8.0
+1. 从MySQL官网下载MySQL Community Server 8.0
+2. 运行安装程序并按照提示完成安装
+3. 启动MySQL服务
+
+
