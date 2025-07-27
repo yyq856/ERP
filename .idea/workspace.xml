@@ -4,7 +4,7 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="fd40e6ca-a706-415b-9e01-5f1f597c5af3" name="更改" comment="readme" />
+    <list default="true" id="fd40e6ca-a706-415b-9e01-5f1f597c5af3" name="更改" comment="销售订单管理功能完成（除最后一个功能需要进行讨论除外）" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -69,7 +69,7 @@
     "RunOnceActivity.ShowReadmeOnStart": "true",
     "SHARE_PROJECT_CONFIGURATION_FILES": "true",
     "Spring Boot.WebshopApplication.executor": "Run",
-    "git-widget-placeholder": "main",
+    "git-widget-placeholder": "zyc",
     "kotlin-language-version-configured": "true",
     "last_opened_file_path": "D:/桌面/大三暑假/SD/src/后端/ERP",
     "node.js.detected.package.eslint": "true",
@@ -248,6 +248,7 @@
     <MESSAGE value="通用搜索功能" />
     <MESSAGE value="通用搜索功能与订单查询" />
     <MESSAGE value="readme" />
-    <option name="LAST_COMMIT_MESSAGE" value="readme" />
+    <MESSAGE value="销售订单管理功能完成（除最后一个功能需要进行讨论除外）" />
+    <option name="LAST_COMMIT_MESSAGE" value="销售订单管理功能完成（除最后一个功能需要进行讨论除外）" />
   </component>
 </project>
