@@ -1,8 +1,7 @@
 package webserver.mapper;
 
 import org.apache.ibatis.annotations.*;
-import webserver.pojo.SalesOrder;
-import webserver.pojo.SalesOrderSearchRequest;
+import webserver.pojo.*;
 
 import java.util.List;
 import java.util.Map;
@@ -62,5 +61,41 @@ public interface SalesOrderMapper {
                              
     @Delete("DELETE FROM erp_sales_item WHERE so_id = #{soId}")
     int deleteSalesOrderItemsBySoId(@Param("soId") Long soId);
+
+    @Select("<script>" +
+            "SELECT so.id, so.planned_creation_date AS plannedCreationDate, so.planned_gi_date AS plannedGIDate, " +
+            "so.shipping_point AS shippingPoint, so.ship_to_party AS shipToParty, " +
+            "so.gross_weight AS grossWeight " +
+            "FROM erp_sales_order so " +
+            "WHERE 1=1 " +
+            "<if test='shipToParty != null and shipToParty != \"\"'>AND so.ship_to_party = #{shipToParty} </if>" +
+            "<if test='plannedCreationDate != null and plannedCreationDate != \"\"'>AND so.planned_creation_date = #{plannedCreationDate} </if>" +
+            "<if test='relevantForTM != null and relevantForTM != \"\"'>AND so.relevant_for_tm = #{relevantForTM} </if>" +
+            "</script>")
+    List<SalesOrderSummaryDTO> selectSalesOrders(
+            @Param("shipToParty") String shipToParty,
+            @Param("plannedCreationDate") String plannedCreationDate,
+            @Param("relevantForTM") String relevantForTM
+    );
+
+    @Select("<script>" +
+            "SELECT " +
+            "CAST(so.so_id AS CHAR) AS id, " +
+            "DATE_FORMAT(so.req_delivery_date, '%Y-%m-%d') AS plannedCreationDate, " +
+            "DATE_FORMAT(od.gi_date, '%Y-%m-%d') AS plannedGIDate, " +
+            "od.shipping_point AS shippingPoint, " +
+            "CAST(so.customer_no AS CHAR) AS shipToParty, " +
+            "'' AS grossWeight " +
+            "FROM erp_sales_order_hdr so " +
+            "LEFT JOIN erp_outbound_delivery od ON so.so_id = od.so_id " +
+            "WHERE 1=1 " +
+            "<if test='shipToParty != null and shipToParty != \"\"'> AND so.customer_no = #{shipToParty} </if> " +
+            "<if test='plannedCreationDate != null and plannedCreationDate != \"\"'> AND so.req_delivery_date = #{plannedCreationDate} </if> " +
+            "</script>")
+    List<SalesOrderDetailDTO> selectSalesOrders1(
+            @Param("shipToParty") String shipToParty,
+            @Param("plannedCreationDate") String plannedCreationDate,
+            @Param("relevantForTM") String relevantForTM
+    );
 }
 

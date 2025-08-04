@@ -2,15 +2,14 @@ package webserver.service.impl;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 import webserver.common.Response;
+import webserver.mapper.OutboundDeliveryMapper;
 import webserver.mapper.SalesOrderMapper;
-import webserver.pojo.SalesOrder;
-import webserver.pojo.SalesOrderCreateRequest;
-import webserver.pojo.SalesOrderSearchRequest;
-import webserver.pojo.SalesOrderDetailDTO;
+import webserver.pojo.*;
 import webserver.service.SalesOrderService;
 
 import java.math.BigDecimal;
@@ -27,6 +26,9 @@ import java.util.stream.Collectors;
 public class SalesOrderServiceImpl implements SalesOrderService {
     
     private final SalesOrderMapper salesOrderMapper;
+
+    @Autowired
+    private OutboundDeliveryMapper outboundDeliveryMapper;
 
     @Override
     public Response searchSalesOrders(SalesOrderSearchRequest request) {
@@ -467,4 +469,26 @@ public class SalesOrderServiceImpl implements SalesOrderService {
             return Response.error("Operation failed.");
         }
     }
+
+    @Override
+    public Response<List<SalesOrderDetailDTO>> searchSalesOrders1(SalesOrdersRequest request) {
+        List<SalesOrderDetailDTO> list = salesOrderMapper.selectSalesOrders1(
+                request.getShipToParty(),
+                request.getPlannedCreationDate(),
+                request.getRelevantForTM()
+        );
+        return Response.success(list);
+    }
+
+    @Override
+    public Response<OutboundDeliveryDetailDTO> getOutboundDeliveryDetail(String deliveryId) {
+        OutboundDeliveryDetailDTO detail = outboundDeliveryMapper.getOutboundDeliveryDetail(deliveryId);
+        if (detail == null) {
+            return Response.error("未找到交货单: " + deliveryId);
+        }
+        List<OutboundDeliveryItemDTO> items = outboundDeliveryMapper.getDeliveryItems(deliveryId);
+        detail.setItems(items);
+        return Response.success(detail);
+    }
+
 }
