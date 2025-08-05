@@ -2,8 +2,6 @@ package webserver.pojo;
 
 import lombok.Data;
 
-import java.util.Map;
-
 
 @Data
 public class SalesOrderCreateResponse {

@@ -69,7 +69,7 @@ public class OutboundDeliveryServiceImpl implements OutboundDeliveryService {
     }
 
     @Override
-    public Response getOutboundDeliverySummaries(GetOutboundDeliverySummaryRequest request) {
+    public Response<?> getOutboundDeliverySummaries(GetOutboundDeliverySummaryRequest request) {
         List<OutboundDeliverySummaryDTO> deliveries = outboundDeliveryMapper.getDeliverySummaries(
                 request.getOverallStatus());
 

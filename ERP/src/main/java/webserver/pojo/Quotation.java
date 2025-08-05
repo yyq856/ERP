@@ -2,7 +2,6 @@ package webserver.pojo;
 
 import lombok.Data;
 
-import webserver.pojo.QuotationItem;
 import java.time.LocalDate;
 import java.util.List;
 

@@ -31,7 +31,7 @@ public class OutboundDeliveryController {
     }
 
     @PostMapping("/get-deliveries-summary")
-    public Response getOutboundDeliverySummaries(@RequestBody GetOutboundDeliverySummaryRequest request) {
+    public Response<?> getOutboundDeliverySummaries(@RequestBody GetOutboundDeliverySummaryRequest request) {
         return outboundDeliveryService.getOutboundDeliverySummaries(request);
     }
 

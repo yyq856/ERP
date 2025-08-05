@@ -31,7 +31,7 @@ public class SalesOrderServiceImpl implements SalesOrderService {
     private OutboundDeliveryMapper outboundDeliveryMapper;
 
     @Override
-    public Response searchSalesOrders(SalesOrderSearchRequest request) {
+    public Response<?> searchSalesOrders(SalesOrderSearchRequest request) {
         try {
             List<Map<String, Object>> orders = salesOrderMapper.searchSalesOrders(request);
 
@@ -153,7 +153,7 @@ public class SalesOrderServiceImpl implements SalesOrderService {
      */
     @Override
     @Transactional
-    public Response createSalesOrder(SalesOrderCreateRequest request) {
+    public Response<?> createSalesOrder(SalesOrderCreateRequest request) {
         try {
             log.info("开始创建销售订单");
 
@@ -419,7 +419,7 @@ public class SalesOrderServiceImpl implements SalesOrderService {
      */
     @Override
     @Transactional
-    public Response updateSalesOrder(String soId, SalesOrderCreateRequest request) {
+    public Response<?> updateSalesOrder(String soId, SalesOrderCreateRequest request) {
         try {
             log.info("开始修改销售订单: {}", soId);
             

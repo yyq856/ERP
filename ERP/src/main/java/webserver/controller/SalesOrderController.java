@@ -20,7 +20,7 @@ public class SalesOrderController {
     private SalesOrderService salesOrderService;
 
     @PostMapping("/search")
-    public Response searchSalesOrders(@RequestBody SalesOrderSearchRequest request) {
+    public Response<?> searchSalesOrders(@RequestBody SalesOrderSearchRequest request) {
         log.info("Sales order search request: {}", request);
         return salesOrderService.searchSalesOrders(request);
     }
@@ -42,12 +42,12 @@ public class SalesOrderController {
     }
 
     @PostMapping("/create")
-    public Response createSalesOrder(@RequestBody SalesOrderCreateRequest request) {
+    public Response<?> createSalesOrder(@RequestBody SalesOrderCreateRequest request) {
         return salesOrderService.createSalesOrder(request);
     }
 
     @PostMapping("/edit")
-    public Response updateSalesOrder(@RequestBody SalesOrderCreateRequest request) {
+    public Response<?> updateSalesOrder(@RequestBody SalesOrderCreateRequest request) {
         // 从请求中获取so_id
         String soId = request.getBasicInfo().getSo_id();
         if (!StringUtils.hasText(soId)) {
