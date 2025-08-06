@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="webserver.mapper.OutboundDeliveryMapper">
+
+    <insert id="insertOutboundDeliveryFromSalesOrder" parameterType="string">
+        INSERT INTO erp_outbound_delivery (
+            so_id, ship_tp, shipping_point, pick_date_plan, status
+        )
+        SELECT
+            so.so_id,
+            so.customer_no,
+            NULL,
+            CURDATE(),
+            'OPEN'
+        FROM erp_sales_order_hdr so
+        WHERE so.so_id = #{soId}
+    </insert>
+
+    <select id="getDeliveryNumberBySalesOrderId" parameterType="string" resultType="string">
+        SELECT CONCAT('DEL-', dlv_id)
+        FROM erp_outbound_delivery
+        WHERE so_id = #{soId}
+        ORDER BY dlv_id DESC
+            LIMIT 1
+    </select>
+
+    <select id="getDeliverySummaries" resultType="webserver.pojo.OutboundDeliverySummaryDTO">
+        SELECT
+            CONCAT('DEL-', d.dlv_id) AS outboundDelivery,
+            d.pick_date_plan AS pickingDate,
+            d.status AS pickingStatus,
+            'Not Started' AS giStatus,
+            'Pick' AS pick
+        FROM
+            erp_outbound_delivery d
+        WHERE
+            (#{overallStatus} IS NULL OR d.status = #{overallStatus})
+    </select>
+
+    <!-- 获取出库交货单详情 -->
+    <select id="getOutboundDeliveryDetail" parameterType="string" resultType="webserver.pojo.OutboundDeliveryDetailDTO">
+        SELECT
+            od.dlv_id AS meta_id,
+            od.pick_date_plan AS plannedGIDate,
+            od.gi_date AS actualGIDate,
+            od.so_id,
+            od.ship_tp,
+            od.shipping_point,
+            od.status
+        FROM erp_outbound_delivery od
+        WHERE od.dlv_id = #{deliveryId}
+    </select>
+
+    <!-- 获取出库交货单明细项 -->
+    <select id="getDeliveryItems" parameterType="string" resultType="webserver.pojo.OutboundDeliveryItemDTO">
+        SELECT
+            odi.item_no AS item,
+            odi.mat_id AS materialId,
+            m.mat_desc AS materialDescription,
+            odi.pick_quantity AS pickingQuantity,
+            odi.plant_id AS plantId,
+            p.plant_name AS plantName,
+            odi.storage_loc AS storageLocation
+        FROM erp_outbound_delivery_item odi
+                 LEFT JOIN erp_material m ON odi.mat_id = m.mat_id
+                 LEFT JOIN erp_plant_name p ON odi.plant_id = p.plant_id
+        WHERE odi.dlv_id = #{deliveryId}
+    </select>
+
+    <select id="findItemByMaterialAndPlant" resultType="webserver.pojo.OutboundDeliveryItemDTO">
+        SELECT
+            mat_id AS material,
+            plant_id AS plant,
+            storage_loc AS storageLocation
+        FROM erp_outbound_delivery_item
+        WHERE mat_id = #{material} AND plant_id = #{plant}
+            LIMIT 1
+    </select>
+
+    <update id="updateGIStatusToPosted">
+        UPDATE erp_outbound_delivery
+        SET status = 'COMPLETED'
+        WHERE dlv_id = #{deliveryId}
+    </update>
+
+    <select id="getDeliverySummary" resultType="webserver.pojo.OutboundDeliverySummaryDTO">
+        SELECT
+            dlv_id AS outboundDelivery,
+            pick_date_plan AS pickingDate,
+            status AS overallStatus,
+            gi_date AS giDate
+        FROM erp_outbound_delivery
+        WHERE dlv_id = #{deliveryId}
+    </select>
+
+    <update id="updateDeliveryDetailForPostGI">
+        UPDATE erp_outbound_delivery
+        SET
+        gi_date = #{actualGIDate},
+        status = 'COMPLETED'  <!-- 这里status相当于gi_status -->
+        WHERE dlv_id = #{meta.id}
+    </update>
+
+    <update id="updateItemPostStatus">
+        UPDATE erp_outbound_delivery_item
+        SET
+            confirm_status = 'Posted'
+        WHERE dlv_id = #{deliveryId} AND item_no = #{item}
+    </update>
+
+</mapper>
