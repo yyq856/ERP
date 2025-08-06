@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="webserver.mapper.QuotationMapper">
+
+    <!-- 获取报价单头信息 -->
+    <select id="getQuotationById" resultType="webserver.pojo.Quotation">
+        SELECT
+            quotation_id AS quotationId,
+            cust_id AS soldToParty,
+            ship_tp AS shipToParty,
+            cust_ref AS customerReference,
+            net_value AS netValue,
+            currency, -- 新增字段
+            customer_reference_date AS customerReferenceDate,
+            valid_to_date AS reqDeliveryDate
+        FROM erp_quotation
+        WHERE quotation_id = #{quotationId}
+    </select>
+
+    <!-- 获取报价单项目列表 -->
+    <select id="getQuotationItemsByQuotationId" resultType="webserver.pojo.QuotationItem">
+        SELECT
+            item_no AS itemNo,
+            mat_id AS material,
+            quantity,
+            su AS unit,
+            req_delivery_date AS reqDelivDate,
+            net_price AS netValue,
+            tax_value AS taxValue, -- 新增字段
+            discount_pct AS orderProbability
+        FROM erp_quotation_item
+        WHERE quotation_id = #{quotationId}
+        ORDER BY item_no
+    </select>
+
+</mapper>

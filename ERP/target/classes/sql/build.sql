@@ -312,6 +312,10 @@ CREATE TABLE erp_quotation (
                                FOREIGN KEY (ship_tp) REFERENCES erp_customer(customer_id)
 );
 
+-- 添加currency字段到erp_quotation表
+ALTER TABLE erp_quotation
+    ADD COLUMN currency VARCHAR(5) NOT NULL DEFAULT 'USD' COMMENT '货币代码';
+
 CREATE TABLE erp_quotation_item (
                                     quotation_id BIGINT NOT NULL,
                                     item_no SMALLINT NOT NULL,
@@ -329,6 +333,11 @@ CREATE TABLE erp_quotation_item (
                                     FOREIGN KEY (mat_id) REFERENCES erp_material(mat_id),
                                     FOREIGN KEY (plant_id) REFERENCES erp_plant_name(plant_id)
 );
+
+-- 添加tax_value字段到erp_quotation_item表
+ALTER TABLE erp_quotation_item
+    ADD COLUMN tax_value FLOAT NOT NULL DEFAULT 0.0 COMMENT '税值';
+
 
 CREATE TABLE erp_sales_order_hdr (
                                      so_id BIGINT PRIMARY KEY AUTO_INCREMENT COMMENT '销售订单ID',
