@@ -11,6 +11,10 @@ public class BusinessPartner {
     private Long customerId;
     private String title;
     private String name;
+    private String firstName;      // 新增：person类型名字
+    private String lastName;       // 新增：person类型姓氏
+    private String bpType;         // 新增：业务伙伴类型 person/org/group
+    private String searchTerm;     // 新增：搜索词
     private String language;
     private String street;
     private String city;
