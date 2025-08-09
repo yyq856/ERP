@@ -9,7 +9,8 @@ import webserver.service.SalesOrderService;
 import java.util.List;
 
 @RestController
-@RequestMapping("/outbound-delivery")
+@CrossOrigin(origins = "*")
+@RequestMapping("/api/app/outbound-delivery")
 public class OutboundDeliveryController {
 
     private final SalesOrderService salesOrderService;
