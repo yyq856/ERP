@@ -76,7 +76,7 @@ public class BusinessPartnerController {
      * @param request 编辑请求
      * @return 操作结果
      */
-    @PostMapping("/api/bp/edit")
+    @PostMapping("/api/bp/create")
     public BpMaintainEditResponse editBusinessPartner(@RequestBody BpMaintainEditRequest request) {
         try {
             log.info("编辑业务伙伴请求开始");

@@ -35,7 +35,7 @@ public interface BusinessPartnerMapper {
             "division, currency, sales_district, price_group, customer_group, delivery_priority, " +
             "shipping_condition, delivering_plant, max_part_deliv, incoterms, incoterms_location, " +
             "payment_terms, acct_assignment, output_tax) " +
-            "VALUES (#{title}, #{name}, #{language}, #{street}, #{city}, #{region}, #{postalCode}, " +
+            "VALUES (#{title}, #{firstName}, #{language}, #{street}, #{city}, #{region}, #{postalCode}, " +
             "#{country}, #{companyCode}, #{reconciliationAccount}, #{sortKey}, #{salesOrg}, #{channel}, " +
             "#{division}, #{currency}, #{salesDistrict}, #{priceGroup}, #{customerGroup}, #{deliveryPriority}, " +
             "#{shippingCondition}, #{deliveringPlant}, #{maxPartDeliv}, #{incoterms}, #{incotermsLocation}, " +
@@ -84,7 +84,7 @@ public interface BusinessPartnerMapper {
      * @param bp 业务伙伴信息
      * @return 影响的行数
      */
-    @Update("UPDATE erp_customer SET title = #{title}, name = #{name}, first_name = #{firstName}, " +
+    @Update("UPDATE erp_customer SET title = #{title}, name = #{firstName}, first_name = #{firstName}, " +
             "last_name = #{lastName}, bp_type = #{bpType}, search_term = #{searchTerm}, " +
             "street = #{street}, city = #{city}, postal_code = #{postalCode}, country = #{country} " +
             "WHERE customer_id = #{customerId}")
