@@ -50,3 +50,49 @@
 3. 启动MySQL服务
 
 
+## 端到端测试（E2E）
+
+本项目提供一个自动枚举 POST 接口的端到端测试框架，位于：
+- src/test/java/webserver/e2e/PostEndpointsE2ETest.java
+
+特点：
+- 自动发现所有 @PostMapping / @RequestMapping(method=POST) 的端点
+- 解析类级 @RequestMapping 前缀，自动拼接完整路径
+- 通过示例请求体映射 sampleBodies 决定哪些端点实际发起请求并断言 200
+
+### 运行方式
+
+1) 在本地内存中运行（MockMvc，不走真实网络）
+- 默认方式：
+  - mvn -Dtest=webserver.e2e.PostEndpointsE2ETest test
+- 说明：该方式会启动 Spring 上下文并用 MockMvc 调用控制器方法，不需要服务实际运行在 localhost:8080。
+
+2) 直连已运行的远端服务（通过 baseUrl 开关）
+- 在测试类里支持读取 `e2e.base-url`，有值则切换为 HTTP 直连：
+  - mvn -Dtest=webserver.e2e.PostEndpointsE2ETest -De2e.base-url=http://<ip>:<port> test
+- 注意：端点列表仍来自本地代码的路由定义；如果远端版本与本地代码不一致，可能出现 404。
+
+### 添加/维护端点样例（JSON 文件）
+- 样例文件路径：`src/test/resources/e2e/post-bodies.json`
+- 支持两种写法：
+  - 单个用例：value 直接是对象或数组
+  - 多个用例：用 `{"cases": [ {...}, {...} ]}` 包装
+
+示例：
+```json
+{
+  "/api/login": { "cases": [
+    { "username": "111", "password": "X123456789" },
+    { "username": "222", "password": "X123456789" }
+  ]},
+  "/inquiry/items-tab-query": [ { "item": "1" }, { "item": "2" } ]
+}
+```
+- 说明：
+  - 如果请求体本身是数组（如 `/inquiry/items-tab-query`），保持数组写法即可
+  - 同一路径包含多个用例时，测试会为每个用例生成一个 DynamicTest
+
+### 可选：测试专用数据源/配置
+- 如果你不希望测试依赖生产数据库，可以为测试 profile 提供独立配置，或引入 H2（test scope）并在测试上下文中覆盖 DataSource。
+- 也可以在 CI 中使用 Docker 启动依赖的数据库后再运行上述测试。
+

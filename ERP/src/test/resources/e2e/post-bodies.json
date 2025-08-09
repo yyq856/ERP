@@ -1,0 +1,133 @@
+{
+  "/api/login": {
+    "username": "111",
+    "password": "X123456789"
+  },
+  "/api/register": {
+    "username": "111",
+    "password": "X123456789"
+  },
+  "/api/app/bp-create": {
+    "customer": {
+      "bpIdAndRoleSection": { "customer_id": "BP008", "bp_role": "CUSTOMER" },
+      "name": { "title": "MR", "name": "Robert Wilson" },
+      "searchTerms": { "searchTerm": "Robert Wilson Tech" },
+      "address": {
+        "country": "US",
+        "street": "456 Innovation Street",
+        "postalCode": "10002",
+        "city": "New York"
+      },
+      "customer": { "type": "INDIVIDUAL" }
+    }
+  },
+  "/api/app/bp-search": { "customerId": "2" },
+  "/api/app/group/create": {
+    "test": {
+      "bpIdAndRoleSection": { "customerId": "GRP001", "bpRole": "CUSTOMER" },
+      "name": { "name": "Technology Innovation Group" },
+      "searchTerms": { "searchTerm": "Tech Innovation Group Solutions" },
+      "address": {
+        "country": "US",
+        "street": "100 Silicon Valley Drive",
+        "postalCode": "94301",
+        "city": "Palo Alto"
+      }
+    }
+  },
+  "/api/app/bp-relationship/register": {
+    "relation": { "relationShipCategory": "customer" },
+    "default": {
+      "businessPartner1": "1",
+      "businessPartner2": "2",
+      "validFrom": "2024-01-01",
+      "validTo": "2024-12-31"
+    }
+  },
+  "/api/app/bp-relationship/get": { "relationshipId": "1" },
+  "/api/app/bp-relationship/edit": {
+    "bpRelationshipData": {
+      "meta": { "id": "" },
+      "basicInfo": {
+        "relation": { "relationShipCategory": "customer" },
+        "default": {
+          "businessPartner1": "1",
+          "businessPartner2": "2",
+          "validFrom": "2024-01-01",
+          "validTo": "2024-12-31"
+        }
+      }
+    },
+    "generalData": {
+      "customerCode": "CUST001",
+      "customerName": "Test Customer",
+      "contactPerson": "John Doe"
+    }
+  },
+  "/inquiry/initialize": {
+    "inquiryType": "ZAG",
+    "salesOrganization": "1000",
+    "distributionChannel": "10",
+    "division": "01"
+  },
+  "/inquiry/get": { "inquiryId": "1" },
+  "/inquiry/edit": {
+    "meta": { "id": "" },
+    "basicInfo": {
+      "inquiry": "",
+      "soldToParty": "CUST-1",
+      "shipToParty": "SHIP-1",
+      "customerReference": "REF-ABC123",
+      "netValue": 15800.50,
+      "netValueUnit": "USD",
+      "customerReferenceDate": "2024-01-15"
+    },
+    "itemOverview": {
+      "validFrom": "2024-01-01",
+      "validTo": "2024-12-31",
+      "reqDelivDate": "2024-02-15",
+      "expectOralVal": "16000.00",
+      "expectOralValUnit": "USD",
+      "items": [
+        {
+          "item": "1",
+          "material": "MAT-1",
+          "orderQuantity": "100",
+          "orderQuantityUnit": "EA",
+          "description": "高品质电子元件",
+          "reqDelivDate": "2024-02-15",
+          "netValue": "1500.00",
+          "netValueUnit": "USD",
+          "taxValue": "225.00",
+          "taxValueUnit": "USD",
+          "pricingDate": "2024-01-15",
+          "orderProbability": "95"
+        }
+      ]
+    }
+  },
+  "/inquiry/items-tab-query": [
+    {
+      "item": "1",
+      "material": "MAT-001",
+      "orderQuantity": "100",
+      "orderQuantityUnit": "EA",
+      "description": "高品质电子元件",
+      "reqDelivDate": "2024-02-15",
+      "netValue": "1500.00",
+      "pricingDate": "2024-01-15",
+      "orderProbability": "95"
+    },
+    {
+      "item": "2",
+      "material": "MAT-002",
+      "orderQuantity": "50",
+      "orderQuantityUnit": "EA",
+      "description": "标准电子元件",
+      "reqDelivDate": "2024-02-20",
+      "netValue": "800.00",
+      "pricingDate": "2024-01-15",
+      "orderProbability": "90"
+    }
+  ]
+}
