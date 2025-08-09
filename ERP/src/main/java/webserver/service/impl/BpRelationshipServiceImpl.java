@@ -74,21 +74,31 @@ public class BpRelationshipServiceImpl implements BpRelationshipService {
             
             // 构建响应数据
             Map<String, Object> content = new HashMap<>();
-            
-            // 基本信息
-            Map<String, Object> basicInfo = new HashMap<>();
+
+            // 基本信息 - 按照前端期望的嵌套结构
+            Map<String, Object> basicInfoOuter = new HashMap<>();
+
+            // meta 信息
+            Map<String, Object> meta = new HashMap<>();
+            meta.put("id", relationship.getRelationId().toString());
+            basicInfoOuter.put("meta", meta);
+
+            // 内层 basicInfo
+            Map<String, Object> basicInfoInner = new HashMap<>();
             Map<String, Object> relation = new HashMap<>();
             relation.put("relationShipCategory", relationship.getRelCategory());
-            
+
             Map<String, Object> defaultInfo = new HashMap<>();
             defaultInfo.put("businessPartner1", relationship.getBp1().toString());
             defaultInfo.put("businessPartner2", relationship.getBp2().toString());
             defaultInfo.put("validFrom", relationship.getValidFrom().toString());
             defaultInfo.put("validTo", relationship.getValidTo().toString());
-            
-            basicInfo.put("relation", relation);
-            basicInfo.put("default", defaultInfo);
-            content.put("basicInfo", basicInfo);
+
+            basicInfoInner.put("relation", relation);
+            basicInfoInner.put("default", defaultInfo);
+            basicInfoOuter.put("basicInfo", basicInfoInner);
+
+            content.put("basicInfo", basicInfoOuter);
             
             // 动态数据（示例）
             Map<String, Object> generalData = new HashMap<>();
