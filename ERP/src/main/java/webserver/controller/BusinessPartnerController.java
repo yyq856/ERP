@@ -76,7 +76,7 @@ public class BusinessPartnerController {
      * @param request 编辑请求
      * @return 操作结果
      */
-    @PostMapping("/api/bp/create")
+    @PostMapping("/api/bp/edit")
     public BpMaintainEditResponse editBusinessPartner(@RequestBody BpMaintainEditRequest request) {
         try {
             log.info("编辑业务伙伴请求开始");
@@ -94,6 +94,9 @@ public class BusinessPartnerController {
             return errorResponse;
         }
     }
+
+    
+    
 
     /**
      * 测试接口 - 验证基本功能

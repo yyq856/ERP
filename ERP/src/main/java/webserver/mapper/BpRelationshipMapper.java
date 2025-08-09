@@ -26,7 +26,7 @@ public interface BpRelationshipMapper {
     @Options(useGeneratedKeys = true, keyProperty = "relationId")
     int insertRelationship(BpRelationship relationship);
     
-    /**
+    /** 
      * 更新业务伙伴关系（临时版本，使用固定值避免外键约束）
      * @param relationship 业务伙伴关系信息
      * @return 影响的行数

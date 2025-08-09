@@ -11,6 +11,7 @@ import java.util.List;
 @Slf4j
 @RestController
 @CrossOrigin(origins = "*")
+@RequestMapping("/api/app")
 public class InquiryController {
 
     @Autowired
