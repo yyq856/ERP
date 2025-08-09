@@ -243,9 +243,14 @@ public class SalesOrderServiceImpl implements SalesOrderService {
         // 3. 日期处理
         try {
             if (StringUtils.hasText(request.getItemOverview().getReqDelivDate())) {
-                LocalDate reqDeliveryDate = LocalDate.parse(request.getItemOverview().getReqDelivDate());
-                order.setReqDeliveryDate(reqDeliveryDate);
-                log.debug("设置要求交货日期: {}", reqDeliveryDate);
+                try {
+                    LocalDate reqDeliveryDate = webserver.util.DateUtil.parseDate(request.getItemOverview().getReqDelivDate());
+                    order.setReqDeliveryDate(reqDeliveryDate);
+                    log.debug("设置要求交货日期: {}", reqDeliveryDate);
+                } catch (Exception e) {
+                    log.error("请求交货日期格式错误: {}", e.getMessage());
+                    throw new RuntimeException("请求交货日期格式不正确: " + e.getMessage());
+                }
             } else {
                 // 默认为当前日期
                 order.setReqDeliveryDate(LocalDate.now());
