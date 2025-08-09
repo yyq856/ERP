@@ -61,11 +61,10 @@
             <version>3.0.3</version>
             <scope>test</scope>
         </dependency>
-        <!-- JSON 解析（用于测试读取样例文件） -->
+        <!-- JSON 解析 -->
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-databind</artifactId>
-            <scope>test</scope>
         </dependency>
         <!-- JWT 依赖 -->
         <dependency>
