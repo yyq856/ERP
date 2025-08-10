@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="webserver.mapper.MaterialDocumentMapper">
+
+    <!-- 搜索物料凭证 -->
+    <select id="searchMaterialDocuments" resultType="webserver.pojo.MaterialDocumentSearchResponse$MaterialDocumentSummary">
+        SELECT
+            md.material_document_id AS materialDocumentId,
+            md.material_document AS materialDocument,
+            COALESCE(pn.plant_name, 'Unknown') AS plant,
+            DATE_FORMAT(md.posting_date, '%Y-%m-%d') AS postingDate,
+            DATE_FORMAT(md.document_date, '%Y-%m-%d') AS documentDate
+        FROM erp_material_document md
+        LEFT JOIN erp_plant_name pn ON md.plant_id = pn.plant_id
+        <where>
+            1=1
+            <if test="materialDocument != null and materialDocument != ''">
+                AND md.material_document LIKE CONCAT('%', #{materialDocument}, '%')
+            </if>
+            <if test="plant != null and plant != ''">
+                AND pn.plant_name LIKE CONCAT('%', #{plant}, '%')
+            </if>
+            <if test="materialDocumentYear != null and materialDocumentYear != ''">
+                AND md.material_document_year = #{materialDocumentYear}
+            </if>
+            <if test="material != null and material != ''">
+                AND EXISTS (
+                    SELECT 1 FROM erp_material_document_item mdi
+                    LEFT JOIN erp_material m ON mdi.mat_id = m.mat_id
+                    WHERE mdi.material_document_id = md.material_document_id
+                    AND (m.mat_desc LIKE CONCAT('%', #{material}, '%') OR CAST(m.mat_id AS CHAR) LIKE CONCAT('%', #{material}, '%'))
+                )
+            </if>
+            <if test="postingDate != null and postingDate != ''">
+                AND md.posting_date = #{postingDate}
+            </if>
+            <if test="documentDate != null and documentDate != ''">
+                AND md.document_date = #{documentDate}
+            </if>
+        </where>
+        ORDER BY md.posting_date DESC, md.material_document DESC
+    </select>
+
+    <!-- 根据ID查询物料凭证详情 -->
+    <select id="getMaterialDocumentById" resultType="webserver.pojo.MaterialDocument">
+        SELECT 
+            md.material_document_id AS materialDocumentId,
+            md.material_document AS materialDocument,
+            md.material_document_year AS materialDocumentYear,
+            md.plant_id AS plantId,
+            pn.plant_name AS plantName,
+            md.posting_date AS postingDate,
+            md.document_date AS documentDate,
+            md.created_by AS createdBy
+        FROM erp_material_document md
+        LEFT JOIN erp_plant_name pn ON md.plant_id = pn.plant_id
+        WHERE md.material_document_id = #{materialDocumentId}
+    </select>
+
+</mapper>

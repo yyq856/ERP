@@ -301,7 +301,7 @@ public class InquiryServiceImpl implements InquiryService {
         
         if (StringUtils.hasText(basicInfo.getCustomerReferenceDate())) {
             try {
-                inquiry.setCustomerReferenceDate(LocalDate.parse(basicInfo.getCustomerReferenceDate()));
+                inquiry.setCustomerReferenceDate(webserver.util.DateUtil.parseDate(basicInfo.getCustomerReferenceDate()));
             } catch (Exception e) {
                 inquiry.setCustomerReferenceDate(LocalDate.now());
             }
@@ -311,7 +311,7 @@ public class InquiryServiceImpl implements InquiryService {
         if (request.getItemOverview() != null) {
             if (StringUtils.hasText(request.getItemOverview().getValidFrom())) {
                 try {
-                    inquiry.setValidFromDate(LocalDate.parse(request.getItemOverview().getValidFrom()));
+                    inquiry.setValidFromDate(webserver.util.DateUtil.parseDate(request.getItemOverview().getValidFrom()));
                 } catch (Exception e) {
                     inquiry.setValidFromDate(LocalDate.now());
                 }
@@ -319,7 +319,7 @@ public class InquiryServiceImpl implements InquiryService {
             
             if (StringUtils.hasText(request.getItemOverview().getValidTo())) {
                 try {
-                    inquiry.setValidToDate(LocalDate.parse(request.getItemOverview().getValidTo()));
+                    inquiry.setValidToDate(webserver.util.DateUtil.parseDate(request.getItemOverview().getValidTo()));
                 } catch (Exception e) {
                     inquiry.setValidToDate(LocalDate.now().plusMonths(6));
                 }

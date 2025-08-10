@@ -8,8 +8,10 @@ import org.springframework.util.StringUtils;
 import webserver.mapper.BpRelationshipMapper;
 import webserver.pojo.*;
 import webserver.service.BpRelationshipService;
+import webserver.util.DateUtil;
 
 import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 
 import java.util.*;
 
@@ -147,11 +149,11 @@ public class BpRelationshipServiceImpl implements BpRelationshipService {
             try {
                 relationship.setBp1(Long.parseLong(basicInfo.getDefaultInfo().getBusinessPartner1()));
                 relationship.setBp2(Long.parseLong(basicInfo.getDefaultInfo().getBusinessPartner2()));
-                relationship.setValidFrom(LocalDate.parse(basicInfo.getDefaultInfo().getValidFrom()));
-                relationship.setValidTo(LocalDate.parse(basicInfo.getDefaultInfo().getValidTo()));
+                relationship.setValidFrom(DateUtil.parseDate(basicInfo.getDefaultInfo().getValidFrom()));
+                relationship.setValidTo(DateUtil.parseDate(basicInfo.getDefaultInfo().getValidTo()));
             } catch (Exception e) {
                 log.error("数据格式转换错误: {}", e.getMessage());
-                return BpRelationshipResponse.error("数据格式不正确");
+                return BpRelationshipResponse.error("数据格式不正确: " + e.getMessage());
             }
 
             // 设置默认值（需要确保这些值在数据库中存在）
@@ -231,4 +233,5 @@ public class BpRelationshipServiceImpl implements BpRelationshipService {
         
         return NodeStructure.createDict("generalData", "General Data", children);
     }
+    
 }
