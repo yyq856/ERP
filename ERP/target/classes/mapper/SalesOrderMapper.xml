@@ -19,17 +19,17 @@
         LEFT JOIN
         erp_quotation q ON so.quote_id = q.quotation_id  <!-- 关键关联 -->
         <where>
-            <if test="request.soId != null and request.soId != ''">
-                AND so.so_id = #{request.soId}
+            <if test="soId != null and soId != ''">
+                AND so.so_id = #{soId}
             </if>
-            <if test="request.status != null and request.status != ''">
-                AND so.status = #{request.status}
+            <if test="status != null and status != ''">
+                AND so.status = #{status}
             </if>
-            <if test="request.customerNo != null and request.customerNo != ''">
-                AND so.customer_no = #{request.customerNo}
+            <if test="customerNo != null and customerNo != ''">
+                AND so.customer_no = #{customerNo}
             </if>
-            <if test="request.customerReference != null and request.customerReference != ''">
-                AND q.cust_ref LIKE CONCAT('%', #{request.customerReference}, '%')
+            <if test="customerReference != null and customerReference != ''">
+                AND q.cust_ref LIKE CONCAT('%', #{customerReference}, '%')
             </if>
         </where>
         ORDER BY so.so_id DESC
