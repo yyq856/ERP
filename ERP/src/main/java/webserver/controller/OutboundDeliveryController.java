@@ -22,8 +22,8 @@ public class OutboundDeliveryController {
     }
 
     @PostMapping("/get-sales-orders")
-    public Response<List<SalesOrderDetailDTO>> getSalesOrders(@RequestBody SalesOrdersRequest request) {
-        return salesOrderService.searchSalesOrders1(request);
+    public SalesOrdersResponse getSalesOrders(@RequestBody SalesOrdersRequest request) {
+        return salesOrderService.getSalesOrders(request);
     }
 
     @PostMapping("/create-from-orders")

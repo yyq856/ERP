@@ -32,8 +32,14 @@
             CONCAT('DEL-', d.dlv_id) AS outboundDelivery,
             d.pick_date_plan AS pickingDate,
             d.status AS pickingStatus,
-            'Not Started' AS giStatus,
-            'Pick' AS pick
+            CASE
+                WHEN EXISTS (
+                    SELECT 1
+                    FROM erp_good_issue gi
+                    WHERE gi.dlv_id = d.dlv_id
+                ) THEN 'Completed'
+                ELSE 'Not Started'
+                END AS giStatus
         FROM
             erp_outbound_delivery d
         WHERE
@@ -43,13 +49,19 @@
     <!-- 获取出库交货单详情 -->
     <select id="getOutboundDeliveryDetail" parameterType="string" resultType="webserver.pojo.OutboundDeliveryDetailDTO">
         SELECT
-            od.dlv_id AS meta_id,
+            od.dlv_id AS id,
             od.pick_date_plan AS plannedGIDate,
             od.gi_date AS actualGIDate,
             od.so_id,
-            od.ship_tp,
-            od.shipping_point,
-            od.status
+            od.ship_tp AS shipToParty,
+            od.shipping_point AS shippingPoint,
+            od.status AS pickingStatus,
+            CASE
+                WHEN EXISTS (
+                    SELECT 1 FROM erp_good_issue gi WHERE gi.dlv_id = od.dlv_id
+                ) THEN 'In Progress'
+                ELSE 'Not Started'
+                END AS giStatus
         FROM erp_outbound_delivery od
         WHERE od.dlv_id = #{deliveryId}
     </select>
@@ -57,57 +69,74 @@
     <!-- 获取出库交货单明细项 -->
     <select id="getDeliveryItems" parameterType="string" resultType="webserver.pojo.OutboundDeliveryItemDTO">
         SELECT
-            odi.item_no AS item,
-            odi.mat_id AS materialId,
+            CAST(odi.item_no AS CHAR) AS item,
+            odi.mat_id AS material,
             m.mat_desc AS materialDescription,
             odi.pick_quantity AS pickingQuantity,
-            odi.plant_id AS plantId,
+            odi.plant_id AS plant,
             p.plant_name AS plantName,
-            odi.storage_loc AS storageLocation
+            odi.storage_loc AS storageLocation,
+            s.name AS storageLocationDescription
         FROM erp_outbound_delivery_item odi
                  LEFT JOIN erp_material m ON odi.mat_id = m.mat_id
                  LEFT JOIN erp_plant_name p ON odi.plant_id = p.plant_id
+                 LEFT JOIN erp_storage_location s ON odi.storage_loc = s.loc_id
         WHERE odi.dlv_id = #{deliveryId}
     </select>
 
     <select id="findItemByMaterialAndPlant" resultType="webserver.pojo.OutboundDeliveryItemDTO">
         SELECT
-            mat_id AS material,
-            plant_id AS plant,
-            storage_loc AS storageLocation
-        FROM erp_outbound_delivery_item
-        WHERE mat_id = #{material} AND plant_id = #{plant}
+            odi.item_no AS item,
+            odi.mat_id AS material,
+            m.mat_desc AS materialDescription,
+            odi.pick_quantity AS pickingQuantity,
+            odi.plant_id AS plant,
+            p.plant_name AS plantName,
+            odi.storage_loc AS storageLocation,
+            sl.name AS storageLocationDescription
+        FROM erp_outbound_delivery_item odi
+                 LEFT JOIN erp_material m ON odi.mat_id = m.mat_id
+                 LEFT JOIN erp_plant_name p ON odi.plant_id = p.plant_id
+                 LEFT JOIN erp_storage_location sl ON odi.storage_loc = sl.loc_id
+        WHERE odi.mat_id = #{material}
+          AND odi.plant_id = #{plant}
             LIMIT 1
     </select>
 
     <update id="updateGIStatusToPosted">
         UPDATE erp_outbound_delivery
-        SET status = 'COMPLETED'
+        SET
+            gi_date = NOW(),
+            status = 'COMPLETED'
         WHERE dlv_id = #{deliveryId}
     </update>
 
     <select id="getDeliverySummary" resultType="webserver.pojo.OutboundDeliverySummaryDTO">
         SELECT
-            dlv_id AS outboundDelivery,
-            pick_date_plan AS pickingDate,
-            status AS overallStatus,
-            gi_date AS giDate
-        FROM erp_outbound_delivery
-        WHERE dlv_id = #{deliveryId}
+            od.dlv_id AS outboundDelivery,
+            od.gi_date AS pickingDate,
+            od.status AS pickingStatus,
+            CASE
+                WHEN EXISTS (
+                    SELECT 1 FROM erp_good_issue gi WHERE gi.dlv_id = od.dlv_id
+                ) THEN 'In Progress'
+                ELSE 'Not Started'
+                END AS giStatus
+        FROM erp_outbound_delivery od
+        WHERE od.dlv_id = #{deliveryId}
     </select>
 
-    <update id="updateDeliveryDetailForPostGI">
+    <update id="updateDeliveryDetailForPostGI" parameterType="webserver.pojo.OutboundDeliveryDetailDTO">
         UPDATE erp_outbound_delivery
         SET
-        gi_date = #{actualGIDate},
-        status = 'COMPLETED'  <!-- 这里status相当于gi_status -->
-        WHERE dlv_id = #{meta.id}
+            gi_date = NOW(),
+            status = 'COMPLETED'
+        WHERE dlv_id = #{id}
     </update>
 
     <update id="updateItemPostStatus">
         UPDATE erp_outbound_delivery_item
-        SET
-            confirm_status = 'Posted'
+        SET confirm_status = 'Posted'
         WHERE dlv_id = #{deliveryId} AND item_no = #{item}
     </update>
 

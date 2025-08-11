@@ -99,20 +99,36 @@ public class OutboundDeliveryServiceImpl implements OutboundDeliveryService {
 
             if (item.getMaterial() == null || item.getPlant() == null) {
                 badIndices.add(i);
+                completedItems.add(item);
                 continue;
             }
 
-            OutboundDeliveryItemDTO dbItem = outboundDeliveryMapper.findItemByMaterialAndPlant(item.getMaterial(), item.getPlant());
+            OutboundDeliveryItemDTO dbItem = outboundDeliveryMapper.findItemByMaterialAndPlant(
+                    item.getMaterial(), item.getPlant()
+            );
+
             if (dbItem == null) {
                 badIndices.add(i);
+                completedItems.add(item);
                 continue;
             }
 
-            // 补全字段
-            if (item.getStorageLocation() == null) item.setStorageLocation(dbItem.getStorageLocation());
-            if (item.getStorageLocationDescription() == null) item.setStorageLocationDescription(dbItem.getStorageLocationDescription());
-            if (item.getStorageBin() == null) item.setStorageBin(dbItem.getStorageBin());
-            if (item.getMaterialAvailability() == null) item.setMaterialAvailability(dbItem.getMaterialAvailability());
+            // 补全缺失字段
+            if (item.getMaterialDescription() == null) {
+                item.setMaterialDescription(dbItem.getMaterialDescription());
+            }
+            if (item.getPickingQuantity() == 0) {
+                item.setPickingQuantity(dbItem.getPickingQuantity());
+            }
+            if (item.getPlantName() == null) {
+                item.setPlantName(dbItem.getPlantName());
+            }
+            if (item.getStorageLocation() == null) {
+                item.setStorageLocation(dbItem.getStorageLocation());
+            }
+            if (item.getStorageLocationDescription() == null) {
+                item.setStorageLocationDescription(dbItem.getStorageLocationDescription());
+            }
 
             completedItems.add(item);
         }
@@ -150,18 +166,17 @@ public class OutboundDeliveryServiceImpl implements OutboundDeliveryService {
 
         for (PostGIsRequest req : requests) {
             OutboundDeliveryDetailDTO detail = req.getDeliveryDetail();
-            String id = detail.getMeta().getId();
+            String id = detail.getId();
 
-            // 1. 校验合法性（可复用 validate 方法）
-            // 2. 更新主表信息
+            // 直接更新主表信息
             outboundDeliveryMapper.updateDeliveryDetailForPostGI(detail);
 
-            // 3. 更新 item 状态
+            // 更新 item 状态
             for (OutboundDeliveryItemDTO item : req.getItems()) {
                 outboundDeliveryMapper.updateItemPostStatus(id, item.getItem());
             }
 
-            // 4. 设置返回 breakdown
+            // 设置返回 breakdown
             Map<String, Object> breakdown = new HashMap<>();
             breakdown.put("detail", outboundDeliveryMapper.getOutboundDeliveryDetail(id));
             breakdown.put("items", outboundDeliveryMapper.getDeliveryItems(id));
