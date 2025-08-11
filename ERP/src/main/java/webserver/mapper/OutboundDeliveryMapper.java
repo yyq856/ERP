@@ -5,16 +5,23 @@ import org.apache.ibatis.annotations.Param;
 import webserver.pojo.OutboundDeliveryDetailDTO;
 import webserver.pojo.OutboundDeliveryItemDTO;
 import webserver.pojo.OutboundDeliverySummaryDTO;
+import webserver.pojo.SalesItemDTO;
 
 import java.util.List;
 
 @Mapper
 public interface OutboundDeliveryMapper {
-    // 1. 插入出库交货单（返回影响的行数）
-    int insertOutboundDeliveryFromSalesOrder(@Param("soId") String soId);
+    // 插入出库交货单，并返回生成的dlv_id
+    void insertOutboundDeliveryFromSalesOrder(@Param("soId") String soId);
 
-    // 2. 根据销售订单 ID 查询刚插入的交货单编号
-    String getDeliveryNumberBySalesOrderId(@Param("soId") String soId);
+    // 获取刚插入的出库交货单的自增id
+    Long getLastInsertedDeliveryId();
+
+    // 获取销售订单明细
+    List<SalesItemDTO> getSalesItemsBySalesOrderId(@Param("soId") String soId);
+
+    // 批量插入出库交货单明细
+    int insertOutboundDeliveryItem(@Param("dlvId") Long dlvId, @Param("item") SalesItemDTO item);
 
     List<OutboundDeliverySummaryDTO> getDeliverySummaries(@Param("overallStatus") String overallStatus);
 
@@ -28,6 +35,8 @@ public interface OutboundDeliveryMapper {
     OutboundDeliverySummaryDTO getDeliverySummary(@Param("deliveryId") String deliveryId);
 
     void updateDeliveryDetailForPostGI(OutboundDeliveryDetailDTO detail);
+
+    void updateItemsConfirmStatusToPosted(@Param("id") String deliveryId);
 
     void updateItemPostStatus(@Param("deliveryId") String deliveryId, @Param("item") String itemNo);
 }

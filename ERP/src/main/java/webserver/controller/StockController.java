@@ -21,18 +21,6 @@ public class StockController {
     @Autowired
     private StockService stockService;
 
-    @PostMapping("/getStockStages")
-    public Response<List<String>> getStockStages() {
-        List<String> stages = stockService.getStockStages();
-        return Response.success(stages);
-    }
-
-    @PostMapping("/getStockLevels")
-    public Response<List<String>> getStockLevels() {
-        List<String> levels = stockService.getStockLevels();
-        return Response.success(levels);
-    }
-
     @PostMapping("/materialInfo")
     public Response<MaterialInfoResponse> getMaterialInfo(@RequestBody MaterialInfoRequest request) {
         MaterialInfoResponse info = stockService.getMaterialInfo(request.getId());
@@ -41,7 +29,6 @@ public class StockController {
 
     @PostMapping("/searchStock")
     public Response<SearchStockResponseData> searchStock(@RequestBody SearchStockRequest request) {
-        SearchStockResponseData data = stockService.searchStock(request.getId());
-        return Response.success(data);
+        return stockService.searchStock(request);
     }
 }

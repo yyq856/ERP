@@ -26,47 +26,33 @@ public class OutboundDeliveryServiceImpl implements OutboundDeliveryService {
     public Response<CreateOutboundDeliveryResponseData> createFromOrders(CreateOutboundDeliveryRequest request) {
         List<String> createdIds = new ArrayList<>();
         StringBuilder messageBuilder = new StringBuilder();
-
         int successCount = 0;
+
         for (CreateOutboundDeliveryRequest.SalesOrderIdDTO so : request.getSelectedOrders()) {
             String soId = so.getId();
-            try {
-                // 插入交货单记录
-                int inserted = outboundDeliveryMapper.insertOutboundDeliveryFromSalesOrder(soId);
-                if (inserted > 0) {
-                    // 查询生成的交货单编号
-                    String deliveryId = outboundDeliveryMapper.getDeliveryNumberBySalesOrderId(soId);
-                    if (deliveryId != null) {
-                        createdIds.add(deliveryId);
-                        successCount++;
-                    } else {
-                        createdIds.add("FAILED:" + soId);
-                        messageBuilder.append("Failed to fetch delivery number for SO ").append(soId).append("; ");
-                    }
-                } else {
-                    createdIds.add("FAILED:" + soId);
-                    messageBuilder.append("No delivery inserted for SO ").append(soId).append("; ");
+            outboundDeliveryMapper.insertOutboundDeliveryFromSalesOrder(soId);
+
+            Long dlvId = outboundDeliveryMapper.getLastInsertedDeliveryId();
+
+            List<SalesItemDTO> items = outboundDeliveryMapper.getSalesItemsBySalesOrderId(soId);
+            if (!items.isEmpty()) {
+                for (SalesItemDTO item : items) {
+                    outboundDeliveryMapper.insertOutboundDeliveryItem(dlvId, item);
                 }
-            } catch (Exception e) {
-                createdIds.add("ERROR:" + soId);
-                messageBuilder.append("Exception creating delivery for SO ").append(soId)
-                        .append(": ").append(e.getMessage()).append("; ");
             }
+
+            String deliveryNumber = "DEL-" + dlvId;
+            createdIds.add(deliveryNumber);
+            successCount++;
+
         }
 
-        // 拼接最终返回信息
-        String finalMessage = "Successfully created " + successCount + " outbound deliveries";
-        if (messageBuilder.length() > 0) {
-            finalMessage += ". Issues: " + messageBuilder.toString();
-        }
-
-        // 构建响应对象
-        CreateOutboundDeliveryResponseData data = new CreateOutboundDeliveryResponseData();
-        data.setMessage(finalMessage);
-        data.setCreatedDeliveries(createdIds);
-
-        return Response.success(data);
+        CreateOutboundDeliveryResponseData respData = new CreateOutboundDeliveryResponseData();
+        respData.setMessage("成功创建 " + successCount + " 条出库交货单");
+        respData.setCreatedDeliveries(createdIds);
+        return Response.success(respData);
     }
+
 
     @Override
     public Response<?> getOutboundDeliverySummaries(GetOutboundDeliverySummaryRequest request) {
@@ -156,7 +142,13 @@ public class OutboundDeliveryServiceImpl implements OutboundDeliveryService {
         List<OutboundDeliverySummaryDTO> summaries = new ArrayList<>();
 
         for (String id : ids) {
+            // 更新出库交货单状态和过账时间
             outboundDeliveryMapper.updateGIStatusToPosted(id);
+
+            // 更新该交货单所有明细的确认状态
+            outboundDeliveryMapper.updateItemsConfirmStatusToPosted(id);
+
+            // 查询更新后的汇总信息
             OutboundDeliverySummaryDTO summary = outboundDeliveryMapper.getDeliverySummary(id);
             summaries.add(summary);
         }
@@ -165,6 +157,7 @@ public class OutboundDeliveryServiceImpl implements OutboundDeliveryService {
         data.put("breakdowns", summaries);
         return Response.success(data);
     }
+
 
     @Override
     public Response<?> postGIs(List<PostGIsRequest> requests) {
