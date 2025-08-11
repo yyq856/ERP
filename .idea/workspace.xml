@@ -4,8 +4,17 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="fd40e6ca-a706-415b-9e01-5f1f597c5af3" name="更改" comment="销售订单管理功能完成（除最后一个功能需要进行讨论除外）">
+    <list default="true" id="fd40e6ca-a706-415b-9e01-5f1f597c5af3" name="更改" comment="部分建表更改">
+      <change afterPath="$PROJECT_DIR$/qodana.yaml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ERP/src/main/java/webserver/controller/SalesOrderController.java" beforeDir="false" afterPath="$PROJECT_DIR$/ERP/src/main/java/webserver/controller/SalesOrderController.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ERP/src/main/java/webserver/mapper/SalesOrderMapper.java" beforeDir="false" afterPath="$PROJECT_DIR$/ERP/src/main/java/webserver/mapper/SalesOrderMapper.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ERP/src/main/java/webserver/service/OutboundDeliveryService.java" beforeDir="false" afterPath="$PROJECT_DIR$/ERP/src/main/java/webserver/service/OutboundDeliveryService.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ERP/src/main/resources/application.properties" beforeDir="false" afterPath="$PROJECT_DIR$/ERP/src/main/resources/application.properties" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ERP/src/main/resources/mapper/SalesOrderMapper.xml" beforeDir="false" afterPath="$PROJECT_DIR$/ERP/src/main/resources/mapper/SalesOrderMapper.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ERP/target/classes/application.properties" beforeDir="false" afterPath="$PROJECT_DIR$/ERP/target/classes/application.properties" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ERP/target/classes/mapper/SalesOrderMapper.xml" beforeDir="false" afterPath="$PROJECT_DIR$/ERP/target/classes/mapper/SalesOrderMapper.xml" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -25,7 +34,7 @@
   <component name="Git.Settings">
     <option name="RECENT_BRANCH_BY_REPOSITORY">
       <map>
-        <entry key="$PROJECT_DIR$" value="zyc" />
+        <entry key="$PROJECT_DIR$" value="main" />
       </map>
     </option>
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
@@ -54,6 +63,9 @@
   <component name="MavenRunner">
     <option name="jreName" value="1.8" />
   </component>
+  <component name="ProblemsViewState">
+    <option name="selectedTabId" value="ProjectErrors" />
+  </component>
   <component name="ProjectColorInfo">{
   &quot;associatedIndex&quot;: 1
 }</component>
@@ -62,39 +74,39 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent"><![CDATA[{
-  "keyToString": {
-    "RequestMappingsPanelOrder0": "0",
-    "RequestMappingsPanelOrder1": "1",
-    "RequestMappingsPanelWidth0": "75",
-    "RequestMappingsPanelWidth1": "75",
-    "RunOnceActivity.ShowReadmeOnStart": "true",
-    "SHARE_PROJECT_CONFIGURATION_FILES": "true",
-    "Spring Boot.WebshopApplication.executor": "Run",
-    "git-widget-placeholder": "main",
-    "kotlin-language-version-configured": "true",
-    "last_opened_file_path": "D:/桌面/大三暑假/SD/src/后端/ERP",
-    "node.js.detected.package.eslint": "true",
-    "node.js.detected.package.tslint": "true",
-    "node.js.selected.package.eslint": "(autodetect)",
-    "node.js.selected.package.tslint": "(autodetect)",
-    "nodejs_package_manager_path": "npm",
-    "project.structure.last.edited": "SDK",
-    "project.structure.proportion": "0.0",
-    "project.structure.side.proportion": "0.2",
-    "settings.editor.selected.configurable": "settings.sync",
-    "vue.rearranger.settings.migration": "true"
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;RequestMappingsPanelOrder0&quot;: &quot;0&quot;,
+    &quot;RequestMappingsPanelOrder1&quot;: &quot;1&quot;,
+    &quot;RequestMappingsPanelWidth0&quot;: &quot;75&quot;,
+    &quot;RequestMappingsPanelWidth1&quot;: &quot;75&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;SHARE_PROJECT_CONFIGURATION_FILES&quot;: &quot;true&quot;,
+    &quot;Spring Boot.WebshopApplication.executor&quot;: &quot;Run&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;zyc&quot;,
+    &quot;kotlin-language-version-configured&quot;: &quot;true&quot;,
+    &quot;last_opened_file_path&quot;: &quot;D:/桌面/大三暑假/SD/src/后端/ERP&quot;,
+    &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
+    &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
+    &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
+    &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
+    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
+    &quot;project.structure.last.edited&quot;: &quot;模块&quot;,
+    &quot;project.structure.proportion&quot;: &quot;0.0&quot;,
+    &quot;project.structure.side.proportion&quot;: &quot;0.2&quot;,
+    &quot;settings.editor.selected.configurable&quot;: &quot;reference.projectsettings.compiler.excludes&quot;,
+    &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
   },
-  "keyToStringList": {
-    "ChangesTree.GroupingKeys": [
-      "directory",
-      "module"
+  &quot;keyToStringList&quot;: {
+    &quot;ChangesTree.GroupingKeys&quot;: [
+      &quot;directory&quot;,
+      &quot;module&quot;
     ],
-    "DatabaseDriversLRU": [
-      "mysql_aurora_aws"
+    &quot;DatabaseDriversLRU&quot;: [
+      &quot;mysql_aurora_aws&quot;
     ]
   }
-}]]></component>
+}</component>
   <component name="RecentsManager">
     <key name="CreateClassDialog.RecentsKey">
       <recent name="webserver.service" />
@@ -140,6 +152,8 @@
       <workItem from="1753444017179" duration="565000" />
       <workItem from="1753620933222" duration="89000" />
       <workItem from="1753694281277" duration="2782000" />
+      <workItem from="1754470278739" duration="2227000" />
+      <workItem from="1754903045664" duration="194000" />
     </task>
     <task id="LOCAL-00001" summary="搜索控制">
       <option name="closed" value="true" />
@@ -221,7 +235,15 @@
       <option name="project" value="LOCAL" />
       <updated>1753444170058</updated>
     </task>
-    <option name="localTasksCounter" value="11" />
+    <task id="LOCAL-00011" summary="部分建表更改">
+      <option name="closed" value="true" />
+      <created>1754469746107</created>
+      <option name="number" value="00011" />
+      <option name="presentableId" value="LOCAL-00011" />
+      <option name="project" value="LOCAL" />
+      <updated>1754469746107</updated>
+    </task>
+    <option name="localTasksCounter" value="12" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -256,6 +278,7 @@
     <MESSAGE value="通用搜索功能与订单查询" />
     <MESSAGE value="readme" />
     <MESSAGE value="销售订单管理功能完成（除最后一个功能需要进行讨论除外）" />
-    <option name="LAST_COMMIT_MESSAGE" value="销售订单管理功能完成（除最后一个功能需要进行讨论除外）" />
+    <MESSAGE value="部分建表更改" />
+    <option name="LAST_COMMIT_MESSAGE" value="部分建表更改" />
   </component>
 </project>

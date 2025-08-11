@@ -8,7 +8,7 @@ import java.util.Map;
 
 @Mapper
 public interface SalesOrderMapper {
-    List<Map<String, Object>> searchSalesOrders(@Param("request") SalesOrderSearchRequest request);
+    List<Map<String, Object>> searchSalesOrders(SalesOrderSearchRequest request);
     
     // ✅ 新增方法：获取销售订单详情
     Map<String, Object> getSalesOrderDetails(@Param("soId") String soId);
