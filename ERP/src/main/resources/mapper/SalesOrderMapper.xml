@@ -4,20 +4,28 @@
     <select id="searchSalesOrders" resultType="map">
         SELECT
         so.so_id AS soId,
+        so.quote_id AS quotationId,
         c.name AS soldToPartyName,
         so.customer_no AS customerNo,
-        q.cust_ref AS customerReference,  <!-- 从报价单表获取客户参考 -->
+        c2.name AS shipToParty,
+        q.cust_ref AS customerReference,
         DATE_FORMAT(so.req_delivery_date, '%Y-%m-%d') AS reqDeliveryDate,
         so.status AS status,
         FORMAT(so.net_value, 2) AS netValue,
         so.currency AS currency,
-        DATE_FORMAT(so.doc_date, '%Y-%m-%d') AS docDate
+        DATE_FORMAT(so.doc_date, '%Y-%m-%d') AS docDate,
+        DATE_FORMAT(q.customer_reference_date, '%Y-%m-%d') AS customerReferenceDate,
+        (SELECT GROUP_CONCAT(si.mat_id) FROM erp_sales_item si WHERE si.so_id = so.so_id) AS materialIds
         FROM
         erp_sales_order_hdr so
         LEFT JOIN
         erp_customer c ON so.customer_no = c.customer_id
         LEFT JOIN
-        erp_quotation q ON so.quote_id = q.quotation_id  <!-- 关键关联 -->
+        erp_contact cont ON so.contact_id = cont.contact_id
+        LEFT JOIN
+        erp_customer c2 ON cont.contact_id = c2.customer_id
+        LEFT JOIN
+        erp_quotation q ON so.quote_id = q.quotation_id
         <where>
             <if test="soId != null and soId != ''">
                 AND so.so_id = #{soId}
@@ -39,29 +47,28 @@
         SELECT
             so.so_id AS soId,
             so.quote_id AS quotationId,
-            c1.name AS soldToParty,
+            so.customer_no AS soldToParty,
             c2.name AS shipToParty,
             q.cust_ref AS customerReference,
             DATE_FORMAT(q.customer_reference_date, '%Y-%m-%d') AS customerReferenceDate,
             DATE_FORMAT(so.req_delivery_date, '%Y-%m-%d') AS reqDeliveryDate,
             FORMAT(so.net_value, 2) AS netValue,
-            so.currency
+            so.currency,
+            (SELECT GROUP_CONCAT(si.mat_id) FROM erp_sales_item si WHERE si.so_id = so.so_id) AS materialIds
         FROM
             erp_sales_order_hdr so
-                LEFT JOIN erp_customer c1 ON so.customer_no = c1.customer_id
                 LEFT JOIN erp_contact cont ON so.contact_id = cont.contact_id
                 LEFT JOIN erp_customer c2 ON cont.contact_id = c2.customer_id
                 LEFT JOIN erp_quotation q ON so.quote_id = q.quotation_id
         WHERE so.so_id = #{soId}
     </select>
-
     <!-- ✅ 新增销售订单项目查询 -->
     <select id="getSalesOrderItems" resultType="map">
         SELECT
             si.item_no AS item,
             m.mat_id AS material,
             si.quantity AS orderQuantity,
-            m.base_uom AS orderQuantityUnit,
+            si.su AS orderQuantityUnit,
             m.mat_desc AS description,
             DATE_FORMAT(so.req_delivery_date, '%Y-%m-%d') AS reqDelivDate,
             FORMAT(si.net_price * si.quantity, 2) AS netValue,
@@ -76,4 +83,29 @@
                 JOIN erp_material m ON si.mat_id = m.mat_id
         WHERE si.so_id = #{soId}
     </select>
+    <!-- 获取销售订单项目的定价元素 -->
+    <select id="getPricingElements" resultType="map">
+        SELECT
+            pe.cnty AS cnty,
+            pe.condition_name AS name,
+            pe.amount AS amount,
+            pe.city AS city,
+            pe.per_value AS per,
+            pe.uom AS uom,
+            pe.condition_value AS conditionValue,
+            pe.currency AS curr,
+            pe.status AS status,
+            pe.numC AS numC,
+            pe.ato_mts_component AS atoMtsComponent,
+            pe.oun AS oun,
+            pe.ccon_de AS cconDe,
+            pe.un AS un,
+            pe.condition_value2 AS conditionValue2,
+            pe.cd_cur AS cdCur,
+            pe.stat AS stat
+        FROM erp_pricing_element pe
+        WHERE pe.document_type = 'sales_order' AND pe.document_id = #{soId} AND pe.item_no = #{itemNo}
+        ORDER BY pe.element_id
+    </select>
+
 </mapper>

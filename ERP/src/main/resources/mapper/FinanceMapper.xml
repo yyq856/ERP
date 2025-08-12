@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="webserver.mapper.FinanceMapper">
+
+    <!-- 搜索未清项 -->
+    <select id="searchOpenItems" parameterType="webserver.pojo.SearchOpenItemsRequest" resultType="map">
+        SELECT
+            bh.bill_id AS journalEntry,
+            DATE_FORMAT(bh.billing_date, '%Y-%m-%d') AS journalEntryDate,
+            c.name AS account,
+            bh.gross AS amount,
+            so.currency AS amountUnit,
+            'Invoice' AS journalEntryType,
+            DATE_ADD(bh.billing_date, INTERVAL 30 DAY) AS netDueDate,
+            CONCAT('Bill ID: ', bh.bill_id) AS assignment,
+            so.company_code AS companyCode
+        FROM erp_billing_hdr bh
+        JOIN erp_customer c ON bh.customer_id = c.customer_id
+        JOIN erp_outbound_delivery od ON bh.dlv_id = od.dlv_id
+        JOIN erp_sales_order_hdr so ON od.so_id = so.so_id
+        WHERE bh.status = 'UNCLEAR'
+          <if test="openItemSelection != null and openItemSelection.accountID != null">
+              AND c.customer_id = #{openItemSelection.accountID}
+          </if>
+          <if test="openItemSelection != null and openItemSelection.accountType != null and openItemSelection.accountType == 'vendor'">
+              AND 1=0  <!-- 目前只支持customer类型 -->
+          </if>
+          <if test="generalInformation != null and generalInformation.companyCode != null and generalInformation.companyCode != ''">
+              AND so.company_code = #{generalInformation.companyCode}
+          </if>
+        ORDER BY bh.billing_date
+        LIMIT 100
+    </select>
+</mapper>

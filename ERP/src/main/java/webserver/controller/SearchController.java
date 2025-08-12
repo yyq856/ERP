@@ -61,4 +61,5 @@ public class SearchController {
             return Response.error("搜索失败: " + e.getMessage());
         }
     }
+
 }
