@@ -476,13 +476,22 @@ public class SalesOrderServiceImpl implements SalesOrderService {
     }
 
     @Override
-    public Response<List<SalesOrderDetailDTO>> searchSalesOrders1(SalesOrdersRequest request) {
-        List<SalesOrderDetailDTO> list = salesOrderMapper.selectSalesOrders1(
+    public SalesOrdersResponse getSalesOrders(SalesOrdersRequest request) {
+        List<OrderSummary> orders = salesOrderMapper.selectSalesOrders1(
                 request.getShipToParty(),
                 request.getPlannedCreationDate(),
                 request.getRelevantForTM()
         );
-        return Response.success(list);
+
+        SalesOrdersResponse.DataContent dataContent = new SalesOrdersResponse.DataContent();
+        dataContent.setOrders(orders);
+
+        SalesOrdersResponse response = new SalesOrdersResponse();
+        response.setSuccess(true);
+        response.setMessage("获取销售订单成功");
+        response.setData(dataContent);
+
+        return response;
     }
 
     @Override

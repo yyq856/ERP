@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="webserver.mapper.StockMapper">
+
+    <select id="selectStockStages" resultType="string">
+        SELECT stage_name FROM stock_stage ORDER BY stage_id
+    </select>
+
+    <select id="selectStockLevels" resultType="string">
+        SELECT level_code FROM stock_level ORDER BY depth, level_code
+    </select>
+
+    <select id="selectMaterialInfoById" parameterType="string" resultType="webserver.pojo.MaterialInfoResponse">
+        SELECT
+            mat_desc AS name,
+            division AS materialType,
+            base_uom AS unit
+        FROM erp_material
+        WHERE mat_id = #{matId}
+    </select>
+
+    <select id="getStockStages" resultType="string">
+        SELECT stage_name FROM stock_stage ORDER BY stage_id
+    </select>
+
+    <select id="selectStockByMaterial" resultType="map" parameterType="string">
+        SELECT
+            sl.level_name,
+            sl.depth,
+            es.stage_id,
+            es.qty_on_hand
+        FROM erp_stock es
+                 JOIN stock_level sl ON es.level_id = sl.level_id
+        WHERE es.mat_id = #{materialId}
+        ORDER BY sl.depth, es.stage_id
+    </select>
+</mapper>

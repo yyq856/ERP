@@ -1,22 +1,27 @@
 package webserver.controller;
 
-import webserver.pojo.QuotationRequest;
-import webserver.pojo.QuotationResponse;
-import webserver.service.QuotationService;
+import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Controller;
+import webserver.common.Response;
+import webserver.pojo.CreateQuotationFromInquiryRequest;
+import webserver.pojo.QuotationData;
+import webserver.service.QuotationService;
 
-@Controller
-@CrossOrigin(origins = "*")
+@RestController
 @RequestMapping("/api/quotation")
+@RequiredArgsConstructor
 public class QuotationController {
-    @Autowired
-    private QuotationService quotationService;
 
-    @PostMapping("/details")
-    @ResponseBody
-    public QuotationResponse getQuotationDetails(@RequestBody QuotationRequest request) {
-        return quotationService.getQuotationDetails(request);
+    private final QuotationService quotationService;
+
+    @PostMapping("/create-quotation-from-inquiry")
+    public Response<QuotationData> createQuotationFromInquiry(@RequestBody CreateQuotationFromInquiryRequest request) {
+        try {
+            QuotationData quotationData = quotationService.createQuotationFromInquiry(request.getInquiryId());
+            String msg = String.format("根据inquiry{%s}成功创建报价单{%s}", request.getInquiryId(), quotationData.getBasicInfo().getQuotation());
+            return new Response<>(200, msg, quotationData);
+        } catch (Exception e) {
+            return new Response<>(500, "Quotation creation failed, please try again later.", null);
+        }
     }
 }
