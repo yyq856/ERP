@@ -603,14 +603,26 @@ public class SalesOrderServiceImpl implements SalesOrderService {
 
     @Override
     public SalesOrdersResponse getSalesOrders(SalesOrdersRequest request) {
-        List<OrderSummary> orders = salesOrderMapper.selectSalesOrders1(
+        List<SalesOrderSummaryDTO> orders = salesOrderMapper.selectSalesOrders(
                 request.getShipToParty(),
                 request.getPlannedCreationDate(),
                 request.getRelevantForTM()
         );
 
+        // 将 SalesOrderSummaryDTO 转换为 OrderSummary
+        List<OrderSummary> orderSummaries = orders.stream()
+                .map(dto -> {
+                    OrderSummary summary = new OrderSummary();
+                    summary.setId(dto.getSoId() != null ? dto.getSoId().toString() : "");
+                    summary.setPlannedCreationDate(dto.getPlannedCreationDate());
+                    summary.setShipToParty(dto.getShipToParty());
+                    summary.setGrossWeight(dto.getGrossWeight());
+                    return summary;
+                })
+                .collect(Collectors.toList());
+
         SalesOrdersResponse.DataContent dataContent = new SalesOrdersResponse.DataContent();
-        dataContent.setOrders(orders);
+        dataContent.setOrders(orderSummaries);
 
         SalesOrdersResponse response = new SalesOrdersResponse();
         response.setSuccess(true);

@@ -5,33 +5,7 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="fd40e6ca-a706-415b-9e01-5f1f597c5af3" name="更改" comment="销售管理订单修改">
-      <change afterPath="$PROJECT_DIR$/ERP/src/main/java/webserver/controller/BillingController.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/ERP/src/main/java/webserver/controller/FinanceController.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/ERP/src/main/java/webserver/mapper/BillingMapper.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/ERP/src/main/java/webserver/mapper/FinanceMapper.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/ERP/src/main/java/webserver/pojo/BillingDocument.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/ERP/src/main/java/webserver/pojo/BillingEditRequest.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/ERP/src/main/java/webserver/pojo/BillingGetRequest.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/ERP/src/main/java/webserver/pojo/BillingInitializeRequest.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/ERP/src/main/java/webserver/pojo/BillingSearchRequest.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/ERP/src/main/java/webserver/pojo/ItemValidationRequest.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/ERP/src/main/java/webserver/pojo/PricingElement.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/ERP/src/main/java/webserver/pojo/SearchOpenItemsRequest.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/ERP/src/main/java/webserver/service/BillingService.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/ERP/src/main/java/webserver/service/FinanceService.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/ERP/src/main/java/webserver/service/impl/BillingServiceImpl.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/ERP/src/main/java/webserver/service/impl/FinanceServiceImpl.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/ERP/src/main/resources/mapper/Billing-Document.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/ERP/src/main/resources/mapper/FinanceMapper.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/ERP/src/main/java/webserver/controller/SearchController.java" beforeDir="false" afterPath="$PROJECT_DIR$/ERP/src/main/java/webserver/controller/SearchController.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/ERP/src/main/java/webserver/mapper/SalesOrderMapper.java" beforeDir="false" afterPath="$PROJECT_DIR$/ERP/src/main/java/webserver/mapper/SalesOrderMapper.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/ERP/src/main/java/webserver/pojo/SalesOrderCreateRequest.java" beforeDir="false" afterPath="$PROJECT_DIR$/ERP/src/main/java/webserver/pojo/SalesOrderCreateRequest.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/ERP/src/main/java/webserver/pojo/SalesOrderDetailDTO.java" beforeDir="false" afterPath="$PROJECT_DIR$/ERP/src/main/java/webserver/pojo/SalesOrderDetailDTO.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/ERP/src/main/java/webserver/service/impl/SalesOrderServiceImpl.java" beforeDir="false" afterPath="$PROJECT_DIR$/ERP/src/main/java/webserver/service/impl/SalesOrderServiceImpl.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/ERP/src/main/resources/mapper/SalesOrderMapper.xml" beforeDir="false" afterPath="$PROJECT_DIR$/ERP/src/main/resources/mapper/SalesOrderMapper.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/ERP/src/main/resources/sql/build.sql" beforeDir="false" afterPath="$PROJECT_DIR$/ERP/src/main/resources/sql/build.sql" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/ERP/target/classes/mapper/SalesOrderMapper.xml" beforeDir="false" afterPath="$PROJECT_DIR$/ERP/target/classes/mapper/SalesOrderMapper.xml" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -49,9 +23,22 @@
     </option>
   </component>
   <component name="Git.Settings">
+    <favorite-branches>
+      <branch-storage>
+        <map>
+          <entry type="LOCAL">
+            <value>
+              <list>
+                <branch-info repo="$PROJECT_DIR$" source="zyc" />
+              </list>
+            </value>
+          </entry>
+        </map>
+      </branch-storage>
+    </favorite-branches>
     <option name="RECENT_BRANCH_BY_REPOSITORY">
       <map>
-        <entry key="$PROJECT_DIR$" value="zyc" />
+        <entry key="$PROJECT_DIR$" value="main" />
       </map>
     </option>
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
@@ -192,7 +179,7 @@
       <workItem from="1754470278739" duration="2227000" />
       <workItem from="1754903045664" duration="194000" />
       <workItem from="1754977957279" duration="53000" />
-      <workItem from="1754978018826" duration="7418000" />
+      <workItem from="1754978018826" duration="8246000" />
     </task>
     <task id="LOCAL-00001" summary="搜索控制">
       <option name="closed" value="true" />
@@ -282,7 +269,15 @@
       <option name="project" value="LOCAL" />
       <updated>1754469746107</updated>
     </task>
-    <option name="localTasksCounter" value="12" />
+    <task id="LOCAL-00012" summary="销售管理订单修改">
+      <option name="closed" value="true" />
+      <created>1754985642223</created>
+      <option name="number" value="00012" />
+      <option name="presentableId" value="LOCAL-00012" />
+      <option name="project" value="LOCAL" />
+      <updated>1754985642223</updated>
+    </task>
+    <option name="localTasksCounter" value="13" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
