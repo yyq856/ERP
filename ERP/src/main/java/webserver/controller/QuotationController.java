@@ -19,9 +19,9 @@ public class QuotationController {
         try {
             QuotationData quotationData = quotationService.createQuotationFromInquiry(request.getInquiryId());
             String msg = String.format("根据inquiry{%s}成功创建报价单{%s}", request.getInquiryId(), quotationData.getBasicInfo().getQuotation());
-            return new Response<>(200, msg, quotationData);
+            return new Response<>(200, msg, true,quotationData);
         } catch (Exception e) {
-            return new Response<>(500, "Quotation creation failed, please try again later.", null);
+            return new Response<>(500, "Quotation creation failed, please try again later.", false,null);
         }
     }
 }

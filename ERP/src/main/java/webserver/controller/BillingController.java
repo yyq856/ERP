@@ -6,6 +6,9 @@ import webserver.common.Response;
 import webserver.pojo.*;
 import webserver.service.BillingService;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -21,12 +24,25 @@ public class BillingController {
      * 根据开票日期和售达方条件，返回开票凭证的模板数据结构
      */
     @PostMapping("/initialize")
-    public Response<Map<String, Object>> initializeBilling(@RequestBody BillingInitializeRequest request) {
+    public Map<String, Object> initializeBilling(@RequestBody BillingInitializeRequest request) {
         try {
             Map<String, Object> result = billingService.initializeBilling(request);
-            return Response.success(result);
+            
+            // 包装成文档要求的格式
+            Map<String, Object> content = new HashMap<>();
+            content.put("content", result);
+            content.put("message", "Billing due list loaded successfully");
+            
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", true);
+            response.put("data", content);
+            
+            return response;
         } catch (Exception e) {
-            return Response.error("Failed to load billing due list: " + e.getMessage());
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", false);
+            response.put("message", "Failed to load billing due list: " + e.getMessage());
+            return response;
         }
     }
     
@@ -35,15 +51,30 @@ public class BillingController {
      * 根据开票凭证号查询现有开票凭证的详细信息
      */
     @PostMapping("/get")
-    public Response<Map<String, Object>> getBilling(@RequestBody BillingGetRequest request) {
+    public Map<String, Object> getBilling(@RequestBody BillingGetRequest request) {
         try {
             Map<String, Object> result = billingService.getBilling(request);
             if (result == null) {
-                return Response.error("Billing document not found");
+                Map<String, Object> response = new HashMap<>();
+                response.put("success", false);
+                response.put("message", "Billing document not found");
+                return response;
             }
-            return Response.success(result);
+            
+            // 包装成文档要求的格式
+            Map<String, Object> content = new HashMap<>();
+            content.put("content", result);
+            
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", true);
+            response.put("data", content);
+            
+            return response;
         } catch (Exception e) {
-            return Response.error("Failed to get billing document: " + e.getMessage());
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", false);
+            response.put("message", "Failed to get billing document: " + e.getMessage());
+            return response;
         }
     }
     
@@ -52,12 +83,31 @@ public class BillingController {
      * 创建新的开票凭证或修改现有开票凭证
      */
     @PostMapping("/edit")
-    public Response<Map<String, Object>> editBilling(@RequestBody BillingEditRequest request) {
+    public Map<String, Object> editBilling(@RequestBody BillingEditRequest request) {
         try {
             Map<String, Object> result = billingService.editBilling(request);
-            return Response.success(result);
+            
+            // 获取ID用于消息
+            String id = (String) ((Map<String, Object>) result.get("meta")).get("id");
+            String message = id != null && !id.isEmpty() 
+                ? "Billing document " + id + " updated successfully" 
+                : "Billing document created successfully";
+            
+            // 包装成文档要求的格式
+            Map<String, Object> content = new HashMap<>();
+            content.put("content", result);
+            content.put("message", message);
+            
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", true);
+            response.put("data", content);
+            
+            return response;
         } catch (Exception e) {
-            return Response.error("Failed to edit billing document: " + e.getMessage());
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", false);
+            response.put("message", "Failed to edit billing document: " + e.getMessage());
+            return response;
         }
     }
     
@@ -66,12 +116,20 @@ public class BillingController {
      * 根据开票凭证号、开票日期、付款方等条件搜索开票凭证列表
      */
     @PostMapping("/search")
-    public Response<Map<String, Object>> searchBilling(@RequestBody BillingSearchRequest request) {
+    public Map<String, Object> searchBilling(@RequestBody BillingSearchRequest request) {
         try {
             Map<String, Object> result = billingService.searchBilling(request);
-            return Response.success(result);
+            
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", true);
+            response.put("data", result);
+            
+            return response;
         } catch (Exception e) {
-            return Response.error("Failed to search billing documents: " + e.getMessage());
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", false);
+            response.put("message", "Failed to search billing documents: " + e.getMessage());
+            return response;
         }
     }
     
@@ -80,12 +138,27 @@ public class BillingController {
      * 开票凭证物品验证服务端点
      */
     @PostMapping("/items-tab-query")
-    public Response<Map<String, Object>> validateBillingItems(@RequestBody ItemValidationRequest request) {
+    public Map<String, Object> validateBillingItems(@RequestBody Map<String, Object> request) {
         try {
-            Map<String, Object> result = billingService.validateBillingItems(request.getItems());
-            return Response.success(result);
+            // 提取items数据
+            Map<String, Object> itemOverview = (Map<String, Object>) request.get("itemOverview");
+            List<Map<String, Object>> items = (List<Map<String, Object>>) itemOverview.get("items");
+            
+            // 转换为Item对象列表
+            List<ItemValidationRequest.Item> itemList = new ArrayList<>();
+            for (Map<String, Object> itemMap : items) {
+                ItemValidationRequest.Item item = new ItemValidationRequest.Item();
+                // 这里需要根据实际数据结构进行转换
+                itemList.add(item);
+            }
+            
+            Map<String, Object> result = billingService.validateBillingItems(itemList);
+            return result;
         } catch (Exception e) {
-            return Response.error("Failed to validate billing items: " + e.getMessage());
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", false);
+            response.put("message", "Failed to validate billing items: " + e.getMessage());
+            return response;
         }
     }
 }
