@@ -33,29 +33,38 @@ public class SalesOrderServiceImpl implements SalesOrderService {
         try {
             List<Map<String, Object>> orders = salesOrderMapper.searchSalesOrders(request);
 
-            // 将结果转换为扁平化的格式
+            // 将结果转换为指定的格式
             List<Map<String, Object>> formattedResults = orders.stream()
                     .map(order -> {
                         Map<String, Object> result = new HashMap<>();
                         
-                        // 构建字段
+                        // 构建meta部分
+                        Map<String, Object> meta = new HashMap<>();
                         String materialIds = (String) order.get("materialIds");
                         if (materialIds != null && !materialIds.isEmpty()) {
-                            result.put("id", Arrays.asList(materialIds.split(",")));
+                            meta.put("id", Arrays.asList(materialIds.split(",")));
                         } else {
-                            result.put("id", Collections.emptyList());
+                            meta.put("id", Collections.emptyList());
                         }
+                        result.put("meta", meta);
                         
-                        result.put("quotation_id", order.get("quotationId"));
-                        result.put("so_id", order.get("soId"));
-                        result.put("soldToParty", order.get("customerNo"));
-                        result.put("shipToParty", order.get("shipToParty"));
-                        result.put("customerReference", order.get("customerReference"));
-                        result.put("netValue", order.get("netValue"));
-                        result.put("netValueUnit", order.get("currency"));
-                        result.put("customerReferenceDate", order.get("docDate"));
-                        result.put("status", order.get("status")); // 添加status字段
-                        result.put("reqDelivDate", order.get("reqDeliveryDate"));
+                        // 构建basicInfo部分
+                        Map<String, Object> basicInfo = new HashMap<>();
+                        basicInfo.put("quotation_id", order.get("quotationId"));
+                        basicInfo.put("so_id", order.get("soId"));
+                        basicInfo.put("soldToParty", order.get("customerNo"));
+                        basicInfo.put("shipToParty", order.get("shipToParty"));
+                        basicInfo.put("customerReference", order.get("customerReference"));
+                        basicInfo.put("netValue", order.get("netValue"));
+                        basicInfo.put("netValueUnit", order.get("currency"));
+                        basicInfo.put("customerReferenceDate", order.get("docDate"));
+                        basicInfo.put("status", order.get("status")); // 添加status字段
+                        result.put("basicInfo", basicInfo);
+                        
+                        // 构建itemOverview部分
+                        Map<String, Object> itemOverview = new HashMap<>();
+                        itemOverview.put("reqDelivDate", order.get("reqDeliveryDate"));
+                        result.put("itemOverview", itemOverview);
                         
                         return result;
                     })
