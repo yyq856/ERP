@@ -38,36 +38,56 @@ public class SalesOrderServiceImpl implements SalesOrderService {
                     .map(order -> {
                         Map<String, Object> result = new HashMap<>();
                         
-                        // 构建meta部分
+                        // 构建SOData结构
+                        Map<String, Object> soData = new HashMap<>();
+                        
+                        // 构建meta部分，包含物料ID列表
                         Map<String, Object> meta = new HashMap<>();
-                        meta.put("id", convertToString(order.get("soId")));
-                        result.put("meta", meta);
+                        String materialIds = (String) order.get("materialIds");
+                        if (materialIds != null && !materialIds.isEmpty()) {
+                            meta.put("id", Arrays.asList(materialIds.split(",")));
+                        } else {
+                            meta.put("id", Collections.emptyList());
+                        }
+                        soData.put("meta", meta);
                         
                         // 构建basicInfo部分
                         Map<String, Object> basicInfo = new HashMap<>();
-                        basicInfo.put("quotation_id", convertToString(order.get("quotationId")));
-                        basicInfo.put("so_id", convertToString(order.get("soId")));
-                        basicInfo.put("soldToParty", convertToString(order.get("customerNo")));
-                        basicInfo.put("customerReference", convertToString(order.get("customerReference")));
-                        basicInfo.put("netValue", convertToString(order.get("netValue")));
-                        basicInfo.put("netValueUnit", convertToString(order.get("currency")));
-                        basicInfo.put("customerReferenceDate", convertToString(order.get("customerReferenceDate")));
-                        result.put("basicInfo", basicInfo);
+                        basicInfo.put("quotation_id", order.get("quotationId"));
+                        basicInfo.put("so_id", order.get("soId"));
+                        basicInfo.put("soldToParty", order.get("customerNo"));
+                        basicInfo.put("shipToParty", order.get("shipToParty"));
+                        basicInfo.put("customerReference", order.get("customerReference"));
+                        basicInfo.put("netValue", order.get("netValue"));
+                        basicInfo.put("netValueUnit", order.get("currency"));
+                        basicInfo.put("customerReferenceDate", order.get("docDate"));
+                        basicInfo.put("status", order.get("status")); // 添加status字段
+                        soData.put("basicInfo", basicInfo);
                         
                         // 构建itemOverview部分
                         Map<String, Object> itemOverview = new HashMap<>();
-                        itemOverview.put("reqDelivDate", convertToString(order.get("reqDeliveryDate")));
-                        result.put("itemOverview", itemOverview);
+                        itemOverview.put("reqDelivDate", order.get("reqDeliveryDate"));
+                        soData.put("itemOverview", itemOverview);
                         
+                        result.put("SOData", soData);
                         return result;
                     })
                     .collect(Collectors.toList());
 
-            // 直接返回数据而不是包装在Response.success中
-            return Response.success(formattedResults);
+            // 包装成新的响应格式
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", true);
+            response.put("data", formattedResults);
+            
+            return Response.success(response);
         } catch (Exception e) {
             log.error("Sales order search error: " + e.getMessage());
             e.printStackTrace();
+            
+            Map<String, Object> errorResponse = new HashMap<>();
+            errorResponse.put("success", false);
+            errorResponse.put("message", "Failed to search sales orders: " + e.getMessage());
+            
             return Response.error("Failed to search sales orders: " + e.getMessage());
         }
     }
@@ -269,30 +289,30 @@ public class SalesOrderServiceImpl implements SalesOrderService {
             }
         }
 
-        // 2. 设置客户和联系人ID（必需）
+        // 2. 设置售达方和送达方客户ID（必需）
         try {
-            // 客户ID处理 (soldToParty)
+            // 售达方处理 (soldToParty)
             if (StringUtils.hasText(request.getBasicInfo().getSoldToParty())) {
                 String soldToParty = request.getBasicInfo().getSoldToParty();
                 Long customerId = parseIdWithPrefix(soldToParty, "CUST-");
-                order.setCustomerId(customerId);
-                log.debug("设置客户ID: {}", customerId);
+                order.setSoldTp(customerId);  // 使用新的sold_tp字段
+                log.debug("设置售达方ID: {}", customerId);
             } else {
                 throw new IllegalArgumentException("soldToParty不能为空");
             }
 
-            // 联系人ID处理 (shipToParty)
+            // 送达方处理 (shipToParty)
             if (StringUtils.hasText(request.getBasicInfo().getShipToParty())) {
                 String shipToParty = request.getBasicInfo().getShipToParty();
-                Long contactId = parseIdWithPrefix(shipToParty, "SHIP-");
-                order.setContactId(contactId);
-                log.debug("设置联系人ID: {}", contactId);
+                Long customerId = parseIdWithPrefix(shipToParty, "CUST-");
+                order.setShipTp(customerId);  // 使用新的ship_tp字段
+                log.debug("设置送达方ID: {}", customerId);
             } else {
                 throw new IllegalArgumentException("shipToParty不能为空");
             }
         } catch (Exception e) {
-            log.error("客户或联系人ID解析失败: ", e);
-            throw new IllegalArgumentException("客户或联系人ID格式不正确", e);
+            log.error("售达方或送达方ID解析失败: ", e);
+            throw new IllegalArgumentException("售达方或送达方ID格式不正确", e);
         }
 
         // 3. 日期处理

@@ -369,6 +369,10 @@ ALTER TABLE erp_sales_order_hdr
     ADD COLUMN cust_ref VARCHAR(10) COMMENT '客户参考';
 ALTER TABLE erp_sales_order_hdr
     ADD COLUMN customer_reference_date DATE COMMENT '客户参考日期';
+ALTER TABLE erp_sales_order_hdr
+    ADD COLUMN sold_tp BIGINT COMMENT '售达方客户ID',
+    ADD COLUMN ship_tp BIGINT COMMENT '送达方客户ID';
+
 
 CREATE TABLE erp_sales_item (
                                 so_id BIGINT NOT NULL,

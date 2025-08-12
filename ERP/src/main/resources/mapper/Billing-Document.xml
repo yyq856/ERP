@@ -87,7 +87,8 @@
             FORMAT(bh.net, 2) AS netValue,
             so.currency AS netValueUnit,
             c.name AS payer,
-            DATE_FORMAT(bh.billing_date, '%Y-%m-%d') AS billingDate
+            DATE_FORMAT(bh.billing_date, '%Y-%m-%d') AS billingDate,
+            CAST(bh.dlv_id AS CHAR) AS deliveryId
         FROM erp_billing_hdr bh
                  JOIN erp_customer c ON bh.customer_id = c.customer_id
                  JOIN erp_outbound_delivery od ON bh.dlv_id = od.dlv_id

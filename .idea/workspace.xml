@@ -4,14 +4,16 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="fd40e6ca-a706-415b-9e01-5f1f597c5af3" name="更改" comment="返回格式修改">
+    <list default="true" id="fd40e6ca-a706-415b-9e01-5f1f597c5af3" name="更改" comment="创建billing">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/ERP/src/main/java/webserver/controller/BillingController.java" beforeDir="false" afterPath="$PROJECT_DIR$/ERP/src/main/java/webserver/controller/BillingController.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/ERP/src/main/java/webserver/mapper/BillingMapper.java" beforeDir="false" afterPath="$PROJECT_DIR$/ERP/src/main/java/webserver/mapper/BillingMapper.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/ERP/src/main/java/webserver/pojo/BillingEditRequest.java" beforeDir="false" afterPath="$PROJECT_DIR$/ERP/src/main/java/webserver/pojo/BillingEditRequest.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/ERP/src/main/java/webserver/pojo/BillingInitializeRequest.java" beforeDir="false" afterPath="$PROJECT_DIR$/ERP/src/main/java/webserver/pojo/BillingInitializeRequest.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ERP/src/main/java/webserver/mapper/SalesOrderMapper.java" beforeDir="false" afterPath="$PROJECT_DIR$/ERP/src/main/java/webserver/mapper/SalesOrderMapper.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ERP/src/main/java/webserver/pojo/SalesOrder.java" beforeDir="false" afterPath="$PROJECT_DIR$/ERP/src/main/java/webserver/pojo/SalesOrder.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/ERP/src/main/java/webserver/service/impl/BillingServiceImpl.java" beforeDir="false" afterPath="$PROJECT_DIR$/ERP/src/main/java/webserver/service/impl/BillingServiceImpl.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ERP/src/main/java/webserver/service/impl/SalesOrderServiceImpl.java" beforeDir="false" afterPath="$PROJECT_DIR$/ERP/src/main/java/webserver/service/impl/SalesOrderServiceImpl.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/ERP/src/main/resources/mapper/Billing-Document.xml" beforeDir="false" afterPath="$PROJECT_DIR$/ERP/src/main/resources/mapper/Billing-Document.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ERP/src/main/resources/mapper/SalesOrderMapper.xml" beforeDir="false" afterPath="$PROJECT_DIR$/ERP/src/main/resources/mapper/SalesOrderMapper.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ERP/src/main/resources/sql/build.sql" beforeDir="false" afterPath="$PROJECT_DIR$/ERP/src/main/resources/sql/build.sql" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ERP/target/classes/mapper/SalesOrderMapper.xml" beforeDir="false" afterPath="$PROJECT_DIR$/ERP/target/classes/mapper/SalesOrderMapper.xml" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -186,7 +188,7 @@
       <workItem from="1754903045664" duration="194000" />
       <workItem from="1754977957279" duration="53000" />
       <workItem from="1754978018826" duration="14540000" />
-      <workItem from="1754995247628" duration="1123000" />
+      <workItem from="1754995247628" duration="6310000" />
     </task>
     <task id="LOCAL-00001" summary="搜索控制">
       <option name="closed" value="true" />
@@ -324,7 +326,15 @@
       <option name="project" value="LOCAL" />
       <updated>1754990146446</updated>
     </task>
-    <option name="localTasksCounter" value="18" />
+    <task id="LOCAL-00018" summary="创建billing">
+      <option name="closed" value="true" />
+      <created>1754996573520</created>
+      <option name="number" value="00018" />
+      <option name="presentableId" value="LOCAL-00018" />
+      <option name="project" value="LOCAL" />
+      <updated>1754996573520</updated>
+    </task>
+    <option name="localTasksCounter" value="19" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -366,6 +376,19 @@
     <MESSAGE value="Billing-Document添加定价元素" />
     <MESSAGE value="success" />
     <MESSAGE value="返回格式修改" />
-    <option name="LAST_COMMIT_MESSAGE" value="返回格式修改" />
+    <MESSAGE value="创建billing" />
+    <option name="LAST_COMMIT_MESSAGE" value="创建billing" />
+  </component>
+  <component name="XDebuggerManager">
+    <breakpoint-manager>
+      <breakpoints>
+        <line-breakpoint enabled="true" type="java-field">
+          <url>file://$PROJECT_DIR$/ERP/src/main/java/webserver/pojo/InquiryItemsTabQueryRequest.java</url>
+          <line>12</line>
+          <properties field="item" class="webserver.pojo.InquiryItemsTabQueryRequest.ItemQuery" />
+          <option name="timeStamp" value="1" />
+        </line-breakpoint>
+      </breakpoints>
+    </breakpoint-manager>
   </component>
 </project>

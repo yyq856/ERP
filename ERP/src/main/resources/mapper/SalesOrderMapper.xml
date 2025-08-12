@@ -6,8 +6,9 @@
         so.so_id AS soId,
         so.quote_id AS quotationId,
         c.name AS soldToPartyName,
-        so.customer_no AS customerNo,
+        so.sold_tp AS customerNo,
         c2.name AS shipToParty,
+        so.ship_tp AS shipToPartyId,
         q.cust_ref AS customerReference,
         DATE_FORMAT(so.req_delivery_date, '%Y-%m-%d') AS reqDeliveryDate,
         so.status AS status,
@@ -19,11 +20,9 @@
         FROM
         erp_sales_order_hdr so
         LEFT JOIN
-        erp_customer c ON so.customer_no = c.customer_id
+        erp_customer c ON so.sold_tp = c.customer_id
         LEFT JOIN
-        erp_contact cont ON so.contact_id = cont.contact_id
-        LEFT JOIN
-        erp_customer c2 ON cont.contact_id = c2.customer_id
+        erp_customer c2 ON so.ship_tp = c2.customer_id
         LEFT JOIN
         erp_quotation q ON so.quote_id = q.quotation_id
         <where>
@@ -34,7 +33,7 @@
                 AND so.status = #{status}
             </if>
             <if test="customerNo != null and customerNo != ''">
-                AND so.customer_no = #{customerNo}
+                AND so.sold_tp = #{customerNo}
             </if>
             <if test="customerReference != null and customerReference != ''">
                 AND q.cust_ref LIKE CONCAT('%', #{customerReference}, '%')
@@ -47,8 +46,9 @@
         SELECT
             so.so_id AS soId,
             so.quote_id AS quotationId,
-            so.customer_no AS soldToParty,
+            so.sold_tp AS soldToParty,
             c2.name AS shipToParty,
+            so.ship_tp AS shipToPartyId,
             q.cust_ref AS customerReference,
             DATE_FORMAT(q.customer_reference_date, '%Y-%m-%d') AS customerReferenceDate,
             DATE_FORMAT(so.req_delivery_date, '%Y-%m-%d') AS reqDeliveryDate,
@@ -57,8 +57,8 @@
             (SELECT GROUP_CONCAT(si.mat_id) FROM erp_sales_item si WHERE si.so_id = so.so_id) AS materialIds
         FROM
             erp_sales_order_hdr so
-                LEFT JOIN erp_contact cont ON so.contact_id = cont.contact_id
-                LEFT JOIN erp_customer c2 ON cont.contact_id = c2.customer_id
+                LEFT JOIN erp_customer c ON so.sold_tp = c.customer_id
+                LEFT JOIN erp_customer c2 ON so.ship_tp = c2.customer_id
                 LEFT JOIN erp_quotation q ON so.quote_id = q.quotation_id
         WHERE so.so_id = #{soId}
     </select>

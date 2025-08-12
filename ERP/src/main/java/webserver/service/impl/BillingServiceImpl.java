@@ -169,12 +169,12 @@ public class BillingServiceImpl implements BillingService {
         Map<String, Object> basicInfo = new HashMap<>();
         basicInfo.put("type", billingHeader.get("type"));
         basicInfo.put("id", billingHeader.get("id"));
-        // 添加deliveryId字段（如果数据库中有对应字段）
-        basicInfo.put("deliveryId", billingHeader.get("deliveryId") != null ? billingHeader.get("deliveryId") : "");
         basicInfo.put("netValue", billingHeader.get("netValue"));
         basicInfo.put("netValueUnit", billingHeader.get("netValueUnit"));
         basicInfo.put("payer", billingHeader.get("payer"));
         basicInfo.put("billingDate", billingHeader.get("billingDate"));
+        // 添加deliveryId字段
+        basicInfo.put("deliveryId", billingHeader.get("deliveryId") != null ? billingHeader.get("deliveryId") : "");
         result.put("basicInfo", basicInfo);
         
         // itemOverview部分
