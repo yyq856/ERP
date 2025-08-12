@@ -33,12 +33,12 @@ public class SalesOrderServiceImpl implements SalesOrderService {
         try {
             List<Map<String, Object>> orders = salesOrderMapper.searchSalesOrders(request);
 
-            // 将结果转换为新的平铺格式
+            // 将结果转换为扁平化的格式
             List<Map<String, Object>> formattedResults = orders.stream()
                     .map(order -> {
                         Map<String, Object> result = new HashMap<>();
                         
-                        // 直接构建平铺的数据结构
+                        // 构建字段
                         String materialIds = (String) order.get("materialIds");
                         if (materialIds != null && !materialIds.isEmpty()) {
                             result.put("id", Arrays.asList(materialIds.split(",")));
@@ -52,29 +52,20 @@ public class SalesOrderServiceImpl implements SalesOrderService {
                         result.put("shipToParty", order.get("shipToParty"));
                         result.put("customerReference", order.get("customerReference"));
                         result.put("netValue", order.get("netValue"));
-                        result.put("status", order.get("status")); // 添加status字段
                         result.put("netValueUnit", order.get("currency"));
                         result.put("customerReferenceDate", order.get("docDate"));
+                        result.put("status", order.get("status")); // 添加status字段
                         result.put("reqDelivDate", order.get("reqDeliveryDate"));
                         
                         return result;
                     })
                     .collect(Collectors.toList());
 
-            // 包装成新的响应格式
-            Map<String, Object> response = new HashMap<>();
-            response.put("success", true);
-            response.put("data", formattedResults);
-            
-            return Response.success(response);
+            // 直接返回结果，不额外包装
+            return Response.success(formattedResults);
         } catch (Exception e) {
             log.error("Sales order search error: " + e.getMessage());
             e.printStackTrace();
-            
-            Map<String, Object> errorResponse = new HashMap<>();
-            errorResponse.put("success", false);
-            errorResponse.put("message", "Failed to search sales orders: " + e.getMessage());
-            
             return Response.error("Failed to search sales orders: " + e.getMessage());
         }
     }
