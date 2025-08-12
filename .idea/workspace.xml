@@ -4,17 +4,7 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="fd40e6ca-a706-415b-9e01-5f1f597c5af3" name="更改" comment="创建billing">
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/ERP/src/main/java/webserver/mapper/SalesOrderMapper.java" beforeDir="false" afterPath="$PROJECT_DIR$/ERP/src/main/java/webserver/mapper/SalesOrderMapper.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/ERP/src/main/java/webserver/pojo/SalesOrder.java" beforeDir="false" afterPath="$PROJECT_DIR$/ERP/src/main/java/webserver/pojo/SalesOrder.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/ERP/src/main/java/webserver/service/impl/BillingServiceImpl.java" beforeDir="false" afterPath="$PROJECT_DIR$/ERP/src/main/java/webserver/service/impl/BillingServiceImpl.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/ERP/src/main/java/webserver/service/impl/SalesOrderServiceImpl.java" beforeDir="false" afterPath="$PROJECT_DIR$/ERP/src/main/java/webserver/service/impl/SalesOrderServiceImpl.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/ERP/src/main/resources/mapper/Billing-Document.xml" beforeDir="false" afterPath="$PROJECT_DIR$/ERP/src/main/resources/mapper/Billing-Document.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/ERP/src/main/resources/mapper/SalesOrderMapper.xml" beforeDir="false" afterPath="$PROJECT_DIR$/ERP/src/main/resources/mapper/SalesOrderMapper.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/ERP/src/main/resources/sql/build.sql" beforeDir="false" afterPath="$PROJECT_DIR$/ERP/src/main/resources/sql/build.sql" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/ERP/target/classes/mapper/SalesOrderMapper.xml" beforeDir="false" afterPath="$PROJECT_DIR$/ERP/target/classes/mapper/SalesOrderMapper.xml" afterDir="false" />
-    </list>
+    <list default="true" id="fd40e6ca-a706-415b-9e01-5f1f597c5af3" name="更改" comment="salesorder增加数据库字段对应&#10;billing处理遗留问题" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -188,7 +178,7 @@
       <workItem from="1754903045664" duration="194000" />
       <workItem from="1754977957279" duration="53000" />
       <workItem from="1754978018826" duration="14540000" />
-      <workItem from="1754995247628" duration="6310000" />
+      <workItem from="1754995247628" duration="6627000" />
     </task>
     <task id="LOCAL-00001" summary="搜索控制">
       <option name="closed" value="true" />
@@ -334,7 +324,15 @@
       <option name="project" value="LOCAL" />
       <updated>1754996573520</updated>
     </task>
-    <option name="localTasksCounter" value="19" />
+    <task id="LOCAL-00019" summary="salesorder增加数据库字段对应&#10;billing处理遗留问题">
+      <option name="closed" value="true" />
+      <created>1755006326647</created>
+      <option name="number" value="00019" />
+      <option name="presentableId" value="LOCAL-00019" />
+      <option name="project" value="LOCAL" />
+      <updated>1755006326647</updated>
+    </task>
+    <option name="localTasksCounter" value="20" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -377,7 +375,8 @@
     <MESSAGE value="success" />
     <MESSAGE value="返回格式修改" />
     <MESSAGE value="创建billing" />
-    <option name="LAST_COMMIT_MESSAGE" value="创建billing" />
+    <MESSAGE value="salesorder增加数据库字段对应&#10;billing处理遗留问题" />
+    <option name="LAST_COMMIT_MESSAGE" value="salesorder增加数据库字段对应&#10;billing处理遗留问题" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
