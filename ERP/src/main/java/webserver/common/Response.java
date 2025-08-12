@@ -10,7 +10,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor // 全参构造器
 public class Response<T> {
     private int code;
-    private String message;
+    private String success;
     private T data;
 
     public static <T> Response<T> success(T data) {
