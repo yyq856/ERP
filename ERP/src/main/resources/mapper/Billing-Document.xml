@@ -8,9 +8,7 @@
             customer_id,
             name
         FROM erp_customer
-        WHERE CONCAT(customer_id, ' - ', name) = #{soldToParty}
-           OR customer_id = #{soldToParty}
-           OR name = #{soldToParty}
+        WHERE customer_id = #{soldToParty}
         LIMIT 1
     </select>
 
@@ -35,9 +33,7 @@
                  JOIN erp_sales_item si ON so.so_id = si.so_id
                  JOIN erp_material m ON si.mat_id = m.mat_id
                  JOIN erp_outbound_delivery od ON so.so_id = od.so_id
-        WHERE (CONCAT(c.customer_id, ' - ', c.name) = #{soldToParty}
-            OR c.customer_id = #{soldToParty}
-            OR c.name = #{soldToParty})
+        WHERE c.customer_id = #{soldToParty}
           AND so.req_delivery_date &lt;= #{billingDate}
           AND so.status = 'COMPLETED'
           AND od.status = 'COMPLETED'
@@ -171,7 +167,7 @@
                 AND bh.billing_date = #{billingDate}
             </if>
             <if test="payer != null and payer != ''">
-                AND c.name LIKE CONCAT('%', #{payer}, '%')
+                AND c.customer_id = #{payer}
             </if>
         </where>
         ORDER BY bh.bill_id DESC
