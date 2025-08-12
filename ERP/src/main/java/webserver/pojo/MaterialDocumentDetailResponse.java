@@ -11,14 +11,8 @@ import java.util.List;
 public class MaterialDocumentDetailResponse {
     private boolean success;
     private String message;
-    private MaterialDocumentResponseData data;
-    
-    @Data
-    @NoArgsConstructor
-    @AllArgsConstructor
-    public static class MaterialDocumentResponseData {
-        private MaterialDocumentDetail materialDocumentDetail;  // 物料凭证详细信息
-    }
+    // 直接返回扁平的详情对象，符合期望的响应结构
+    private MaterialDocumentDetail data;
     
     @Data
     @NoArgsConstructor

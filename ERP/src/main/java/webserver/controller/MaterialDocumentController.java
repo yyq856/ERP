@@ -42,7 +42,7 @@ public class MaterialDocumentController {
      * @param materialDocumentId 物料凭证ID
      * @return 物料凭证详情
      */
-    @GetMapping("/api/material/get/{materialDocumentId}")
+    @GetMapping(value = "/api/material/get/{materialDocumentId}", produces = "application/json")
     public MaterialDocumentDetailResponse getMaterialDocumentDetail(
             @PathVariable("materialDocumentId") String materialDocumentId) {
         log.info("物料凭证详情查询请求，标识: {}", materialDocumentId);

@@ -72,12 +72,12 @@ public class MaterialDocumentServiceImpl implements MaterialDocumentService {
             // 查询业务流程关联信息
             MaterialDocumentProcess processFlow = materialDocumentMapper.getMaterialDocumentProcess(materialDocumentId);
             
-            // 构建响应数据
-            MaterialDocumentDetailResponse.MaterialDocumentResponseData responseData = buildDetailResponse(
+            // 构建响应数据（扁平 data 结构）
+            MaterialDocumentDetailResponse.MaterialDocumentDetail detail = buildDetailResponse(
                 materialDocument, items, processFlow);
-            
+
             log.info("物料凭证详情查询成功，ID: {}", materialDocumentId);
-            return new MaterialDocumentDetailResponse(true, "成功", responseData);
+            return new MaterialDocumentDetailResponse(true, "查询成功", detail);
             
         } catch (Exception e) {
             log.error("查询物料凭证详情失败: {}", e.getMessage(), e);
@@ -154,11 +154,10 @@ public class MaterialDocumentServiceImpl implements MaterialDocumentService {
     /**
      * 构建详情响应数据
      */
-    private MaterialDocumentDetailResponse.MaterialDocumentResponseData buildDetailResponse(
+    private MaterialDocumentDetailResponse.MaterialDocumentDetail buildDetailResponse(
             MaterialDocument materialDocument,
             List<MaterialDocumentItem> items,
             MaterialDocumentProcess processFlow) {
-        
         // 构建物料凭证详细信息
         MaterialDocumentDetailResponse.MaterialDocumentDetail materialDocumentDetail =
             new MaterialDocumentDetailResponse.MaterialDocumentDetail();
@@ -186,12 +185,7 @@ public class MaterialDocumentServiceImpl implements MaterialDocumentService {
             convertToProcessFlowDetails(materialDocument, processFlow);
         materialDocumentDetail.setProcessFlow(processFlowDetails);
         
-        // 构建最终响应数据
-        MaterialDocumentDetailResponse.MaterialDocumentResponseData responseData =
-            new MaterialDocumentDetailResponse.MaterialDocumentResponseData();
-        responseData.setMaterialDocumentDetail(materialDocumentDetail);
-        
-        return responseData;
+    return materialDocumentDetail;
     }
     
     /**
