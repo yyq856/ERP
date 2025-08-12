@@ -4,16 +4,33 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="fd40e6ca-a706-415b-9e01-5f1f597c5af3" name="更改" comment="部分建表更改">
-      <change afterPath="$PROJECT_DIR$/qodana.yaml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
+    <list default="true" id="fd40e6ca-a706-415b-9e01-5f1f597c5af3" name="更改" comment="销售管理订单修改">
+      <change afterPath="$PROJECT_DIR$/ERP/src/main/java/webserver/controller/BillingController.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/ERP/src/main/java/webserver/controller/FinanceController.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/ERP/src/main/java/webserver/mapper/BillingMapper.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/ERP/src/main/java/webserver/mapper/FinanceMapper.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/ERP/src/main/java/webserver/pojo/BillingDocument.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/ERP/src/main/java/webserver/pojo/BillingEditRequest.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/ERP/src/main/java/webserver/pojo/BillingGetRequest.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/ERP/src/main/java/webserver/pojo/BillingInitializeRequest.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/ERP/src/main/java/webserver/pojo/BillingSearchRequest.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/ERP/src/main/java/webserver/pojo/ItemValidationRequest.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/ERP/src/main/java/webserver/pojo/PricingElement.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/ERP/src/main/java/webserver/pojo/SearchOpenItemsRequest.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/ERP/src/main/java/webserver/service/BillingService.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/ERP/src/main/java/webserver/service/FinanceService.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/ERP/src/main/java/webserver/service/impl/BillingServiceImpl.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/ERP/src/main/java/webserver/service/impl/FinanceServiceImpl.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/ERP/src/main/resources/mapper/Billing-Document.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/ERP/src/main/resources/mapper/FinanceMapper.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/ERP/src/main/java/webserver/controller/SalesOrderController.java" beforeDir="false" afterPath="$PROJECT_DIR$/ERP/src/main/java/webserver/controller/SalesOrderController.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ERP/src/main/java/webserver/controller/SearchController.java" beforeDir="false" afterPath="$PROJECT_DIR$/ERP/src/main/java/webserver/controller/SearchController.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/ERP/src/main/java/webserver/mapper/SalesOrderMapper.java" beforeDir="false" afterPath="$PROJECT_DIR$/ERP/src/main/java/webserver/mapper/SalesOrderMapper.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/ERP/src/main/java/webserver/service/OutboundDeliveryService.java" beforeDir="false" afterPath="$PROJECT_DIR$/ERP/src/main/java/webserver/service/OutboundDeliveryService.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/ERP/src/main/resources/application.properties" beforeDir="false" afterPath="$PROJECT_DIR$/ERP/src/main/resources/application.properties" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ERP/src/main/java/webserver/pojo/SalesOrderCreateRequest.java" beforeDir="false" afterPath="$PROJECT_DIR$/ERP/src/main/java/webserver/pojo/SalesOrderCreateRequest.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ERP/src/main/java/webserver/pojo/SalesOrderDetailDTO.java" beforeDir="false" afterPath="$PROJECT_DIR$/ERP/src/main/java/webserver/pojo/SalesOrderDetailDTO.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ERP/src/main/java/webserver/service/impl/SalesOrderServiceImpl.java" beforeDir="false" afterPath="$PROJECT_DIR$/ERP/src/main/java/webserver/service/impl/SalesOrderServiceImpl.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/ERP/src/main/resources/mapper/SalesOrderMapper.xml" beforeDir="false" afterPath="$PROJECT_DIR$/ERP/src/main/resources/mapper/SalesOrderMapper.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/ERP/target/classes/application.properties" beforeDir="false" afterPath="$PROJECT_DIR$/ERP/target/classes/application.properties" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ERP/src/main/resources/sql/build.sql" beforeDir="false" afterPath="$PROJECT_DIR$/ERP/src/main/resources/sql/build.sql" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/ERP/target/classes/mapper/SalesOrderMapper.xml" beforeDir="false" afterPath="$PROJECT_DIR$/ERP/target/classes/mapper/SalesOrderMapper.xml" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -34,7 +51,7 @@
   <component name="Git.Settings">
     <option name="RECENT_BRANCH_BY_REPOSITORY">
       <map>
-        <entry key="$PROJECT_DIR$" value="main" />
+        <entry key="$PROJECT_DIR$" value="zyc" />
       </map>
     </option>
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
@@ -64,7 +81,7 @@
     <option name="jreName" value="1.8" />
   </component>
   <component name="ProblemsViewState">
-    <option name="selectedTabId" value="ProjectErrors" />
+    <option name="selectedTabId" value="CurrentFile" />
   </component>
   <component name="ProjectColorInfo">{
   &quot;associatedIndex&quot;: 1
@@ -112,13 +129,33 @@
       <recent name="webserver.service" />
     </key>
     <key name="MoveFile.RECENT_KEYS">
-      <recent name="D:\桌面\大三暑假\SD\src\后端\ERP\ERP\src\main\resources\sql" />
-      <recent name="D:\桌面\大三暑假\SD\src\后端\ERP\ERP\src\main\java\webserver\service" />
+      <recent name="D:\桌面\大三暑假\SD\src\后端\ERP\ERP\src\main\java\webserver\pojo" />
       <recent name="D:\桌面\大三暑假\SD\src\后端\ERP\ERP\src\main\resources\mapper" />
+      <recent name="D:\桌面\大三暑假\SD\src\后端\ERP\ERP\src\main\java\webserver\mapper" />
+      <recent name="D:\桌面\大三暑假\SD\src\后端\ERP\ERP\src\main\java\webserver\service\impl" />
+      <recent name="D:\桌面\大三暑假\SD\src\后端\ERP\ERP\src\main\java\webserver\service" />
     </key>
     <key name="MoveClassesOrPackagesDialog.RECENTS_KEY">
+      <recent name="webserver.service" />
       <recent name="webserver.service.impl" />
     </key>
+  </component>
+  <component name="RunAnythingCache">
+    <myKeys>
+      <visibility group="Gradle 任务" flag="true" />
+      <visibility group="Grunt" flag="true" />
+      <visibility group="Gulp" flag="true" />
+      <visibility group="HTTP 请求" flag="true" />
+      <visibility group="Maven 目标" flag="true" />
+      <visibility group="Node.js" flag="true" />
+      <visibility group="npm" flag="true" />
+      <visibility group="yarn" flag="true" />
+      <visibility group="最近的项目" flag="true" />
+      <visibility group="运行 Python 文件" flag="true" />
+      <visibility group="运行 conda 命令" flag="true" />
+      <visibility group="运行 pip 命令" flag="true" />
+      <visibility group="运行配置" flag="true" />
+    </myKeys>
   </component>
   <component name="RunManager">
     <configuration name="WebshopApplication" type="SpringBootApplicationConfigurationType" factoryName="Spring Boot" nameIsGenerated="true">
@@ -154,6 +191,8 @@
       <workItem from="1753694281277" duration="2782000" />
       <workItem from="1754470278739" duration="2227000" />
       <workItem from="1754903045664" duration="194000" />
+      <workItem from="1754977957279" duration="53000" />
+      <workItem from="1754978018826" duration="7418000" />
     </task>
     <task id="LOCAL-00001" summary="搜索控制">
       <option name="closed" value="true" />
@@ -260,7 +299,7 @@
                   <entry key="branch">
                     <value>
                       <list>
-                        <option value="origin/main" />
+                        <option value="zyc" />
                       </list>
                     </value>
                   </entry>
@@ -279,6 +318,7 @@
     <MESSAGE value="readme" />
     <MESSAGE value="销售订单管理功能完成（除最后一个功能需要进行讨论除外）" />
     <MESSAGE value="部分建表更改" />
-    <option name="LAST_COMMIT_MESSAGE" value="部分建表更改" />
+    <MESSAGE value="销售管理订单修改" />
+    <option name="LAST_COMMIT_MESSAGE" value="销售管理订单修改" />
   </component>
 </project>

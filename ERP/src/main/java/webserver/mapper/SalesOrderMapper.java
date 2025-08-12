@@ -15,6 +15,15 @@ public interface SalesOrderMapper {
     
     // ✅ 新增方法：获取销售订单项目列表
     List<Map<String, Object>> getSalesOrderItems(@Param("soId") String soId);
+    
+    // ✅ 新增方法：获取销售订单项目的定价元素
+    List<Map<String, Object>> getPricingElements(@Param("soId") Long soId, @Param("itemNo") Integer itemNo);
+    
+    // ✅ 新增方法：获取询价单项目的定价元素
+    List<Map<String, Object>> getInquiryPricingElements(@Param("inquiryId") Long inquiryId, @Param("itemNo") Integer itemNo);
+    
+    // ✅ 新增方法：获取报价单项目的定价元素
+    List<Map<String, Object>> getQuotationPricingElements(@Param("quotationId") Long quotationId, @Param("itemNo") Integer itemNo);
 
     @Insert("INSERT INTO erp_sales_order_hdr (" +
             "quote_id, customer_no, contact_id, doc_date, req_delivery_date, " +
@@ -37,7 +46,18 @@ public interface SalesOrderMapper {
                              @Param("quantity") int quantity,
                              @Param("unit") String unit,
                              @Param("netPrice") double netPrice);
-                             
+
+    @Insert("INSERT INTO erp_pricing_element (" +
+            "document_type, document_id, item_no, cnty, condition_name, amount, city, per_value, " +
+            "uom, condition_value, currency, status, numC, ato_mts_component, oun, ccon_de, un, " +
+            "condition_value2, cd_cur, stat" +
+            ") VALUES (" +
+            "'sales_order', #{documentId}, #{itemNo}, #{cnty}, #{conditionName}, #{amount}, #{city}, #{perValue}, " +
+            "#{uom}, #{conditionValue}, #{currency}, #{status}, #{numC}, #{atoMtsComponent}, #{oun}, #{cconDe}, #{un}, " +
+            "#{conditionValue2}, #{cdCur}, #{stat}" +
+            ")")
+    int insertPricingElement(PricingElement pricingElement);
+
     @Update("UPDATE erp_sales_order_hdr SET " +
             "quote_id = #{quotationId}, customer_no = #{customerId}, contact_id = #{contactId}, " +
             "req_delivery_date = #{reqDeliveryDate}, currency = #{currency}, " +
@@ -62,11 +82,14 @@ public interface SalesOrderMapper {
     @Delete("DELETE FROM erp_sales_item WHERE so_id = #{soId}")
     int deleteSalesOrderItemsBySoId(@Param("soId") Long soId);
 
+    @Delete("DELETE FROM erp_pricing_element WHERE document_type = #{documentType} AND document_id = #{documentId}")
+    int deletePricingElements(@Param("documentType") String documentType, @Param("documentId") Long documentId);
+
     @Select("<script>" +
             "SELECT so.id, so.planned_creation_date AS plannedCreationDate, so.planned_gi_date AS plannedGIDate, " +
             "so.shipping_point AS shippingPoint, so.ship_to_party AS shipToParty, " +
             "so.gross_weight AS grossWeight " +
-            "FROM erp_sales_order so " +
+            "FROM erp_sales_order_ so " +
             "WHERE 1=1 " +
             "<if test='shipToParty != null and shipToParty != \"\"'>AND so.ship_to_party = #{shipToParty} </if>" +
             "<if test='plannedCreationDate != null and plannedCreationDate != \"\"'>AND so.planned_creation_date = #{plannedCreationDate} </if>" +

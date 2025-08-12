@@ -1,53 +1,43 @@
 package webserver.pojo;
 
-import java.util.List;
 import lombok.Data;
-
+import java.util.List;
 
 @Data
-public class SalesOrderCreateRequest {
+public class BillingEditRequest {
     private Meta meta;
     private BasicInfo basicInfo;
     private ItemOverview itemOverview;
-
-    // Getters and Setters
+    
     @Data
     public static class Meta {
         private String id;
-        // Getter and Setter
     }
-
+    
     @Data
     public static class BasicInfo {
-        private String quotation_id;
-        private String so_id;
-        private String soldToParty;
-        private String shipToParty;
-        private String customerReference;
+        private String type;
+        private String id;
         private String netValue;
         private String netValueUnit;
-        private String customerReferenceDate;
-        
-        // 新增字段
-        private String quotation; // 报价单号
-        private String currency; // 货币代码
-        private String taxValue; // 税值
-        private String taxValueUnit; // 税值单位
-        private String grossValue; // 总值
-        private String grossValueUnit; // 总值单位
+        private String payer;
+        private String payerId;
+        private String billingDate;
+        private String taxValue;
+        private String grossValue;
     }
-
+    
     @Data
     public static class ItemOverview {
-        private String reqDelivDate;
         private List<Item> items;
-        // Getters and Setters
     }
-
+    
     @Data
     public static class Item {
         private String item;
+        private String itemNo;
         private String material;
+        private String materialId;
         private String orderQuantity;
         private String orderQuantityUnit;
         private String description;
@@ -58,8 +48,11 @@ public class SalesOrderCreateRequest {
         private String taxValueUnit;
         private String pricingDate;
         private String orderProbability;
+        private String dlvId;
+        private String quantity;
+        private String netPrice;
+        private String taxRate;
         private List<PricingElement> pricingElements;
-        // Getters and Setters
     }
     
     @Data

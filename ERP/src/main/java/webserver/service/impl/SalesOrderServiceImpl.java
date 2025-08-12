@@ -15,9 +15,7 @@ import webserver.service.SalesOrderService;
 import java.math.BigDecimal;
 import java.text.DecimalFormat;
 import java.time.LocalDate;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -35,30 +33,37 @@ public class SalesOrderServiceImpl implements SalesOrderService {
         try {
             List<Map<String, Object>> orders = salesOrderMapper.searchSalesOrders(request);
 
-            // 将结果转换为符合要求的格式
+            // 将结果转换为新的格式
             List<Map<String, Object>> formattedResults = orders.stream()
                     .map(order -> {
-                        // 创建新的HashMap避免修改原始数据
-                        Map<String, Object> formattedOrder = new HashMap<>(order);
-
-                        // 更健壮的数值处理
-                        Object netValueObj = formattedOrder.get("netValue");
-                        if (netValueObj != null) {
-                            try {
-                                // 统一转换为BigDecimal处理
-                                BigDecimal netValue = new BigDecimal(netValueObj.toString());
-                                DecimalFormat df = new DecimalFormat("#.00");
-                                formattedOrder.put("netValue", df.format(netValue));
-                            } catch (NumberFormatException e) {
-                                log.warn("Invalid netValue format: " + netValueObj);
-                                formattedOrder.put("netValue", "0.00");
-                            }
-                        }
-
-                        return formattedOrder;
+                        Map<String, Object> result = new HashMap<>();
+                        
+                        // 构建meta部分
+                        Map<String, Object> meta = new HashMap<>();
+                        meta.put("id", convertToString(order.get("soId")));
+                        result.put("meta", meta);
+                        
+                        // 构建basicInfo部分
+                        Map<String, Object> basicInfo = new HashMap<>();
+                        basicInfo.put("quotation_id", convertToString(order.get("quotationId")));
+                        basicInfo.put("so_id", convertToString(order.get("soId")));
+                        basicInfo.put("soldToParty", convertToString(order.get("customerNo")));
+                        basicInfo.put("customerReference", convertToString(order.get("customerReference")));
+                        basicInfo.put("netValue", convertToString(order.get("netValue")));
+                        basicInfo.put("netValueUnit", convertToString(order.get("currency")));
+                        basicInfo.put("customerReferenceDate", convertToString(order.get("customerReferenceDate")));
+                        result.put("basicInfo", basicInfo);
+                        
+                        // 构建itemOverview部分
+                        Map<String, Object> itemOverview = new HashMap<>();
+                        itemOverview.put("reqDelivDate", convertToString(order.get("reqDeliveryDate")));
+                        result.put("itemOverview", itemOverview);
+                        
+                        return result;
                     })
                     .collect(Collectors.toList());
 
+            // 直接返回数据而不是包装在Response.success中
             return Response.success(formattedResults);
         } catch (Exception e) {
             log.error("Sales order search error: " + e.getMessage());
@@ -76,7 +81,7 @@ public class SalesOrderServiceImpl implements SalesOrderService {
             }
             
             List<Map<String, Object>> itemsData = salesOrderMapper.getSalesOrderItems(soId);
-            
+
             SalesOrderDetailDTO orderDetail = buildSalesOrderDetail(orderData, itemsData);
             return Response.success(orderDetail);
         } catch (Exception e) {
@@ -89,14 +94,19 @@ public class SalesOrderServiceImpl implements SalesOrderService {
     public SalesOrderDetailDTO buildSalesOrderDetail(Map<String, Object> orderData, List<Map<String, Object>> itemsData) {
         SalesOrderDetailDTO result = new SalesOrderDetailDTO();
 
-        // 构建meta部分
-        result.getMeta().setId(convertToString(orderData.get("soId")));
+        // 构建meta部分 - 使用物料ID列表
+        String materialIds = convertToString(orderData.get("materialIds"));
+        if (materialIds != null && !materialIds.isEmpty()) {
+            result.getMeta().setId(materialIds);
+        } else {
+            result.getMeta().setId("");
+        }
 
         // 构建basicInfo部分
         SalesOrderDetailDTO.BasicInfo basicInfo = result.getBasicInfo();
         basicInfo.setQuotation_id(convertToString(orderData.get("quotationId")));
         basicInfo.setSo_id(convertToString(orderData.get("soId")));
-        basicInfo.setSoldToParty(convertToString(orderData.get("soldToParty")));
+        basicInfo.setSoldToParty(convertToString(orderData.get("soldToParty"))); // 客户ID而不是客户名称
         basicInfo.setShipToParty(convertToString(orderData.get("shipToParty")));
         basicInfo.setCustomerReference(convertToString(orderData.get("customerReference")));
         basicInfo.setNetValue(convertToString(orderData.get("netValue")));
@@ -122,6 +132,46 @@ public class SalesOrderServiceImpl implements SalesOrderService {
                     itemDTO.setTaxValueUnit(convertToString(item.get("taxValueUnit")));
                     itemDTO.setPricingDate(convertToString(item.get("pricingDate")));
                     itemDTO.setOrderProbability(convertToString(item.get("orderProbability")));
+                    
+                    // 获取定价元素信息
+                    Long soId = Long.valueOf(convertToString(orderData.get("soId")));
+                    Integer itemNo = Integer.valueOf(convertToString(item.get("item")));
+                    List<Map<String, Object>> pricingElementsData = salesOrderMapper.getPricingElements(soId, itemNo);
+                    
+                    List<SalesOrderDetailDTO.PricingElement> pricingElements = pricingElementsData.stream()
+                            .map(pe -> {
+                                SalesOrderDetailDTO.PricingElement pricingElement = new SalesOrderDetailDTO.PricingElement();
+                                pricingElement.setCnty(convertToString(pe.get("cnty")));
+                                pricingElement.setName(convertToString(pe.get("name")));
+                                pricingElement.setAmount(convertToString(pe.get("amount")));
+                                pricingElement.setCity(convertToString(pe.get("city")));
+                                pricingElement.setPer(convertToString(pe.get("per")));
+                                pricingElement.setUom(convertToString(pe.get("uom")));
+                                pricingElement.setConditionValue(convertToString(pe.get("conditionValue")));
+                                pricingElement.setCurr(convertToString(pe.get("curr")));
+                                pricingElement.setStatus(convertToString(pe.get("status")));
+                                pricingElement.setNumC(convertToString(pe.get("numC")));
+                                pricingElement.setAtoMtsComponent(convertToString(pe.get("atoMtsComponent")));
+                                pricingElement.setOun(convertToString(pe.get("oun")));
+                                pricingElement.setCconDe(convertToString(pe.get("cconDe")));
+                                pricingElement.setUn(convertToString(pe.get("un")));
+                                pricingElement.setConditionValue2(convertToString(pe.get("conditionValue2")));
+                                pricingElement.setCdCur(convertToString(pe.get("cdCur")));
+                                
+                                Object stat = pe.get("stat");
+                                if (stat instanceof Boolean) {
+                                    pricingElement.setStat((Boolean) stat);
+                                } else if (stat instanceof Number) {
+                                    pricingElement.setStat(((Number) stat).intValue() != 0);
+                                } else {
+                                    pricingElement.setStat(Boolean.valueOf(convertToString(stat)));
+                                }
+                                
+                                return pricingElement;
+                            })
+                            .toList();
+                    
+                    itemDTO.setPricingElements(pricingElements);
                     return itemDTO;
                 })
                 .toList();
@@ -181,14 +231,19 @@ public class SalesOrderServiceImpl implements SalesOrderService {
             // 5. 插入订单项目
             if (request.getItemOverview() != null && request.getItemOverview().getItems() != null) {
                 insertOrderItems(soId, request.getItemOverview().getItems());
+                
+                // 6. 插入定价元素
+                insertPricingElements(soId, request.getItemOverview().getItems());
             }
 
-            // 6. 构建成功响应
+            // 7. 构建成功响应
             Map<String, Object> data = new HashMap<>();
             data.put("so_id", soId.toString());
-
             log.info("销售订单创建成功，订单ID: {}", soId);
-            return Response.success(data);
+            Map<String, Object> successResponse = new HashMap<>();
+            successResponse.put("message", "Sales Order created successfully!");
+            successResponse.put("data", data);
+            return Response.success(successResponse);
 
         } catch (Exception e) {
             log.error("创建销售订单失败: ", e);
@@ -334,6 +389,56 @@ public class SalesOrderServiceImpl implements SalesOrderService {
     }
 
     /**
+     * 插入定价元素
+     * @param soId 销售订单ID
+     * @param items 订单项目列表
+     */
+    private void insertPricingElements(Long soId, List<SalesOrderCreateRequest.Item> items) {
+        log.info("开始插入定价元素，订单ID: {}, 项目数量: {}", soId, items.size());
+
+        for (int i = 0; i < items.size(); i++) {
+            SalesOrderCreateRequest.Item item = items.get(i);
+            
+            // 如果项目包含定价元素，则插入它们
+            if (item.getPricingElements() != null && !item.getPricingElements().isEmpty()) {
+                for (SalesOrderCreateRequest.PricingElement pricingElement : item.getPricingElements()) {
+                    PricingElement element = new PricingElement();
+                    element.setDocumentType("sales_order");
+                    element.setDocumentId(soId);
+                    element.setItemNo(i + 1);
+                    element.setCnty(pricingElement.getCnty());
+                    element.setConditionName(pricingElement.getName());
+                    element.setAmount(pricingElement.getAmount());
+                    element.setCity(pricingElement.getCity());
+                    element.setPerValue(pricingElement.getPer());
+                    element.setUom(pricingElement.getUom());
+                    element.setConditionValue(pricingElement.getConditionValue());
+                    element.setCurrency(pricingElement.getCurr());
+                    element.setStatus(pricingElement.getStatus());
+                    element.setNumC(pricingElement.getNumC());
+                    element.setAtoMtsComponent(pricingElement.getAtoMtsComponent());
+                    element.setOun(pricingElement.getOun());
+                    element.setCconDe(pricingElement.getCconDe());
+                    element.setUn(pricingElement.getUn());
+                    element.setConditionValue2(pricingElement.getConditionValue2());
+                    element.setCdCur(pricingElement.getCdCur());
+                    element.setStat(pricingElement.getStat());
+                    
+                    int result = salesOrderMapper.insertPricingElement(element);
+                    if (result <= 0) {
+                        log.error("插入定价元素失败: 订单ID={}, 项目号={}, 条件名称={}", 
+                                soId, i + 1, pricingElement.getName());
+                        throw new RuntimeException("插入定价元素失败: " + pricingElement.getName());
+                    }
+                    
+                    log.debug("定价元素插入成功: 订单ID={}, 项目号={}, 条件名称={}", 
+                            soId, i + 1, pricingElement.getName());
+                }
+            }
+        }
+    }
+
+    /**
      * 解析带前缀的ID
      * @param idWithPrefix 带前缀的ID
      * @param prefix 前缀
@@ -464,14 +569,35 @@ public class SalesOrderServiceImpl implements SalesOrderService {
             // 6. 插入新的订单项目
             if (request.getItemOverview() != null && request.getItemOverview().getItems() != null) {
                 insertOrderItems(order.getSoId(), request.getItemOverview().getItems());
+                
+                // 7. 删除原有的定价元素
+                deletePricingElements(order.getSoId());
+                
+                // 8. 插入新的定价元素
+                insertPricingElements(order.getSoId(), request.getItemOverview().getItems());
             }
             
             log.info("销售订单修改成功: {}", soId);
-            return Response.success("Sales Order updated successfully!");
+            return Response.success("Sales Order saved successfully!");
             
         } catch (Exception e) {
             log.error("修改销售订单失败: ", e);
             return Response.error("Operation failed.");
+        }
+    }
+
+    /**
+     * 删除销售订单的定价元素
+     * @param soId 销售订单ID
+     */
+    private void deletePricingElements(Long soId) {
+        log.info("开始删除销售订单的定价元素: {}", soId);
+        try {
+            salesOrderMapper.deletePricingElements("sales_order", soId);
+            log.info("定价元素删除成功: {}", soId);
+        } catch (Exception e) {
+            log.error("删除定价元素失败: {}", soId, e);
+            throw new RuntimeException("删除定价元素失败", e);
         }
     }
 
