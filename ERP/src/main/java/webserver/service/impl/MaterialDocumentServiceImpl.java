@@ -84,6 +84,33 @@ public class MaterialDocumentServiceImpl implements MaterialDocumentService {
             return new MaterialDocumentDetailResponse(false, "查询失败: " + e.getMessage(), null);
         }
     }
+
+    @Override
+    public MaterialDocumentDetailResponse getMaterialDocumentDetail(String materialDocument) {
+        try {
+            if (!StringUtils.hasText(materialDocument)) {
+                return new MaterialDocumentDetailResponse(false, "物料凭证标识不能为空", null);
+            }
+
+            // 如果是纯数字，直接当作主键ID查询
+            Long id = null;
+            try {
+                id = Long.parseLong(materialDocument);
+            } catch (NumberFormatException ignore) {
+                // 非数字：按业务号查询其对应的ID
+                id = materialDocumentMapper.findIdByDocumentCode(materialDocument);
+            }
+
+            if (id == null) {
+                return new MaterialDocumentDetailResponse(false, "未找到对应的物料凭证", null);
+            }
+
+            return getMaterialDocumentDetail(id);
+        } catch (Exception e) {
+            log.error("按标识查询物料凭证详情失败: {}", e.getMessage(), e);
+            return new MaterialDocumentDetailResponse(false, "查询失败: " + e.getMessage(), null);
+        }
+    }
     
     /**
      * 处理搜索请求，转换日期格式

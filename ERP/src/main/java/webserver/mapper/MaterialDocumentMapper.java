@@ -22,6 +22,14 @@ public interface MaterialDocumentMapper {
      * @return 物料凭证详情
      */
     MaterialDocument getMaterialDocumentById(@Param("materialDocumentId") Long materialDocumentId);
+
+        /**
+         * 根据业务凭证号查询其主键ID
+         * @param materialDocument 业务凭证号（如 MD001）
+         * @return 主键ID，未找到返回 null
+         */
+        @Select("SELECT material_document_id FROM erp_material_document WHERE material_document = #{materialDocument} LIMIT 1")
+        Long findIdByDocumentCode(@Param("materialDocument") String materialDocument);
     
     /**
      * 查询物料凭证项目

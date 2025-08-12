@@ -45,15 +45,11 @@ public class MaterialDocumentController {
     @GetMapping("/api/material/get/{materialDocumentId}")
     public MaterialDocumentDetailResponse getMaterialDocumentDetail(
             @PathVariable("materialDocumentId") String materialDocumentId) {
-        log.info("物料凭证详情查询请求，ID: {}", materialDocumentId);
+        log.info("物料凭证详情查询请求，标识: {}", materialDocumentId);
         try {
-            Long id = Long.parseLong(materialDocumentId);
-            MaterialDocumentDetailResponse response = materialDocumentService.getMaterialDocumentDetail(id);
-            log.info("物料凭证详情查询完成，ID: {}", materialDocumentId);
+            MaterialDocumentDetailResponse response = materialDocumentService.getMaterialDocumentDetail(materialDocumentId);
+            log.info("物料凭证详情查询完成，标识: {}", materialDocumentId);
             return response;
-        } catch (NumberFormatException e) {
-            log.error("物料凭证ID格式错误: {}", materialDocumentId);
-            return new MaterialDocumentDetailResponse(false, "物料凭证ID格式错误", null);
         } catch (Exception e) {
             log.error("物料凭证详情查询异常: {}", e.getMessage(), e);
             return new MaterialDocumentDetailResponse(false, "查询失败: " + e.getMessage(), null);
