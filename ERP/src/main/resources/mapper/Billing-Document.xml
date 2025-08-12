@@ -46,6 +46,39 @@
         ORDER BY so.so_id, si.item_no
     </select>
 
+    <!-- 根据交货单ID获取开票项目列表 -->
+    <select id="getBillingItemsByDeliveryId" resultType="map">
+        SELECT
+            si.item_no AS item,
+            m.mat_id AS material,
+            si.quantity AS orderQuantity,
+            m.base_uom AS orderQuantityUnit,
+            m.mat_desc AS description,
+            DATE_FORMAT(so.req_delivery_date, '%Y-%m-%d') AS reqDelivDate,
+            FORMAT(si.net_price * si.quantity, 2) AS netValue,
+            so.currency AS netValueUnit,
+            FORMAT((si.net_price * si.quantity) * 0.1, 2) AS taxValue,
+            so.currency AS taxValueUnit,
+            DATE_FORMAT(so.doc_date, '%Y-%m-%d') AS pricingDate,
+            '95' AS orderProbability,
+            od.dlv_id AS dlvId
+        FROM erp_sales_order_hdr so
+                 JOIN erp_customer c ON so.customer_no = c.customer_id
+                 JOIN erp_sales_item si ON so.so_id = si.so_id
+                 JOIN erp_material m ON si.mat_id = m.mat_id
+                 JOIN erp_outbound_delivery od ON so.so_id = od.so_id
+        WHERE od.dlv_id = #{deliveryId}
+          AND so.status = 'COMPLETED'
+          AND od.status = 'COMPLETED'
+          AND NOT EXISTS (
+            SELECT 1
+            FROM erp_outbound_delivery od2
+                     JOIN erp_billing_hdr bh ON od2.dlv_id = bh.dlv_id
+            WHERE od2.so_id = so.so_id
+        )
+        ORDER BY so.so_id, si.item_no
+    </select>
+
     <!-- 根据开票凭证号获取开票凭证基本信息 -->
     <select id="getBillingHeader" resultType="map">
         SELECT
@@ -94,6 +127,19 @@
         WHERE od.dlv_id = #{dlvId}
     </select>
 
+    <!-- 根据交货单ID获取交货单信息 -->
+    <select id="getDeliveryById" resultType="map">
+        SELECT
+            od.dlv_id AS deliveryId,
+            CAST(so.customer_no AS CHAR) AS customerId,
+            c.name AS customerName,
+            DATE_FORMAT(od.gi_date, '%Y-%m-%d') AS deliveryDate
+        FROM erp_outbound_delivery od
+                 JOIN erp_sales_order_hdr so ON od.so_id = so.so_id
+                 JOIN erp_customer c ON so.customer_no = c.customer_id
+        WHERE od.dlv_id = #{deliveryId}
+    </select>
+
     <!-- 检查交货单是否存在 -->
     <select id="checkDeliveryExists" resultType="int">
         SELECT COUNT(*)
@@ -101,11 +147,18 @@
         WHERE dlv_id = #{dlvId}
     </select>
 
+    <!-- 检查交货单是否已完成 -->
+    <select id="isDeliveryCompleted" resultType="boolean">
+        SELECT COUNT(*) > 0
+        FROM erp_outbound_delivery
+        WHERE dlv_id = #{deliveryId} AND status = 'COMPLETED'
+    </select>
+
     <!-- 创建开票凭证 -->
-    <insert id="createBilling" parameterType="webserver.pojo.BillingEditRequest" useGeneratedKeys="true" keyProperty="billId">
+    <insert id="createBilling" parameterType="webserver.pojo.BillingEditRequest" useGeneratedKeys="true" keyProperty="basicInfo.id">
         INSERT INTO erp_billing_hdr (dlv_id, customer_id, billing_date, net, tax, gross, status)
         VALUES (
-        #{basicInfo.dlvId},
+        #{basicInfo.deliveryId},
         #{basicInfo.payerId},
         #{basicInfo.billingDate},
         #{basicInfo.netValue},
@@ -113,7 +166,7 @@
         #{basicInfo.grossValue},
         'OPEN'
         )
-        <selectKey keyProperty="billId" resultType="string" order="AFTER">
+        <selectKey keyProperty="basicInfo.id" resultType="string" order="AFTER">
             SELECT LAST_INSERT_ID()
         </selectKey>
     </insert>
@@ -140,10 +193,10 @@
         VALUES (
                    #{billId},
                    #{item.itemNo},
-                   #{item.materialId},
-                   #{item.quantity},
-                   #{item.netPrice},
-                   #{item.taxRate}
+                   COALESCE(#{item.materialId}, 0),
+                   COALESCE(#{item.quantity}, 0),
+                   COALESCE(#{item.netPrice}, 0),
+                   COALESCE(#{item.taxRate}, 0)
                )
     </insert>
 

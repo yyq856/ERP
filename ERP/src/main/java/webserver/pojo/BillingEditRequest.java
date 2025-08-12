@@ -18,6 +18,7 @@ public class BillingEditRequest {
     public static class BasicInfo {
         private String type;
         private String id;
+        private String deliveryId;
         private String netValue;
         private String netValueUnit;
         private String payer;

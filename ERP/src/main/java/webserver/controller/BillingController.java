@@ -2,14 +2,10 @@ package webserver.controller;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
-import webserver.common.Response;
 import webserver.pojo.*;
 import webserver.service.BillingService;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 @RestController
 @RequestMapping("/api/app/billing")
@@ -88,7 +84,12 @@ public class BillingController {
             Map<String, Object> result = billingService.editBilling(request);
             
             // 获取ID用于消息
-            String id = (String) ((Map<String, Object>) result.get("meta")).get("id");
+            String id = "";
+            if (result != null && result.get("meta") != null) {
+                Map<String, Object> meta = (Map<String, Object>) result.get("meta");
+                id = (String) meta.get("id");
+            }
+            
             String message = id != null && !id.isEmpty() 
                 ? "Billing document " + id + " updated successfully" 
                 : "Billing document created successfully";
@@ -129,35 +130,6 @@ public class BillingController {
             Map<String, Object> response = new HashMap<>();
             response.put("success", false);
             response.put("message", "Failed to search billing documents: " + e.getMessage());
-            return response;
-        }
-    }
-    
-    /**
-     * 开票凭证物品验证接口
-     * 开票凭证物品验证服务端点
-     */
-    @PostMapping("/items-tab-query")
-    public Map<String, Object> validateBillingItems(@RequestBody Map<String, Object> request) {
-        try {
-            // 提取items数据
-            Map<String, Object> itemOverview = (Map<String, Object>) request.get("itemOverview");
-            List<Map<String, Object>> items = (List<Map<String, Object>>) itemOverview.get("items");
-            
-            // 转换为Item对象列表
-            List<ItemValidationRequest.Item> itemList = new ArrayList<>();
-            for (Map<String, Object> itemMap : items) {
-                ItemValidationRequest.Item item = new ItemValidationRequest.Item();
-                // 这里需要根据实际数据结构进行转换
-                itemList.add(item);
-            }
-            
-            Map<String, Object> result = billingService.validateBillingItems(itemList);
-            return result;
-        } catch (Exception e) {
-            Map<String, Object> response = new HashMap<>();
-            response.put("success", false);
-            response.put("message", "Failed to validate billing items: " + e.getMessage());
             return response;
         }
     }

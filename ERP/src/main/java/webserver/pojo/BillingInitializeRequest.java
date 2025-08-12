@@ -10,5 +10,6 @@ public class BillingInitializeRequest {
     public static class BillingDueList {
         private String billingDate;
         private String soldToParty;
+        private String deliveryId;
     }
 }

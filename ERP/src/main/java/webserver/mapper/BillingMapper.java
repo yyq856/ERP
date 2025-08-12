@@ -45,9 +45,8 @@ public interface BillingMapper {
     /**
      * 创建开票凭证
      * @param request 开票凭证信息
-     * @return 新创建的开票凭证ID
      */
-    String createBilling(BillingEditRequest request);
+    void createBilling(BillingEditRequest request);
     
     /**
      * 更新开票凭证
@@ -66,7 +65,7 @@ public interface BillingMapper {
      * @param billId 开票凭证ID
      * @param item 项目信息
      */
-    void insertBillingItem(@Param("billId") String billId, @Param("item") BillingEditRequest.Item item);
+    void insertBillingItem(@Param("billId") String billId, @Param("item") Map<String, Object> item);
     
     /**
      * 根据交货单ID获取客户ID
@@ -118,4 +117,26 @@ public interface BillingMapper {
      * @return 销售项目价格信息
      */
     Map<String, Object> getSalesItemPrice(@Param("materialId") Long materialId, @Param("soId") Long soId);
+    
+    /**
+     * 根据交货单ID获取交货单信息
+     * @param deliveryId 交货单ID
+     * @return 交货单信息
+     */
+    Map<String, Object> getDeliveryById(@Param("deliveryId") String deliveryId);
+    
+    /**
+     * 检查交货单是否已完成
+     * @param deliveryId 交货单ID
+     * @return 是否已完成
+     */
+    boolean isDeliveryCompleted(@Param("deliveryId") String deliveryId);
+
+    /**
+     * 根据交货单ID获取开票项目列表
+     * @param deliveryId 交货单ID
+     * @return 项目列表
+     */
+    List<Map<String, Object>> getBillingItemsByDeliveryId(@Param("deliveryId") String deliveryId);
+
 }
