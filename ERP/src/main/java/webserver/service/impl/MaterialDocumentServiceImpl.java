@@ -73,11 +73,11 @@ public class MaterialDocumentServiceImpl implements MaterialDocumentService {
             MaterialDocumentProcess processFlow = materialDocumentMapper.getMaterialDocumentProcess(materialDocumentId);
             
             // 构建响应数据
-            MaterialDocumentDetailResponse.MaterialDocumentDetail detail = buildDetailResponse(
+            MaterialDocumentDetailResponse.MaterialDocumentResponseData responseData = buildDetailResponse(
                 materialDocument, items, processFlow);
             
             log.info("物料凭证详情查询成功，ID: {}", materialDocumentId);
-            return new MaterialDocumentDetailResponse(true, "查询成功", detail);
+            return new MaterialDocumentDetailResponse(true, "成功", responseData);
             
         } catch (Exception e) {
             log.error("查询物料凭证详情失败: {}", e.getMessage(), e);
@@ -127,38 +127,44 @@ public class MaterialDocumentServiceImpl implements MaterialDocumentService {
     /**
      * 构建详情响应数据
      */
-    private MaterialDocumentDetailResponse.MaterialDocumentDetail buildDetailResponse(
-            MaterialDocument materialDocument, 
-            List<MaterialDocumentItem> items, 
+    private MaterialDocumentDetailResponse.MaterialDocumentResponseData buildDetailResponse(
+            MaterialDocument materialDocument,
+            List<MaterialDocumentItem> items,
             MaterialDocumentProcess processFlow) {
         
-        MaterialDocumentDetailResponse.MaterialDocumentDetail detail = 
+        // 构建物料凭证详细信息
+        MaterialDocumentDetailResponse.MaterialDocumentDetail materialDocumentDetail =
             new MaterialDocumentDetailResponse.MaterialDocumentDetail();
         
         // 设置基础信息
-        detail.setMaterialDocument(materialDocument.getMaterialDocument());
-        detail.setPlant(materialDocument.getPlantName() != null ? materialDocument.getPlantName() : "");
-        detail.setMaterialDocumentYear(materialDocument.getMaterialDocumentYear());
+        materialDocumentDetail.setMaterialDocument(materialDocument.getMaterialDocument());
+        materialDocumentDetail.setPlant(materialDocument.getPlantName() != null ? materialDocument.getPlantName() : "");
+        materialDocumentDetail.setMaterialDocumentYear(materialDocument.getMaterialDocumentYear());
         
         // 格式化日期为ISO 8601格式
         if (materialDocument.getPostingDate() != null) {
-            detail.setPostingDate(materialDocument.getPostingDate().toString());
+            materialDocumentDetail.setPostingDate(materialDocument.getPostingDate().toString());
         }
         if (materialDocument.getDocumentDate() != null) {
-            detail.setDocumentDate(materialDocument.getDocumentDate().toString());
+            materialDocumentDetail.setDocumentDate(materialDocument.getDocumentDate().toString());
         }
         
         // 转换物料凭证项目
-        List<MaterialDocumentDetailResponse.MaterialDocumentItemDetail> itemDetails = 
+        List<MaterialDocumentDetailResponse.MaterialDocumentItemDetail> itemDetails =
             items.stream().map(this::convertToItemDetail).collect(Collectors.toList());
-        detail.setItems(itemDetails);
+        materialDocumentDetail.setItems(itemDetails);
         
         // 转换业务流程信息
-        List<MaterialDocumentDetailResponse.ProcessFlowDetail> processFlowDetails = 
+        List<MaterialDocumentDetailResponse.ProcessFlowDetail> processFlowDetails =
             convertToProcessFlowDetails(materialDocument, processFlow);
-        detail.setProcessFlow(processFlowDetails);
+        materialDocumentDetail.setProcessFlow(processFlowDetails);
         
-        return detail;
+        // 构建最终响应数据
+        MaterialDocumentDetailResponse.MaterialDocumentResponseData responseData =
+            new MaterialDocumentDetailResponse.MaterialDocumentResponseData();
+        responseData.setMaterialDocumentDetail(materialDocumentDetail);
+        
+        return responseData;
     }
     
     /**

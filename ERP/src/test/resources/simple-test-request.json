@@ -1,0 +1,37 @@
+[
+  {
+    "item": "001",
+    "material": "1001",
+    "orderQuantity": "2",
+    "orderQuantityUnit": "PC",
+    "description": "标准电脑主板采购",
+    "reqDelivDate": "2024-03-15",
+    "netValue": "2400.00",
+    "netValueUnit": "CNY",
+    "taxValue": "240.00",
+    "taxValueUnit": "CNY",
+    "pricingDate": "2024-03-01",
+    "orderProbability": "90",
+    "pricingElements": [
+      {
+        "cnty": "001",
+        "name": "基础价格",
+        "amount": "2400.00",
+        "city": "北京",
+        "per": "100",
+        "uom": "CNY",
+        "conditionValue": "1200.00",
+        "curr": "CNY",
+        "status": "ACTIVE",
+        "numC": "1",
+        "atoMtsComponent": "N",
+        "oun": "PC",
+        "cconDe": "基础价格条件",
+        "un": "CNY",
+        "conditionValue2": "0.00",
+        "cdCur": "CNY",
+        "stat": true
+      }
+    ]
+  }
+]

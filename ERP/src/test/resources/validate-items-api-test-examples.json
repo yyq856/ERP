@@ -1,0 +1,245 @@
+{
+  "description": "物品验证服务接口测试用例",
+  "endpoint": "POST /items-tab-query",
+  "content-type": "application/json",
+  
+  "test_cases": [
+    {
+      "name": "有效数据测试",
+      "description": "测试包含有效物品数据的请求",
+      "request_body": [
+        {
+          "item": "001",
+          "material": "1001",
+          "orderQuantity": "2",
+          "orderQuantityUnit": "PC",
+          "description": "标准电脑主板采购",
+          "reqDelivDate": "2024-03-15",
+          "netValue": "2400.00",
+          "netValueUnit": "CNY",
+          "taxValue": "240.00",
+          "taxValueUnit": "CNY",
+          "pricingDate": "2024-03-01",
+          "orderProbability": "90",
+          "pricingElements": [
+            {
+              "cnty": "001",
+              "name": "基础价格",
+              "amount": "2400.00",
+              "city": "北京",
+              "per": "100",
+              "uom": "CNY",
+              "conditionValue": "1200.00",
+              "curr": "CNY",
+              "status": "ACTIVE",
+              "numC": "1",
+              "atoMtsComponent": "N",
+              "oun": "PC",
+              "cconDe": "基础价格条件",
+              "un": "CNY",
+              "conditionValue2": "0.00",
+              "cdCur": "CNY",
+              "stat": true
+            }
+          ]
+        },
+        {
+          "item": "002",
+          "material": "1002",
+          "orderQuantity": "1",
+          "orderQuantityUnit": "PC",
+          "description": "高性能显卡采购",
+          "reqDelivDate": "2024-03-20",
+          "netValue": "2800.00",
+          "netValueUnit": "CNY",
+          "taxValue": "280.00",
+          "taxValueUnit": "CNY",
+          "pricingDate": "2024-03-01",
+          "orderProbability": "85",
+          "pricingElements": [
+            {
+              "cnty": "002",
+              "name": "显卡基础价格",
+              "amount": "2800.00",
+              "city": "上海",
+              "per": "100",
+              "uom": "CNY",
+              "conditionValue": "2800.00",
+              "curr": "CNY",
+              "status": "ACTIVE",
+              "numC": "1",
+              "atoMtsComponent": "N",
+              "oun": "PC",
+              "cconDe": "显卡价格条件",
+              "un": "CNY",
+              "conditionValue2": "0.00",
+              "cdCur": "CNY",
+              "stat": true
+            }
+          ]
+        }
+      ],
+      "expected_response": {
+        "success": true,
+        "message": "批量验证成功",
+        "data": {
+          "result": {
+            "allDataLegal": 1,
+            "badRecordIndices": []
+          },
+          "generalData": {
+            "netValue": "5200.00",
+            "netValueUnit": "CNY",
+            "expectOralVal": "5720.00",
+            "expectOralValUnit": "CNY"
+          },
+          "breakdowns": [
+            {
+              "item": "001",
+              "material": "1001",
+              "orderQuantity": "2",
+              "orderQuantityUnit": "PC",
+              "description": "标准电脑主板采购",
+              "reqDelivDate": "2024-03-15",
+              "netValue": 2400.0,
+              "netValueUnit": "CNY",
+              "taxValue": 240.0,
+              "taxValueUnit": "CNY",
+              "pricingDate": "2024-03-01",
+              "orderProbability": "90"
+            },
+            {
+              "item": "002",
+              "material": "1002",
+              "orderQuantity": "1",
+              "orderQuantityUnit": "PC",
+              "description": "高性能显卡采购",
+              "reqDelivDate": "2024-03-20",
+              "netValue": 2800.0,
+              "netValueUnit": "CNY",
+              "taxValue": 280.0,
+              "taxValueUnit": "CNY",
+              "pricingDate": "2024-03-01",
+              "orderProbability": "85"
+            }
+          ]
+        }
+      }
+    },
+    
+    {
+      "name": "无效数据测试",
+      "description": "测试包含无效物品数据的请求",
+      "request_body": [
+        {
+          "item": "003",
+          "orderQuantity": "1",
+          "orderQuantityUnit": "PC",
+          "description": "缺少物料编号的测试"
+        },
+        {
+          "item": "004",
+          "material": "9999",
+          "orderQuantity": "1",
+          "orderQuantityUnit": "PC",
+          "description": "不存在的物料编号测试"
+        }
+      ],
+      "expected_response": {
+        "success": true,
+        "message": "批量验证成功",
+        "data": {
+          "result": {
+            "allDataLegal": 0,
+            "badRecordIndices": [0, 1]
+          },
+          "generalData": {
+            "netValue": "0.00",
+            "netValueUnit": "CNY",
+            "expectOralVal": "0.00",
+            "expectOralValUnit": "CNY"
+          },
+          "breakdowns": []
+        }
+      }
+    },
+    
+    {
+      "name": "混合数据测试",
+      "description": "测试包含有效和无效物品混合数据的请求",
+      "request_body": [
+        {
+          "item": "001",
+          "material": "1001",
+          "orderQuantity": "1",
+          "orderQuantityUnit": "PC",
+          "description": "有效的电脑主板",
+          "reqDelivDate": "2024-03-15",
+          "netValue": "1200.00",
+          "netValueUnit": "CNY",
+          "taxValue": "120.00",
+          "taxValueUnit": "CNY",
+          "pricingDate": "2024-03-01",
+          "orderProbability": "90",
+          "pricingElements": []
+        },
+        {
+          "item": "002",
+          "orderQuantity": "1",
+          "orderQuantityUnit": "PC",
+          "description": "缺少物料编号"
+        }
+      ],
+      "expected_response": {
+        "success": true,
+        "message": "批量验证成功",
+        "data": {
+          "result": {
+            "allDataLegal": 0,
+            "badRecordIndices": [1]
+          },
+          "generalData": {
+            "netValue": "1200.00",
+            "netValueUnit": "CNY",
+            "expectOralVal": "1320.00",
+            "expectOralValUnit": "CNY"
+          },
+          "breakdowns": [
+            {
+              "item": "001",
+              "material": "1001",
+              "orderQuantity": "1",
+              "orderQuantityUnit": "PC",
+              "description": "有效的电脑主板",
+              "reqDelivDate": "2024-03-15",
+              "netValue": 1200.0,
+              "netValueUnit": "CNY",
+              "taxValue": 120.0,
+              "taxValueUnit": "CNY",
+              "pricingDate": "2024-03-01",
+              "orderProbability": "90"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  
+  "curl_examples": [
+    {
+      "name": "有效数据测试 CURL 命令",
+      "command": "curl -X POST http://localhost:8080/items-tab-query \\\n  -H \"Content-Type: application/json\" \\\n  -d '[{\"item\":\"001\",\"material\":\"1001\",\"orderQuantity\":\"2\",\"orderQuantityUnit\":\"PC\",\"description\":\"标准电脑主板采购\",\"reqDelivDate\":\"2024-03-15\",\"netValue\":\"2400.00\",\"netValueUnit\":\"CNY\",\"taxValue\":\"240.00\",\"taxValueUnit\":\"CNY\",\"pricingDate\":\"2024-03-01\",\"orderProbability\":\"90\",\"pricingElements\":[{\"cnty\":\"001\",\"name\":\"基础价格\",\"amount\":\"2400.00\",\"city\":\"北京\",\"per\":\"100\",\"uom\":\"CNY\",\"conditionValue\":\"1200.00\",\"curr\":\"CNY\",\"status\":\"ACTIVE\",\"stat\":true}]}]'"
+    },
+    {
+      "name": "无效数据测试 CURL 命令",
+      "command": "curl -X POST http://localhost:8080/items-tab-query \\\n  -H \"Content-Type: application/json\" \\\n  -d '[{\"item\":\"003\",\"orderQuantity\":\"1\",\"orderQuantityUnit\":\"PC\",\"description\":\"缺少物料编号的测试\"},{\"item\":\"004\",\"material\":\"9999\",\"orderQuantity\":\"1\",\"orderQuantityUnit\":\"PC\",\"description\":\"不存在的物料编号测试\"}]'"
+    }
+  ],
+  
+  "setup_instructions": [
+    "1. 确保数据库已经运行并且已经执行了基础建表脚本 (build.sql)",
+    "2. 执行测试数据脚本: insert_validate_items_test_data.sql",
+    "3. 启动 Spring Boot 应用",
+    "4. 使用上述测试用例进行接口测试"
+  ]
+}

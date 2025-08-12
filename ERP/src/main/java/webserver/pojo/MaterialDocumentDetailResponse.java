@@ -11,7 +11,14 @@ import java.util.List;
 public class MaterialDocumentDetailResponse {
     private boolean success;
     private String message;
-    private MaterialDocumentDetail data;
+    private MaterialDocumentResponseData data;
+    
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class MaterialDocumentResponseData {
+        private MaterialDocumentDetail materialDocumentDetail;  // 物料凭证详细信息
+    }
     
     @Data
     @NoArgsConstructor
@@ -22,9 +29,8 @@ public class MaterialDocumentDetailResponse {
         private String postingDate;           // 过账日期 (ISO 8601格式)
         private String documentDate;          // 凭证日期 (ISO 8601格式)
         private String materialDocumentYear;  // 物料凭证年份
-        
-        private List<MaterialDocumentItemDetail> items;  // 物料凭证项目列表
-        private List<ProcessFlowDetail> processFlow;     // 业务流程数据
+        private List<MaterialDocumentItemDetail> items;         // 物料凭证项目列表
+        private List<ProcessFlowDetail> processFlow;            // 业务流程数据
     }
     
     @Data

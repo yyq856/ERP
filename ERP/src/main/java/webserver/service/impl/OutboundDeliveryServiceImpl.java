@@ -117,13 +117,19 @@ public class OutboundDeliveryServiceImpl implements OutboundDeliveryService {
             completedItems.add(item);
         }
 
-        ValidateItemsResponse.ValidateItemsResult result = new ValidateItemsResponse.ValidateItemsResult();
+        ValidateItemsResponse.ValidationResult result = new ValidateItemsResponse.ValidationResult();
         result.setAllDataLegal(badIndices.isEmpty() ? 1 : 0);
         result.setBadRecordIndices(badIndices);
 
+        ValidateItemsResponse.ValidateItemsData responseData = new ValidateItemsResponse.ValidateItemsData();
+        responseData.setResult(result);
+        responseData.setGeneralData(null); // 可以根据需要设置
+        responseData.setBreakdowns(null); // 这里需要转换为适当的类型
+
         ValidateItemsResponse response = new ValidateItemsResponse();
-        response.setResult(result);
-        response.setBreakdowns(completedItems);
+        response.setSuccess(true);
+        response.setMessage("验证完成");
+        response.setData(responseData);
 
         return Response.success(response);
     }

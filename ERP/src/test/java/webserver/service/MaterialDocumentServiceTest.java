@@ -62,7 +62,7 @@ public class MaterialDocumentServiceTest {
         
         assertNotNull(detailResponse);
         assertTrue(detailResponse.isSuccess());
-        assertEquals("查询成功", detailResponse.getMessage());
+        assertEquals("成功", detailResponse.getMessage());
     }
 
     /**
