@@ -75,7 +75,8 @@
             FORMAT(bi.net_price * bi.quantity * bi.tax_rate / 100, 2) AS taxValue,
             so.currency AS taxValueUnit,
             DATE_FORMAT(bh.billing_date, '%Y-%m-%d') AS pricingDate,
-            '100' AS orderProbability
+            '100' AS orderProbability,
+            od.dlv_id AS dlvId
         FROM erp_billing_item bi
                  JOIN erp_billing_hdr bh ON bi.bill_id = bh.bill_id
                  JOIN erp_material m ON bi.mat_id = m.mat_id
@@ -193,4 +194,42 @@
                  JOIN erp_sales_order_hdr so ON si.so_id = so.so_id
         WHERE si.mat_id = #{materialId} AND si.so_id = #{soId}
     </select>
+
+    <!-- 根据交货单ID获取销售订单ID和项目号 -->
+    <select id="getDeliveryInfo" resultType="map">
+        SELECT
+            so.so_id AS soId,
+            si.item_no AS itemNo
+        FROM erp_outbound_delivery od
+                 JOIN erp_sales_order_hdr so ON od.so_id = so.so_id
+                 JOIN erp_sales_item si ON so.so_id = si.so_id
+        WHERE od.dlv_id = #{dlvId}
+        LIMIT 1
+    </select>
+
+    <!-- 获取定价元素 -->
+    <select id="getPricingElements" resultType="map">
+        SELECT
+            pe.cnty AS cnty,
+            pe.condition_name AS name,
+            pe.amount AS amount,
+            pe.city AS city,
+            pe.per_value AS per,
+            pe.uom AS uom,
+            pe.condition_value AS conditionValue,
+            pe.currency AS curr,
+            pe.status AS status,
+            pe.numC AS numC,
+            pe.ato_mts_component AS atoMtsComponent,
+            pe.oun AS oun,
+            pe.ccon_de AS cconDe,
+            pe.un AS un,
+            pe.condition_value2 AS conditionValue2,
+            pe.cd_cur AS cdCur,
+            pe.stat AS stat
+        FROM erp_pricing_element pe
+        WHERE pe.document_type = 'sales_order' AND pe.document_id = #{soId} AND pe.item_no = #{itemNo}
+        ORDER BY pe.element_id
+    </select>
+
 </mapper>

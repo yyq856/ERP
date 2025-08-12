@@ -4,8 +4,12 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="fd40e6ca-a706-415b-9e01-5f1f597c5af3" name="更改" comment="销售管理订单修改">
+    <list default="true" id="fd40e6ca-a706-415b-9e01-5f1f597c5af3" name="更改" comment="Billing-Document.xml里对sotp处理的修改">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ERP/src/main/java/webserver/controller/BillingController.java" beforeDir="false" afterPath="$PROJECT_DIR$/ERP/src/main/java/webserver/controller/BillingController.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ERP/src/main/java/webserver/mapper/BillingMapper.java" beforeDir="false" afterPath="$PROJECT_DIR$/ERP/src/main/java/webserver/mapper/BillingMapper.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ERP/src/main/java/webserver/service/impl/BillingServiceImpl.java" beforeDir="false" afterPath="$PROJECT_DIR$/ERP/src/main/java/webserver/service/impl/BillingServiceImpl.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ERP/src/main/resources/mapper/Billing-Document.xml" beforeDir="false" afterPath="$PROJECT_DIR$/ERP/src/main/resources/mapper/Billing-Document.xml" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -179,7 +183,7 @@
       <workItem from="1754470278739" duration="2227000" />
       <workItem from="1754903045664" duration="194000" />
       <workItem from="1754977957279" duration="53000" />
-      <workItem from="1754978018826" duration="8246000" />
+      <workItem from="1754978018826" duration="10687000" />
     </task>
     <task id="LOCAL-00001" summary="搜索控制">
       <option name="closed" value="true" />
@@ -277,7 +281,23 @@
       <option name="project" value="LOCAL" />
       <updated>1754985642223</updated>
     </task>
-    <option name="localTasksCounter" value="13" />
+    <task id="LOCAL-00013" summary="一些小问题">
+      <option name="closed" value="true" />
+      <created>1754986872777</created>
+      <option name="number" value="00013" />
+      <option name="presentableId" value="LOCAL-00013" />
+      <option name="project" value="LOCAL" />
+      <updated>1754986872777</updated>
+    </task>
+    <task id="LOCAL-00014" summary="Billing-Document.xml里对sotp处理的修改">
+      <option name="closed" value="true" />
+      <created>1754987385538</created>
+      <option name="number" value="00014" />
+      <option name="presentableId" value="LOCAL-00014" />
+      <option name="project" value="LOCAL" />
+      <updated>1754987385538</updated>
+    </task>
+    <option name="localTasksCounter" value="15" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -314,6 +334,8 @@
     <MESSAGE value="销售订单管理功能完成（除最后一个功能需要进行讨论除外）" />
     <MESSAGE value="部分建表更改" />
     <MESSAGE value="销售管理订单修改" />
-    <option name="LAST_COMMIT_MESSAGE" value="销售管理订单修改" />
+    <MESSAGE value="一些小问题" />
+    <MESSAGE value="Billing-Document.xml里对sotp处理的修改" />
+    <option name="LAST_COMMIT_MESSAGE" value="Billing-Document.xml里对sotp处理的修改" />
   </component>
 </project>

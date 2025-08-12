@@ -2,6 +2,7 @@ package webserver.service.impl;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import webserver.mapper.BillingMapper;
 import webserver.pojo.BillingSearchRequest;
 import webserver.service.BillingService;
@@ -48,13 +49,31 @@ public class BillingServiceImpl implements BillingService {
         // itemOverview部分
         Map<String, Object> itemOverview = new HashMap<>();
         List<Map<String, Object>> items = billingMapper.getBillingItems(billingDate, soldToParty);
+        
+        // 为每个项目添加定价元素
+        for (Map<String, Object> item : items) {
+            // 从项目中获取必要的信息来查询定价元素
+            String dlvId = (String) item.get("dlvId");
+            if (dlvId != null) {
+                // 获取交货单对应的销售订单ID和项目号
+                Map<String, Object> deliveryInfo = billingMapper.getDeliveryInfo(dlvId);
+                if (deliveryInfo != null) {
+                    Long soId = (Long) deliveryInfo.get("soId");
+                    Integer itemNo = (Integer) deliveryInfo.get("itemNo");
+                    
+                    if (soId != null && itemNo != null) {
+                        // 获取定价元素
+                        List<Map<String, Object>> pricingElements = billingMapper.getPricingElements(soId, itemNo);
+                        item.put("pricingElements", pricingElements);
+                    }
+                }
+            }
+        }
+        
         itemOverview.put("items", items);
         result.put("itemOverview", itemOverview);
         
-        Map<String, Object> content = new HashMap<>();
-        content.put("content", result);
-        
-        return content;
+        return result;
     }
     
     @Override
@@ -70,6 +89,27 @@ public class BillingServiceImpl implements BillingService {
         // 获取开票凭证项目信息
         List<Map<String, Object>> billingItems = billingMapper.getBillingItemsById(billingDocumentId);
         
+        // 为每个项目添加定价元素
+        for (Map<String, Object> item : billingItems) {
+            // 从项目中获取交货单ID
+            Object dlvIdObj = item.get("dlvId");
+            if (dlvIdObj != null) {
+                String dlvId = dlvIdObj.toString();
+                // 获取交货单对应的销售订单ID和项目号
+                Map<String, Object> deliveryInfo = billingMapper.getDeliveryInfo(dlvId);
+                if (deliveryInfo != null) {
+                    Long soId = (Long) deliveryInfo.get("soId");
+                    Integer itemNo = (Integer) deliveryInfo.get("itemNo");
+                    
+                    if (soId != null && itemNo != null) {
+                        // 获取定价元素
+                        List<Map<String, Object>> pricingElements = billingMapper.getPricingElements(soId, itemNo);
+                        item.put("pricingElements", pricingElements);
+                    }
+                }
+            }
+        }
+        
         // 构建响应数据结构
         Map<String, Object> result = new HashMap<>();
         
@@ -80,8 +120,8 @@ public class BillingServiceImpl implements BillingService {
         
         // basicInfo部分
         Map<String, Object> basicInfo = new HashMap<>();
-        basicInfo.put("type", "Invoice");
-        basicInfo.put("id", billingDocumentId);
+        basicInfo.put("type", billingHeader.get("type"));
+        basicInfo.put("id", billingHeader.get("id"));
         basicInfo.put("netValue", billingHeader.get("netValue"));
         basicInfo.put("netValueUnit", billingHeader.get("netValueUnit"));
         basicInfo.put("payer", billingHeader.get("payer"));
@@ -93,67 +133,57 @@ public class BillingServiceImpl implements BillingService {
         itemOverview.put("items", billingItems);
         result.put("itemOverview", itemOverview);
         
-        Map<String, Object> content = new HashMap<>();
-        content.put("content", result);
-        
-        return content;
+        return result;
     }
     
     @Override
+    @Transactional
     public Map<String, Object> editBilling(BillingEditRequest request) {
-        String billingId = request.getMeta().getId();
-        String message;
+        BillingEditRequest.Meta meta = request.getMeta();
+        BillingEditRequest.BasicInfo basicInfo = request.getBasicInfo();
+        BillingEditRequest.ItemOverview itemOverview = request.getItemOverview();
         
-        // 验证交货单是否存在
-        if (request.getItemOverview() != null && 
-            request.getItemOverview().getItems() != null && 
-            !request.getItemOverview().getItems().isEmpty()) {
-            
-            String dlvId = request.getItemOverview().getItems().get(0).getDlvId();
-            int deliveryExists = billingMapper.checkDeliveryExists(dlvId);
-            
-            if (deliveryExists == 0) {
-                throw new RuntimeException("Delivery ID " + dlvId + " does not exist in the system");
-            }
-        }
+        String billingId = meta.getId();
+        boolean isUpdate = billingId != null && !billingId.isEmpty();
         
-        if (billingId == null || billingId.isEmpty()) {
-            // 创建新的开票凭证
-            billingId = billingMapper.createBilling(request);
-            message = "Billing document " + billingId + " created successfully";
-        } else {
-            // 更新现有开票凭证
-            billingMapper.updateBilling(request);
-            message = "Billing document " + billingId + " updated successfully";
-        }
-        
-        // 处理项目信息
-        if (request.getItemOverview() != null && 
-            request.getItemOverview().getItems() != null) {
-            
-            // 删除现有项目（如果是更新）
-            if (billingId != null && !billingId.isEmpty()) {
+        try {
+            if (isUpdate) {
+                // 更新现有开票凭证
+                billingMapper.updateBilling(request);
+                // 删除现有项目
                 billingMapper.deleteBillingItems(billingId);
+            } else {
+                // 创建新开票凭证
+                billingMapper.createBilling(request);
+                // 获取生成的ID
+                billingId = String.valueOf(request.getBasicInfo().getId());
             }
             
-            // 插入新项目
-            for (BillingEditRequest.Item item : request.getItemOverview().getItems()) {
-                billingMapper.insertBillingItem(billingId, item);
+            // 插入项目
+            List<BillingEditRequest.Item> items = itemOverview.getItems();
+            if (items != null && !items.isEmpty()) {
+                for (int i = 0; i < items.size(); i++) {
+                    BillingEditRequest.Item item = items.get(i);
+                    // 添加项目号
+                    item.setItemNo(String.valueOf(i + 1));
+                    billingMapper.insertBillingItem(billingId, item);
+                }
             }
+            
+            // 构建响应
+            Map<String, Object> result = new HashMap<>();
+            Map<String, Object> responseMeta = new HashMap<>();
+            responseMeta.put("id", billingId);
+            result.put("meta", responseMeta);
+            
+            result.put("basicInfo", basicInfo);
+            result.put("itemOverview", itemOverview);
+            
+            return result;
+            
+        } catch (Exception e) {
+            throw new RuntimeException("保存开票凭证失败: " + e.getMessage(), e);
         }
-        
-        // 获取更新后的开票凭证信息
-        BillingGetRequest getRequest = new BillingGetRequest();
-        getRequest.setBillingDocumentId(billingId);
-        Map<String, Object> result = getBilling(getRequest);
-        
-        // 添加消息
-        if (result != null && result.containsKey("content")) {
-            Map<String, Object> content = (Map<String, Object>) result.get("content");
-            content.put("message", message);
-        }
-        
-        return result;
     }
     
     @Override

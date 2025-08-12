@@ -83,6 +83,21 @@ public interface BillingMapper {
     int checkDeliveryExists(@Param("dlvId") String dlvId);
     
     /**
+     * 根据交货单ID获取销售订单ID和项目号
+     * @param dlvId 交货单ID
+     * @return 销售订单信息
+     */
+    Map<String, Object> getDeliveryInfo(@Param("dlvId") String dlvId);
+    
+    /**
+     * 获取定价元素
+     * @param soId 销售订单ID
+     * @param itemNo 项目号
+     * @return 定价元素列表
+     */
+    List<Map<String, Object>> getPricingElements(@Param("soId") Long soId, @Param("itemNo") Integer itemNo);
+    
+    /**
      * 搜索开票凭证
      * @param request 搜索条件
      * @return 开票凭证列表
