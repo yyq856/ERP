@@ -1,60 +1,76 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 
 <mapper namespace="webserver.mapper.QuotationMapper">
 
-    <!-- 根据询价单创建报价单，插入数据，返回新报价单ID -->
-    <insert id="insertQuotationFromInquiry" parameterType="string" useGeneratedKeys="true" keyProperty="quotationId" keyColumn="quotation_id">
-        INSERT INTO erp_quotation (
-            reference_inquiry_id, cust_id, inquiry_type, sls_org, sales_district, division,
-            sold_tp, ship_tp, cust_ref, customer_reference_date, valid_from_date,
-            valid_to_date, probability, net_value, status
-        )
+    <!-- 查询询价单 -->
+    <select id="selectInquiryById" parameterType="string" resultType="webserver.pojo.InquiryDTO">
         SELECT
-            inquiry_id, cust_id, inquiry_type, sls_org, sales_district, division,
-            sold_tp, ship_tp, cust_ref, customer_reference_date, valid_from_date,
-            valid_to_date, probability, net_value, 'NEW'
+            inquiry_id AS inquiryId,
+            cust_id AS custId,
+            inquiry_type AS inquiryType,
+            sls_org AS slsOrg,
+            sales_district AS salesDistrict,
+            division,
+            sold_tp AS soldTp,
+            ship_tp AS shipTp,
+            cust_ref AS custRef,
+            customer_reference_date AS customerReferenceDate,
+            valid_from_date AS validFromDate,
+            valid_to_date AS validToDate,
+            probability,
+            net_value AS netValue,
+            status
         FROM erp_inquiry
         WHERE inquiry_id = #{inquiryId}
+    </select>
+
+    <!-- 查询询价单明细 -->
+    <select id="selectInquiryItemsById" parameterType="string" resultType="webserver.pojo.InquiryItemDTO">
+        SELECT
+            inquiry_id AS inquiryId,
+            item_no AS itemNo,
+            mat_id AS matId,
+            quantity,
+            net_price AS netPrice,
+            item_value AS itemValue,
+            plant_id AS plantId,
+            su
+        FROM erp_inquiry_item
+        WHERE inquiry_id = #{inquiryId}
+    </select>
+
+    <!-- 插入报价单 -->
+    <insert id="insertQuotationFromInquiry" parameterType="webserver.pojo.InquiryDTO">
+        INSERT INTO erp_quotation (
+            reference_inquiry_id, cust_id, inquiry_type, sls_org, sales_district, division,
+            sold_tp, ship_tp, cust_ref, customer_reference_date, valid_from_date, valid_to_date,
+            probability, net_value, status, currency
+        ) VALUES (
+                     #{inquiryId}, #{custId}, #{inquiryType}, #{slsOrg}, #{salesDistrict}, #{division},
+                     #{soldTp}, #{shipTp}, #{custRef}, #{customerReferenceDate}, #{validFromDate}, #{validToDate},
+                     #{probability}, #{netValue}, 'NEW', 'USD'
+                 )
     </insert>
 
-    <select id="getQuotationBasicInfo" parameterType="string" resultType="webserver.pojo.QuotationBasicInfo">
-        SELECT
-            quotation_id AS quotation,
-            sold_tp AS soldToParty,
-            ship_tp AS shipToParty,
-            cust_ref AS customerReference,
-            net_value AS netValue,
-            'CNY' AS netValueUnit,
-            DATE_FORMAT(customer_reference_date, '%Y-%m-%d') AS customerReferenceDate
-        FROM erp_quotation
-        WHERE quotation_id = #{quotationId}
-    </select>
+    <!-- 批量插入报价单明细 -->
+    <insert id="insertQuotationItemsFromInquiry">
+        <foreach collection="items" item="item" separator=",">
+            INSERT INTO erp_quotation_item (
+            quotation_id, item_no, mat_id, quantity, net_price,
+            item_discount_pct, item_value, plant_id, su, cnty, tax_value
+            ) VALUES (
+            #{quotationId}, #{item.itemNo}, #{item.matId}, #{item.quantity}, #{item.netPrice},
+            0, #{item.itemValue}, #{item.plantId}, #{item.su}, 0, 0
+            )
+        </foreach>
+    </insert>
 
-    <select id="getQuotationItemOverview" parameterType="string" resultType="webserver.pojo.QuotationItemOverview">
-        SELECT
-            DATE_FORMAT(valid_from_date, '%Y-%m-%d') AS validFrom,
-            DATE_FORMAT(valid_to_date, '%Y-%m-%d') AS validTo,
-            DATE_FORMAT(valid_from_date, '%Y-%m-%d') AS reqDelivDate,
-            '预估口头价值' AS expectedOralVal,
-            'CNY' AS expectedOralValUnit
-        FROM erp_quotation
-        WHERE quotation_id = #{quotationId}
-    </select>
-
-    <select id="getQuotationItems" parameterType="string" resultType="webserver.pojo.QuotationItem">
-        SELECT
-            item_no AS item,
-            mat_id AS material,
-            quantity AS orderQuantity,
-            'PCS' AS orderQuantityUnit,
-            '' AS description,
-            su,
-            0 AS altItm
-        FROM erp_quotation_item
-        WHERE quotation_id = #{quotationId}
-        ORDER BY item_no
+    <!-- 获取最后插入的ID -->
+    <select id="getLastInsertId" resultType="long">
+        SELECT LAST_INSERT_ID()
     </select>
 
 </mapper>

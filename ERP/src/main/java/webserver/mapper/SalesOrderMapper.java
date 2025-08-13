@@ -66,7 +66,9 @@ public interface SalesOrderMapper {
             "SELECT " +
             "CAST(so.so_id AS CHAR) AS id, " +
             "DATE_FORMAT(so.req_delivery_date, '%Y-%m-%d') AS plannedCreationDate, " +
+            "DATE_FORMAT(DATE_ADD(so.req_delivery_date, INTERVAL 7 DAY), '%Y-%m-%d') AS plannedGIDate, " +  // 注意逗号
             "CAST(so.customer_no AS CHAR) AS shipToParty, " +
+            "CAST(so.customer_no AS CHAR) AS shippingPoint, " +
             "CAST(so.gross_value AS CHAR) AS grossWeight " +
             "FROM erp_sales_order_hdr so " +
             "LEFT JOIN erp_outbound_delivery od ON so.so_id = od.so_id " +
