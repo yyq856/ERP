@@ -8,8 +8,8 @@ import webserver.service.BillingService;
 import java.util.*;
 
 @RestController
-@RequestMapping("/api/app/billing")
 @CrossOrigin(origins = "*")
+@RequestMapping("/api/app/billing")
 public class BillingController {
     
     @Autowired
