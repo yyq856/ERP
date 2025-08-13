@@ -53,7 +53,7 @@
 
     <select id="getDeliverySummaries" resultType="webserver.pojo.OutboundDeliverySummaryDTO">
         SELECT
-            CONCAT('DEL-', d.dlv_id) AS outboundDelivery,
+            d.dlv_id AS outboundDelivery,
             d.pick_date_plan AS pickingDate,
             d.status AS pickingStatus,
             CASE
@@ -70,8 +70,8 @@
             (#{overallStatus} IS NULL OR d.status = #{overallStatus})
     </select>
 
-    <!-- 获取出库交货单详情 -->
-    <select id="getOutboundDeliveryDetail" parameterType="string" resultType="webserver.pojo.OutboundDeliveryDetailDTO">
+    <!-- 获取出库交货单详情，返回 RawDTO -->
+    <select id="getOutboundDeliveryDetail" parameterType="string" resultType="webserver.pojo.OutboundDeliveryDetailRawDTO">
         SELECT
             od.dlv_id AS id,
             od.pick_date_plan AS plannedGIDate,
@@ -89,6 +89,7 @@
         FROM erp_outbound_delivery od
         WHERE od.dlv_id = #{deliveryId}
     </select>
+
 
     <!-- 获取出库交货单明细项 -->
     <select id="getDeliveryItems" parameterType="string" resultType="webserver.pojo.OutboundDeliveryItemDTO">
@@ -150,12 +151,12 @@
         WHERE od.dlv_id = #{deliveryId}
     </select>
 
-    <update id="updateDeliveryDetailForPostGI" parameterType="webserver.pojo.OutboundDeliveryDetailDTO">
+    <update id="updateDeliveryDetailForPostGI" parameterType="string">
         UPDATE erp_outbound_delivery
         SET
             gi_date = NOW(),
             status = 'COMPLETED'
-        WHERE dlv_id = #{id}
+        WHERE dlv_id = #{deliveryId}
     </update>
 
     <!-- 更新该交货单所有明细的确认状态 -->

@@ -37,7 +37,7 @@ public class OutboundDeliveryController {
     }
 
     @PostMapping("/get-detail")
-    public Response<OutboundDeliveryDetailDTO> getDeliveryDetail(@RequestBody GetOutboundDeliveryDetailRequest request) {
+    public Response<OutboundDeliveryDetailResponse> getDeliveryDetail(@RequestBody GetOutboundDeliveryDetailRequest request) {
         return outboundDeliveryService.getOutboundDeliveryDetail(request.getDeliveryId());
     }
 

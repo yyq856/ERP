@@ -636,15 +636,4 @@ public class SalesOrderServiceImpl implements SalesOrderService {
         return response;
     }
 
-    @Override
-    public Response<OutboundDeliveryDetailDTO> getOutboundDeliveryDetail(String deliveryId) {
-        OutboundDeliveryDetailDTO detail = outboundDeliveryMapper.getOutboundDeliveryDetail(deliveryId);
-        if (detail == null) {
-            return Response.error("未找到交货单: " + deliveryId);
-        }
-        List<OutboundDeliveryItemDTO> items = outboundDeliveryMapper.getDeliveryItems(deliveryId);
-        detail.setItems(items);
-        return Response.success(detail);
-    }
-
 }

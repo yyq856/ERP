@@ -2,10 +2,7 @@ package webserver.mapper;
 
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
-import webserver.pojo.OutboundDeliveryDetailDTO;
-import webserver.pojo.OutboundDeliveryItemDTO;
-import webserver.pojo.OutboundDeliverySummaryDTO;
-import webserver.pojo.SalesItemDTO;
+import webserver.pojo.*;
 
 import java.util.List;
 
@@ -25,7 +22,7 @@ public interface OutboundDeliveryMapper {
 
     List<OutboundDeliverySummaryDTO> getDeliverySummaries(@Param("overallStatus") String overallStatus);
 
-    OutboundDeliveryDetailDTO getOutboundDeliveryDetail(@Param("deliveryId") String deliveryId);
+    OutboundDeliveryDetailRawDTO getOutboundDeliveryDetail(@Param("deliveryId") String deliveryId);
     List<OutboundDeliveryItemDTO> getDeliveryItems(@Param("deliveryId") String deliveryId);
 
     OutboundDeliveryItemDTO findItemByMaterialAndPlant(@Param("material") String material, @Param("plant") String plant);
@@ -34,7 +31,7 @@ public interface OutboundDeliveryMapper {
 
     OutboundDeliverySummaryDTO getDeliverySummary(@Param("deliveryId") String deliveryId);
 
-    void updateDeliveryDetailForPostGI(OutboundDeliveryDetailDTO detail);
+    void updateDeliveryDetailForPostGI(@Param("deliveryId") String deliveryId);
 
     void updateItemsConfirmStatusToPosted(@Param("id") String deliveryId);
 
