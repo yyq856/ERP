@@ -64,8 +64,15 @@ public class OutboundDeliveryServiceImpl implements OutboundDeliveryService {
 
     @Override
     public Response<?> getOutboundDeliverySummaries(GetOutboundDeliverySummaryRequest request) {
-        List<OutboundDeliverySummaryDTO> deliveries = outboundDeliveryMapper.getDeliverySummaries(
-                request.getOverallStatus());
+        // Treat null or empty overallStatus as 'select all' (no filter)
+        String status = request.getOverallStatus();
+        if (status != null) {
+            status = status.trim();
+            if (status.isEmpty()) {
+                status = null;
+            }
+        }
+        List<OutboundDeliverySummaryDTO> deliveries = outboundDeliveryMapper.getDeliverySummaries(status);
 
         Map<String, Object> result = new HashMap<>();
         result.put("deliveries", deliveries);
