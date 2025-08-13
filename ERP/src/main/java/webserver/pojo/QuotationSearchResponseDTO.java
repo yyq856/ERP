@@ -11,6 +11,9 @@ public class QuotationSearchResponseDTO {
 
     @Data
     public static class QuotationStruct {
+        private String varType="dict";
+        private String nodeType="dict";
+        private String name="quotation";
         private List<QuotationNode> currentValue;
         @JsonIgnore
         private Object config;
