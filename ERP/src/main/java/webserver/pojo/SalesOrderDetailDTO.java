@@ -17,7 +17,7 @@ public class SalesOrderDetailDTO {
 
     @Data
     public static class BasicInfo {
-        private String quotation_id;
+        private String salesQuotationId;
         private String so_id;
         private String soldToParty;
         private String shipToParty;

@@ -111,7 +111,7 @@ public class SalesOrderServiceImpl implements SalesOrderService {
 
         // 构建basicInfo部分
         SalesOrderDetailDTO.BasicInfo basicInfo = result.getBasicInfo();
-        basicInfo.setQuotation_id(convertToString(orderData.get("quotationId")));
+        basicInfo.setSalesQuotationId(convertToString(orderData.get("quotationId")));
         basicInfo.setSo_id(convertToString(orderData.get("soId")));
         basicInfo.setSoldToParty(convertToString(orderData.get("soldToParty"))); // 客户ID而不是客户名称
         basicInfo.setShipToParty(convertToString(orderData.get("shipToParty")));
