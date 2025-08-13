@@ -95,7 +95,7 @@ public class QuotationServiceImpl implements QuotationService {
     }
 
     @Override
-    public QuotationDetailsResponseDTO getQuotationDetails(String quotationId) {
+    public QuotationResponseDTO1 getQuotationDetails(String quotationId) {
         QuotationDTO quotation = quotationMapper.selectQuotationById(quotationId);
         if (quotation == null) {
             throw new RuntimeException("Quotation not found");
@@ -104,7 +104,13 @@ public class QuotationServiceImpl implements QuotationService {
         List<QuotationItemEntity> quotationItems =
                 quotationMapper.selectQuotationItemsByQuotationId(quotationId);
 
-        return buildResponseDTO1(quotation, quotationItems);
+        QuotationDetailsResponseDTO details = buildResponseDTO1(quotation, quotationItems);
+
+        // 外层包装
+        QuotationResponseDTO1 response = new QuotationResponseDTO1();
+        response.setQuotation(details);
+
+        return response;
     }
 
     private QuotationDetailsResponseDTO buildResponseDTO1(QuotationDTO quotation, List<QuotationItemEntity> items) {
@@ -165,7 +171,9 @@ public class QuotationServiceImpl implements QuotationService {
     }
 
     @Override
-    public QuotationResponseDTO updateQuotation(QuotationResponseDTO quotation) {
+    public QuotationResponseDTO1 updateQuotation(QuotationResponseDTO1 request) {
+        QuotationDetailsResponseDTO quotation = request.getQuotation();
+
         if (quotation.getMeta() == null || quotation.getMeta().getId() == null) {
             throw new RuntimeException("Quotation ID cannot be null");
         }
@@ -183,9 +191,13 @@ public class QuotationServiceImpl implements QuotationService {
             }
         }
 
-        // 返回最新数据
-        return quotation;
+        // 返回最新数据（仍然保持外层包装）
+        QuotationResponseDTO1 response = new QuotationResponseDTO1();
+        response.setQuotation(quotation);
+
+        return response;
     }
+
 
     @Override
     public QuotationSearchResponseDTO searchQuotations(QuotationSearchRequestDTO request) {

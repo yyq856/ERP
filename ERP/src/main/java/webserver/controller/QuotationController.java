@@ -21,9 +21,9 @@ public class QuotationController {
     }
 
     @PostMapping("/details")
-    public Response<QuotationDetailsResponseDTO> getQuotationDetails(@RequestBody QuotationDetailsRequestDTO request) {
+    public Response<QuotationResponseDTO1> getQuotationDetails(@RequestBody QuotationDetailsRequestDTO request) {
         try {
-            QuotationDetailsResponseDTO data = quotationService.getQuotationDetails(request.getSalesQuotationId());
+            QuotationResponseDTO1 data = quotationService.getQuotationDetails(request.getSalesQuotationId());
             return Response.success(data);
         } catch (Exception e) {
             return Response.error("Failed to load quotation details: " + e.getMessage());
@@ -31,9 +31,9 @@ public class QuotationController {
     }
 
     @PostMapping("/update")
-    public Response<QuotationResponseDTO> updateQuotation(@RequestBody QuotationResponseDTO quotation) {
+    public Response<QuotationResponseDTO1> updateQuotation(@RequestBody QuotationResponseDTO1 quotation) {
         try {
-            QuotationResponseDTO updated = quotationService.updateQuotation(quotation);
+            QuotationResponseDTO1 updated = quotationService.updateQuotation(quotation);
             return Response.success(updated);
         } catch (Exception e) {
             return Response.error("Failed to update quotation: " + e.getMessage());

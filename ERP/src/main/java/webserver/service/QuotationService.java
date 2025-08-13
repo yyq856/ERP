@@ -5,7 +5,7 @@ import webserver.common.Response;
 
 public interface QuotationService {
     Response<QuotationResponseDTO> createQuotationFromInquiry(CreateQuotationFromInquiryRequest request);
-    QuotationDetailsResponseDTO getQuotationDetails(String quotationId);
-    QuotationResponseDTO updateQuotation(QuotationResponseDTO quotation);
+    QuotationResponseDTO1 getQuotationDetails(String quotationId);
+    QuotationResponseDTO1 updateQuotation(QuotationResponseDTO1 quotation);
     QuotationSearchResponseDTO searchQuotations(QuotationSearchRequestDTO request);
 }

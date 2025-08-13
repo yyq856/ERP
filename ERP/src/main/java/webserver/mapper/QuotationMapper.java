@@ -79,8 +79,8 @@ public interface QuotationMapper {
         WHERE quotation_id = #{quotationId}
     """)
     void updateQuotation(@Param("quotationId") Long quotationId,
-                         @Param("basicInfo") QuotationResponseDTO.BasicInfo basicInfo,
-                         @Param("itemOverview") QuotationResponseDTO.ItemOverview itemOverview);
+                         @Param("basicInfo") QuotationDetailsResponseDTO.BasicInfo basicInfo,
+                         @Param("itemOverview") QuotationDetailsResponseDTO.ItemOverview itemOverview);
 
     @Delete("DELETE FROM erp_quotation_item WHERE quotation_id = #{quotationId}")
     void deleteQuotationItems(@Param("quotationId") Long quotationId);
