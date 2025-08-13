@@ -15,7 +15,7 @@ public class QuotationController {
     private final QuotationService quotationService;
 
     @PostMapping("/create-quotation-from-inquiry")
-    public Response<QuotationResponseDTO> createQuotationFromInquiry(
+    public Response<QuotationResponseDTO1> createQuotationFromInquiry(
             @RequestBody CreateQuotationFromInquiryRequest request) {
         return quotationService.createQuotationFromInquiry(request);
     }

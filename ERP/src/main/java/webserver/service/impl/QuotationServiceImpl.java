@@ -21,7 +21,7 @@ public class QuotationServiceImpl implements QuotationService {
 
     @Override
     @Transactional
-    public Response<QuotationResponseDTO> createQuotationFromInquiry(CreateQuotationFromInquiryRequest request) {
+    public Response<QuotationResponseDTO1> createQuotationFromInquiry(CreateQuotationFromInquiryRequest request) {
         try {
             // 1. 获取 inquiry 信息
             var inquiry = quotationMapper.selectInquiryById(request.getInquiryId());
@@ -37,25 +37,26 @@ public class QuotationServiceImpl implements QuotationService {
             quotationMapper.insertQuotationItemsFromInquiry(quotationId, inquiryItems);
 
             // 4. 组装返回 DTO
-            QuotationResponseDTO resp = buildResponseDTO(quotationId, inquiry, inquiryItems);
-
-            return Response.success(resp);
+            QuotationDetailsResponseDTO resp = buildResponseDTO(quotationId, inquiry, inquiryItems);
+            QuotationResponseDTO1 response = new QuotationResponseDTO1();
+            response.setQuotationData(resp);
+            return Response.success(response);
 
         } catch (Exception e) {
             return Response.error("Quotation creation failed, please try again later.");
         }
     }
 
-    private QuotationResponseDTO buildResponseDTO(Long quotationId, InquiryDTO inquiry, List<InquiryItemDTO> inquiryItems) {
-        QuotationResponseDTO response = new QuotationResponseDTO();
+    private QuotationDetailsResponseDTO buildResponseDTO(Long quotationId, InquiryDTO inquiry, List<InquiryItemDTO> inquiryItems) {
+        QuotationDetailsResponseDTO response = new QuotationDetailsResponseDTO();
 
         // meta
-        QuotationResponseDTO.Meta meta = new QuotationResponseDTO.Meta();
+        QuotationDetailsResponseDTO.Meta meta = new QuotationDetailsResponseDTO.Meta();
         meta.setId(String.valueOf(quotationId));
         response.setMeta(meta);
 
         // basicInfo
-        QuotationResponseDTO.BasicInfo basicInfo = new QuotationResponseDTO.BasicInfo();
+        QuotationDetailsResponseDTO.BasicInfo basicInfo = new QuotationDetailsResponseDTO.BasicInfo();
         basicInfo.setQuotation(String.valueOf(quotationId));
         basicInfo.setSoldToParty(String.valueOf(inquiry.getSoldTp()));
         basicInfo.setShipToParty(String.valueOf(inquiry.getShipTp()));
@@ -66,7 +67,7 @@ public class QuotationServiceImpl implements QuotationService {
         response.setBasicInfo(basicInfo);
 
         // itemOverview
-        QuotationResponseDTO.ItemOverview itemOverview = new QuotationResponseDTO.ItemOverview();
+        QuotationDetailsResponseDTO.ItemOverview itemOverview = new QuotationDetailsResponseDTO.ItemOverview();
         itemOverview.setValidFrom(inquiry.getValidFromDate().toString());
         itemOverview.setValidTo(inquiry.getValidToDate().toString());
         itemOverview.setReqDelivDate(inquiry.getValidFromDate().toString());
@@ -108,7 +109,7 @@ public class QuotationServiceImpl implements QuotationService {
 
         // 外层包装
         QuotationResponseDTO1 response = new QuotationResponseDTO1();
-        response.setQuotation(details);
+        response.setQuotationData(details);
 
         return response;
     }
@@ -172,7 +173,7 @@ public class QuotationServiceImpl implements QuotationService {
 
     @Override
     public QuotationResponseDTO1 updateQuotation(QuotationResponseDTO1 request) {
-        QuotationDetailsResponseDTO quotation = request.getQuotation();
+        QuotationDetailsResponseDTO quotation = request.getQuotationData();
 
         if (quotation.getMeta() == null || quotation.getMeta().getId() == null) {
             throw new RuntimeException("Quotation ID cannot be null");
@@ -193,7 +194,7 @@ public class QuotationServiceImpl implements QuotationService {
 
         // 返回最新数据（仍然保持外层包装）
         QuotationResponseDTO1 response = new QuotationResponseDTO1();
-        response.setQuotation(quotation);
+        response.setQuotationData(quotation);
 
         return response;
     }
