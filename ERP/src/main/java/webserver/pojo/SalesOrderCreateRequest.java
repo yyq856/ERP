@@ -35,6 +35,18 @@ public class SalesOrderCreateRequest {
         private String taxValueUnit; // 税值单位
         private String grossValue; // 总值
         private String grossValueUnit; // 总值单位
+        
+        // 添加salesQuotationId字段
+        private String salesQuotationId;
+        
+        // Getters and Setters for salesQuotationId
+        public String getSalesQuotationId() {
+            return salesQuotationId;
+        }
+        
+        public void setSalesQuotationId(String salesQuotationId) {
+            this.salesQuotationId = salesQuotationId;
+        }
     }
 
     @Data

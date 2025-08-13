@@ -274,6 +274,15 @@ public class SalesOrderServiceImpl implements SalesOrderService {
             } catch (NumberFormatException e) {
                 log.warn("报价单ID格式不正确: {}", request.getBasicInfo().getQuotation_id());
             }
+        } 
+        // 处理新的报价单ID字段名
+        else if (StringUtils.hasText(request.getBasicInfo().getSalesQuotationId())) {
+            try {
+                order.setQuotationId(Long.valueOf(request.getBasicInfo().getSalesQuotationId()));
+                log.debug("设置报价单ID: {}", order.getQuotationId());
+            } catch (NumberFormatException e) {
+                log.warn("报价单ID格式不正确: {}", request.getBasicInfo().getSalesQuotationId());
+            }
         }
 
         // 2. 设置售达方和送达方客户ID（必需）
