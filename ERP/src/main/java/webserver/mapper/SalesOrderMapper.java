@@ -26,10 +26,10 @@ public interface SalesOrderMapper {
     List<Map<String, Object>> getQuotationPricingElements(@Param("quotationId") Long quotationId, @Param("itemNo") Integer itemNo);
 
     @Insert("INSERT INTO erp_sales_order_hdr (" +
-            "quote_id, customer_no, contact_id, doc_date, req_delivery_date, " +
+            "quote_id, sold_tp, ship_tp, doc_date, req_delivery_date, " +
             "currency, net_value, tax_value, gross_value, incoterms, payment_terms, status" +
             ") VALUES (" +
-            "#{quotationId}, #{customerId}, #{contactId}, NOW(), #{reqDeliveryDate}, " +
+            "#{quotationId}, #{soldTp}, #{shipTp}, NOW(), #{reqDeliveryDate}, " +
             "#{currency}, #{netValue}, #{taxValue}, #{grossValue}, #{incoterms}, #{paymentTerms}, 'NEW')")
     @Options(useGeneratedKeys = true, keyProperty = "soId")
     int insertSalesOrder(SalesOrder order);

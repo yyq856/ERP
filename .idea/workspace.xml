@@ -4,8 +4,9 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="fd40e6ca-a706-415b-9e01-5f1f597c5af3" name="更改" comment="salesorder-search返回格式更改二周目">
+    <list default="true" id="fd40e6ca-a706-415b-9e01-5f1f597c5af3" name="更改" comment="creatsalesorder修改">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ERP/src/main/java/webserver/mapper/SalesOrderMapper.java" beforeDir="false" afterPath="$PROJECT_DIR$/ERP/src/main/java/webserver/mapper/SalesOrderMapper.java" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -180,7 +181,8 @@
       <workItem from="1754903045664" duration="194000" />
       <workItem from="1754977957279" duration="53000" />
       <workItem from="1754978018826" duration="14540000" />
-      <workItem from="1754995247628" duration="8272000" />
+      <workItem from="1754995247628" duration="10396000" />
+      <workItem from="1755072690394" duration="5747000" />
     </task>
     <task id="LOCAL-00001" summary="搜索控制">
       <option name="closed" value="true" />
@@ -350,7 +352,15 @@
       <option name="project" value="LOCAL" />
       <updated>1755007805768</updated>
     </task>
-    <option name="localTasksCounter" value="22" />
+    <task id="LOCAL-00022" summary="salesorder-search返回格式更改三周目">
+      <option name="closed" value="true" />
+      <created>1755008408908</created>
+      <option name="number" value="00022" />
+      <option name="presentableId" value="LOCAL-00022" />
+      <option name="project" value="LOCAL" />
+      <updated>1755008408908</updated>
+    </task>
+    <option name="localTasksCounter" value="23" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -396,7 +406,9 @@
     <MESSAGE value="salesorder增加数据库字段对应&#10;billing处理遗留问题" />
     <MESSAGE value="salesorder-search返回格式更改" />
     <MESSAGE value="salesorder-search返回格式更改二周目" />
-    <option name="LAST_COMMIT_MESSAGE" value="salesorder-search返回格式更改二周目" />
+    <MESSAGE value="salesorder-search返回格式更改三周目" />
+    <MESSAGE value="creatsalesorder修改" />
+    <option name="LAST_COMMIT_MESSAGE" value="creatsalesorder修改" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
