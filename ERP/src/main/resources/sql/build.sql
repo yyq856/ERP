@@ -480,8 +480,8 @@ CREATE TABLE erp_payment (
 
 CREATE TABLE erp_pricing_element (
                                      element_id BIGINT PRIMARY KEY AUTO_INCREMENT COMMENT '定价元素ID',
-                                     so_id BIGINT NOT NULL COMMENT '销售订单ID',
-                                     item_no SMALLINT NOT NULL COMMENT '项目号',
+                                     so_id BIGINT COMMENT '销售订单ID',
+                                     item_no SMALLINT COMMENT '项目号',
                                      cnty VARCHAR(10) COMMENT '国家',
                                      condition_name VARCHAR(50) NOT NULL COMMENT '条件名称',
                                      amount VARCHAR(20) COMMENT '金额（可能是数值或百分比）',

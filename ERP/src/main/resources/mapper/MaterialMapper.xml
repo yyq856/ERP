@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="webserver.mapper.MaterialMapper">
+    <select id="findById" parameterType="long" resultType="webserver.pojo.Material">
+        SELECT
+            mat_id   AS matId,
+            mat_desc AS matDesc,
+            base_uom AS baseUom,
+            srd_price AS srdPrice
+        FROM erp_material
+        WHERE mat_id = #{matId}
+    </select>
+</mapper>
+
