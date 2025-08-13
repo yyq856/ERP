@@ -188,7 +188,7 @@ public class QuotationServiceImpl implements QuotationService {
         List<QuotationItemDTO> items = quotation.getItemOverview().getItems();
         if (items != null && !items.isEmpty()) {
             for (QuotationItemDTO item : items) {
-                quotationMapper.updateQuotationItem(quotationId, item);
+                if(item.getItem()!=null && !item.getItem().equals("")) quotationMapper.updateQuotationItem(quotationId, item);
             }
         }
 
