@@ -2,10 +2,9 @@ package webserver.service.impl;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import webserver.common.Response;
 import webserver.mapper.StockMapper;
-import webserver.pojo.MaterialInfoResponse;
-import webserver.pojo.SearchStockResponseData;
-import webserver.pojo.StockContentItem;
+import webserver.pojo.*;
 import webserver.service.StockService;
 
 import java.util.*;
@@ -17,69 +16,71 @@ public class StockServiceImpl implements StockService {
     private StockMapper stockMapper;
 
     @Override
-    public List<String> getStockStages() {
-        return stockMapper.selectStockStages();
-    }
-
-    @Override
-    public List<String> getStockLevels() {
-        return stockMapper.selectStockLevels();
-    }
-
-    @Override
     public MaterialInfoResponse getMaterialInfo(String materialId) {
         return stockMapper.selectMaterialInfoById(materialId);
     }
 
     @Override
-    public SearchStockResponseData searchStock(String materialId) {
-        // 1. 获取库存阶段数和阶段名称（也可以缓存或调用另接口）
-        List<String> stages = stockMapper.getStockStages(); // ["stage name 0", "stage name 1", "stage name 2"]
-        int stageCount = stages.size();
+    public Response<SearchStockResponseData> searchStock(SearchStockRequest request) {
+        String matId = request.getId();
+        List<StockRecord> records = stockMapper.selectStockByMatId(matId);
 
-        // 2. 查询数据库，获取该物料所有层级、阶段的库存数据
-        // 返回 List<Map> 结构，每条记录包含 level_name, depth, stage_id, qty_on_hand
-        List<Map<String, Object>> rawData = stockMapper.selectStockByMaterial(materialId);
+        double totalOnHand = 0, totalCommitted = 0;
 
-        // 3. 整理数据，构造最终返回格式
-        // 结构：Map<level, Map<stage_k, qty>>, 另存 depth
-        Map<String, Map<String, String>> levelStageQtyMap = new LinkedHashMap<>();
-        Map<String, Integer> levelDepthMap = new HashMap<>();
+        Map<Long, Map<Long, StockRecord>> hierarchy = new LinkedHashMap<>();
 
-        for (Map<String, Object> row : rawData) {
-            String level = (String) row.get("level_name");
-            Integer depth = (Integer) row.get("depth");
-            Integer stageId = (Integer) row.get("stage_id");
-            Float qty = (Float) row.get("qty_on_hand");
+        for (StockRecord r : records) {
+            totalOnHand += r.getQtyOnHand();
+            totalCommitted += r.getQtyCommitted();
 
-            levelDepthMap.put(level, depth);
-
-            // stage字段按stage0、stage1编号
-            String stageKey = "stage" + (stageId - 1);
-
-            levelStageQtyMap.putIfAbsent(level, new HashMap<>());
-            levelStageQtyMap.get(level).put(stageKey, String.valueOf(qty.intValue()));
+            hierarchy.computeIfAbsent(r.getBpId(), k -> new LinkedHashMap<>())
+                    .put(r.getPlantId(), r);
         }
 
-        // 4. 构造返回列表，确保每个stage字段都有，即使为0
-        List<StockContentItem> content = new ArrayList<>();
-        for (String level : levelStageQtyMap.keySet()) {
-            Map<String, String> stageQty = levelStageQtyMap.get(level);
+        List<StockLevelNode> result = new ArrayList<>();
 
-            // 补全缺失stage，值为 "0"
-            for (int i = 0; i < stageCount; i++) {
-                String key = "stage" + i;
-                stageQty.putIfAbsent(key, "0");
+        // 根节点，总计
+        result.add(createNode("Full", totalOnHand, totalCommitted, 0));
+
+        for (Map.Entry<Long, Map<Long, StockRecord>> bpEntry : hierarchy.entrySet()) {
+            Long bpId = bpEntry.getKey();
+            Map<Long, StockRecord> plantMap = bpEntry.getValue();
+
+            String bpLevel = bpId.toString();
+            result.add(createNode(bpLevel, sumQtyOnHand(plantMap), sumQtyCommitted(plantMap), 1));
+
+            for (Map.Entry<Long, StockRecord> plantEntry : plantMap.entrySet()) {
+                Long plantId = plantEntry.getKey();
+                StockRecord rec = plantEntry.getValue();
+
+                String plantName = stockMapper.selectPlantNameById(plantId);
+                result.add(createNode(plantName, rec.getQtyOnHand(), rec.getQtyCommitted(), 2));
             }
-
-            Map<String, String> data = new LinkedHashMap<>();
-            data.put("level", level);
-            data.putAll(stageQty);
-
-            int depth = levelDepthMap.getOrDefault(level, 0);
-            content.add(new StockContentItem(data, depth));
         }
 
-        return new SearchStockResponseData(content);
+        SearchStockResponseData responseData = new SearchStockResponseData();
+        responseData.setContent(result);
+
+        return Response.success(responseData);
+    }
+
+    private StockLevelNode createNode(String level, double stage0Val, double stage1Val, int depth) {
+        StockLevelData data = new StockLevelData();
+        data.setLevel(level);
+        data.setStage0(stage0Val == 0 ? "" : String.valueOf((int)stage0Val));
+        data.setStage1(stage1Val == 0 ? "" : String.valueOf((int)stage1Val));
+
+        StockLevelNode node = new StockLevelNode();
+        node.setData(data);
+        node.setDepth(depth);
+        return node;
+    }
+
+    private double sumQtyOnHand(Map<Long, StockRecord> plantMap) {
+        return plantMap.values().stream().mapToDouble(StockRecord::getQtyOnHand).sum();
+    }
+
+    private double sumQtyCommitted(Map<Long, StockRecord> plantMap) {
+        return plantMap.values().stream().mapToDouble(StockRecord::getQtyCommitted).sum();
     }
 }

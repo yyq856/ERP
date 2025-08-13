@@ -364,6 +364,16 @@ CREATE TABLE erp_sales_order_hdr (
                                      FOREIGN KEY (payment_terms) REFERENCES erp_payment_terms(term_id)
 );
 
+
+ALTER TABLE erp_sales_order_hdr
+    ADD COLUMN cust_ref VARCHAR(10) COMMENT '客户参考';
+ALTER TABLE erp_sales_order_hdr
+    ADD COLUMN customer_reference_date DATE COMMENT '客户参考日期';
+ALTER TABLE erp_sales_order_hdr
+    ADD COLUMN sold_tp BIGINT COMMENT '售达方客户ID',
+    ADD COLUMN ship_tp BIGINT COMMENT '送达方客户ID';
+
+
 CREATE TABLE erp_sales_item (
                                 so_id BIGINT NOT NULL,
                                 item_no SMALLINT NOT NULL,
@@ -466,4 +476,29 @@ CREATE TABLE erp_payment (
                              FOREIGN KEY (bill_id) REFERENCES erp_billing_hdr(bill_id),
                              FOREIGN KEY (customer_id) REFERENCES erp_customer(customer_id),
                              FOREIGN KEY (currency) REFERENCES erp_currency(currency_code)
+);
+
+CREATE TABLE erp_pricing_element (
+                                     element_id BIGINT PRIMARY KEY AUTO_INCREMENT COMMENT '定价元素ID',
+                                     so_id BIGINT NOT NULL COMMENT '销售订单ID',
+                                     item_no SMALLINT NOT NULL COMMENT '项目号',
+                                     cnty VARCHAR(10) COMMENT '国家',
+                                     condition_name VARCHAR(50) NOT NULL COMMENT '条件名称',
+                                     amount VARCHAR(20) COMMENT '金额（可能是数值或百分比）',
+                                     city VARCHAR(50) COMMENT '城市/货币',
+                                     per_value VARCHAR(10) COMMENT '每(例如: "1")',
+                                     uom VARCHAR(10) COMMENT '单位(例如: "EA")',
+                                     condition_value VARCHAR(20) COMMENT '条件值',
+                                     currency VARCHAR(5) COMMENT '货币',
+                                     status VARCHAR(20) COMMENT '状态',
+                                     numC VARCHAR(10) COMMENT '数量条件',
+                                     ato_mts_component VARCHAR(50) COMMENT 'ATO/MTS组件',
+                                     oun VARCHAR(10) COMMENT 'OUn',
+                                     ccon_de VARCHAR(10) COMMENT 'CConDe',
+                                     un VARCHAR(10) COMMENT 'Un',
+                                     condition_value2 VARCHAR(20) COMMENT '条件值2',
+                                     cd_cur VARCHAR(5) COMMENT 'CdCur',
+                                     stat BOOLEAN DEFAULT TRUE COMMENT '状态布尔值',
+
+                                     FOREIGN KEY (so_id, item_no) REFERENCES erp_sales_item(so_id, item_no)
 );

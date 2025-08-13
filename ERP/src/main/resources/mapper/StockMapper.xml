@@ -5,14 +5,6 @@
 
 <mapper namespace="webserver.mapper.StockMapper">
 
-    <select id="selectStockStages" resultType="string">
-        SELECT stage_name FROM stock_stage ORDER BY stage_id
-    </select>
-
-    <select id="selectStockLevels" resultType="string">
-        SELECT level_code FROM stock_level ORDER BY depth, level_code
-    </select>
-
     <select id="selectMaterialInfoById" parameterType="string" resultType="webserver.pojo.MaterialInfoResponse">
         SELECT
             mat_desc AS name,
@@ -20,10 +12,6 @@
             base_uom AS unit
         FROM erp_material
         WHERE mat_id = #{matId}
-    </select>
-
-    <select id="getStockStages" resultType="string">
-        SELECT stage_name FROM stock_stage ORDER BY stage_id
     </select>
 
     <select id="selectStockByMaterial" resultType="map" parameterType="string">

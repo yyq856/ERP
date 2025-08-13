@@ -1,0 +1,289 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="webserver.mapper.BillingMapper">
+
+    <!-- 根据售达方获取客户信息 -->
+    <select id="getCustomerBySoldToParty" resultType="map">
+        SELECT
+            customer_id,
+            name
+        FROM erp_customer
+        WHERE customer_id = #{soldToParty}
+        LIMIT 1
+    </select>
+
+    <!-- 获取开票项目列表 -->
+    <select id="getBillingItems" resultType="map">
+        SELECT
+            si.item_no AS item,
+            m.mat_id AS material,
+            si.quantity AS orderQuantity,
+            m.base_uom AS orderQuantityUnit,
+            m.mat_desc AS description,
+            DATE_FORMAT(so.req_delivery_date, '%Y-%m-%d') AS reqDelivDate,
+            FORMAT(si.net_price * si.quantity, 2) AS netValue,
+            so.currency AS netValueUnit,
+            FORMAT((si.net_price * si.quantity) * 0.1, 2) AS taxValue,
+            so.currency AS taxValueUnit,
+            DATE_FORMAT(so.doc_date, '%Y-%m-%d') AS pricingDate,
+            '95' AS orderProbability,
+            od.dlv_id AS dlvId
+        FROM erp_sales_order_hdr so
+                 JOIN erp_customer c ON so.customer_no = c.customer_id
+                 JOIN erp_sales_item si ON so.so_id = si.so_id
+                 JOIN erp_material m ON si.mat_id = m.mat_id
+                 JOIN erp_outbound_delivery od ON so.so_id = od.so_id
+        WHERE c.customer_id = #{soldToParty}
+          AND so.req_delivery_date &lt;= #{billingDate}
+          AND so.status = 'COMPLETED'
+          AND od.status = 'COMPLETED'
+          AND NOT EXISTS (
+            SELECT 1
+            FROM erp_outbound_delivery od2
+                     JOIN erp_billing_hdr bh ON od2.dlv_id = bh.dlv_id
+            WHERE od2.so_id = so.so_id
+        )
+        ORDER BY so.so_id, si.item_no
+    </select>
+
+    <!-- 根据交货单ID获取开票项目列表 -->
+    <select id="getBillingItemsByDeliveryId" resultType="map">
+        SELECT
+            si.item_no AS item,
+            m.mat_id AS material,
+            si.quantity AS orderQuantity,
+            m.base_uom AS orderQuantityUnit,
+            m.mat_desc AS description,
+            DATE_FORMAT(so.req_delivery_date, '%Y-%m-%d') AS reqDelivDate,
+            FORMAT(si.net_price * si.quantity, 2) AS netValue,
+            so.currency AS netValueUnit,
+            FORMAT((si.net_price * si.quantity) * 0.1, 2) AS taxValue,
+            so.currency AS taxValueUnit,
+            DATE_FORMAT(so.doc_date, '%Y-%m-%d') AS pricingDate,
+            '95' AS orderProbability,
+            od.dlv_id AS dlvId
+        FROM erp_sales_order_hdr so
+                 JOIN erp_customer c ON so.customer_no = c.customer_id
+                 JOIN erp_sales_item si ON so.so_id = si.so_id
+                 JOIN erp_material m ON si.mat_id = m.mat_id
+                 JOIN erp_outbound_delivery od ON so.so_id = od.so_id
+        WHERE od.dlv_id = #{deliveryId}
+          AND so.status = 'COMPLETED'
+          AND od.status = 'COMPLETED'
+          AND NOT EXISTS (
+            SELECT 1
+            FROM erp_outbound_delivery od2
+                     JOIN erp_billing_hdr bh ON od2.dlv_id = bh.dlv_id
+            WHERE od2.so_id = so.so_id
+        )
+        ORDER BY so.so_id, si.item_no
+    </select>
+
+    <!-- 根据开票凭证号获取开票凭证基本信息 -->
+    <select id="getBillingHeader" resultType="map">
+        SELECT
+            bh.bill_id AS id,
+            'Invoice' AS type,
+            FORMAT(bh.net, 2) AS netValue,
+            so.currency AS netValueUnit,
+            c.name AS payer,
+            DATE_FORMAT(bh.billing_date, '%Y-%m-%d') AS billingDate,
+            CAST(bh.dlv_id AS CHAR) AS deliveryId
+        FROM erp_billing_hdr bh
+                 JOIN erp_customer c ON bh.customer_id = c.customer_id
+                 JOIN erp_outbound_delivery od ON bh.dlv_id = od.dlv_id
+                 JOIN erp_sales_order_hdr so ON od.so_id = so.so_id
+        WHERE bh.bill_id = #{billingDocumentId}
+    </select>
+
+    <!-- 根据开票凭证号获取开票凭证项目信息 -->
+    <select id="getBillingItemsById" resultType="map">
+        SELECT
+            bi.item_no AS item,
+            m.mat_id AS material,
+            bi.quantity AS orderQuantity,
+            m.base_uom AS orderQuantityUnit,
+            m.mat_desc AS description,
+            FORMAT(bi.net_price * bi.quantity, 2) AS netValue,
+            so.currency AS netValueUnit,
+            FORMAT(bi.net_price * bi.quantity * bi.tax_rate / 100, 2) AS taxValue,
+            so.currency AS taxValueUnit,
+            DATE_FORMAT(bh.billing_date, '%Y-%m-%d') AS pricingDate,
+            '100' AS orderProbability,
+            od.dlv_id AS dlvId
+        FROM erp_billing_item bi
+                 JOIN erp_billing_hdr bh ON bi.bill_id = bh.bill_id
+                 JOIN erp_material m ON bi.mat_id = m.mat_id
+                 JOIN erp_outbound_delivery od ON bh.dlv_id = od.dlv_id
+                 JOIN erp_sales_order_hdr so ON od.so_id = so.so_id
+        WHERE bi.bill_id = #{billingDocumentId}
+        ORDER BY bi.item_no
+    </select>
+
+    <!-- 根据交货单ID获取客户ID -->
+    <select id="getCustomerIdByDeliveryId" resultType="string">
+        SELECT so.customer_no
+        FROM erp_outbound_delivery od
+                 JOIN erp_sales_order_hdr so ON od.so_id = so.so_id
+        WHERE od.dlv_id = #{dlvId}
+    </select>
+
+    <!-- 根据交货单ID获取交货单信息 -->
+    <select id="getDeliveryById" resultType="map">
+        SELECT
+            od.dlv_id AS deliveryId,
+            CAST(so.customer_no AS CHAR) AS customerId,
+            c.name AS customerName,
+            DATE_FORMAT(od.gi_date, '%Y-%m-%d') AS deliveryDate
+        FROM erp_outbound_delivery od
+                 JOIN erp_sales_order_hdr so ON od.so_id = so.so_id
+                 JOIN erp_customer c ON so.customer_no = c.customer_id
+        WHERE od.dlv_id = #{deliveryId}
+    </select>
+
+    <!-- 检查交货单是否存在 -->
+    <select id="checkDeliveryExists" resultType="int">
+        SELECT COUNT(*)
+        FROM erp_outbound_delivery
+        WHERE dlv_id = #{dlvId}
+    </select>
+
+    <!-- 检查交货单是否已完成 -->
+    <select id="isDeliveryCompleted" resultType="boolean">
+        SELECT COUNT(*) > 0
+        FROM erp_outbound_delivery
+        WHERE dlv_id = #{deliveryId} AND status = 'COMPLETED'
+    </select>
+
+    <!-- 创建开票凭证 -->
+    <insert id="createBilling" parameterType="webserver.pojo.BillingEditRequest" useGeneratedKeys="true" keyProperty="basicInfo.id">
+        INSERT INTO erp_billing_hdr (dlv_id, customer_id, billing_date, net, tax, gross, status)
+        VALUES (
+        #{basicInfo.deliveryId},
+        #{basicInfo.payerId},
+        #{basicInfo.billingDate},
+        #{basicInfo.netValue},
+        #{basicInfo.taxValue},
+        #{basicInfo.grossValue},
+        'OPEN'
+        )
+        <selectKey keyProperty="basicInfo.id" resultType="string" order="AFTER">
+            SELECT LAST_INSERT_ID()
+        </selectKey>
+    </insert>
+
+    <!-- 更新开票凭证 -->
+    <update id="updateBilling" parameterType="webserver.pojo.BillingEditRequest">
+        UPDATE erp_billing_hdr
+        SET
+            billing_date = #{basicInfo.billingDate},
+            net = #{basicInfo.netValue},
+            tax = #{basicInfo.taxValue},
+            gross = #{basicInfo.grossValue}
+        WHERE bill_id = #{meta.id}
+    </update>
+
+    <!-- 删除开票凭证项目 -->
+    <delete id="deleteBillingItems">
+        DELETE FROM erp_billing_item WHERE bill_id = #{billId}
+    </delete>
+
+    <!-- 插入开票凭证项目 -->
+    <insert id="insertBillingItem">
+        INSERT INTO erp_billing_item (bill_id, item_no, mat_id, quantity, net_price, tax_rate)
+        VALUES (
+                   #{billId},
+                   #{item.itemNo},
+                   COALESCE(#{item.materialId}, 0),
+                   COALESCE(#{item.quantity}, 0),
+                   COALESCE(#{item.netPrice}, 0),
+                   COALESCE(#{item.taxRate}, 0)
+               )
+    </insert>
+
+    <!-- 搜索开票凭证 -->
+    <select id="searchBilling" parameterType="webserver.pojo.BillingSearchRequest" resultType="map">
+        SELECT
+        bh.bill_id AS billingDocument,
+        DATE_FORMAT(bh.billing_date, '%Y-%m-%d') AS billingDate,
+        c.name AS payer,
+        FORMAT(bh.net, 2) AS netValue,
+        so.currency AS netValueUnit,
+        bh.status AS billingStatus
+        FROM erp_billing_hdr bh
+        JOIN erp_customer c ON bh.customer_id = c.customer_id
+        JOIN erp_outbound_delivery od ON bh.dlv_id = od.dlv_id
+        JOIN erp_sales_order_hdr so ON od.so_id = so.so_id
+        <where>
+            <if test="billingDocument != null and billingDocument != ''">
+                AND bh.bill_id = #{billingDocument}
+            </if>
+            <if test="billingDate != null and billingDate != ''">
+                AND bh.billing_date = #{billingDate}
+            </if>
+            <if test="payer != null and payer != ''">
+                AND c.customer_id = #{payer}
+            </if>
+        </where>
+        ORDER BY bh.bill_id DESC
+    </select>
+
+    <!-- 根据物料ID获取物料信息 -->
+    <select id="getMaterialById" resultType="map">
+        SELECT
+            mat_id,
+            mat_desc,
+            base_uom,
+            srd_price
+        FROM erp_material
+        WHERE mat_id = #{materialId}
+    </select>
+
+    <!-- 根据物料ID和销售订单ID获取销售项目价格信息 -->
+    <select id="getSalesItemPrice" resultType="map">
+        SELECT
+            si.net_price,
+            so.currency
+        FROM erp_sales_item si
+                 JOIN erp_sales_order_hdr so ON si.so_id = so.so_id
+        WHERE si.mat_id = #{materialId} AND si.so_id = #{soId}
+    </select>
+
+    <!-- 根据交货单ID获取销售订单ID和项目号 -->
+    <select id="getDeliveryInfo" resultType="map">
+        SELECT
+            so.so_id AS soId,
+            si.item_no AS itemNo
+        FROM erp_outbound_delivery od
+                 JOIN erp_sales_order_hdr so ON od.so_id = so.so_id
+                 JOIN erp_sales_item si ON so.so_id = si.so_id
+        WHERE od.dlv_id = #{dlvId}
+        LIMIT 1
+    </select>
+
+    <!-- 获取定价元素 -->
+    <select id="getPricingElements" resultType="map">
+        SELECT
+            pe.cnty AS cnty,
+            pe.condition_name AS name,
+            pe.amount AS amount,
+            pe.city AS city,
+            pe.per_value AS per,
+            pe.uom AS uom,
+            pe.condition_value AS conditionValue,
+            pe.currency AS curr,
+            pe.status AS status,
+            pe.numC AS numC,
+            pe.ato_mts_component AS atoMtsComponent,
+            pe.oun AS oun,
+            pe.ccon_de AS cconDe,
+            pe.un AS un,
+            pe.condition_value2 AS conditionValue2,
+            pe.cd_cur AS cdCur,
+            pe.stat AS stat
+        FROM erp_pricing_element pe
+        WHERE pe.document_type = 'sales_order' AND pe.document_id = #{soId} AND pe.item_no = #{itemNo}
+        ORDER BY pe.element_id
+    </select>
+
+</mapper>

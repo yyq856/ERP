@@ -12,5 +12,4 @@ public interface SalesOrderService {
     Response<?> createSalesOrder(SalesOrderCreateRequest request);
     Response<?> updateSalesOrder(String soId, SalesOrderCreateRequest request);
     SalesOrdersResponse getSalesOrders(SalesOrdersRequest request);
-    Response<OutboundDeliveryDetailDTO> getOutboundDeliveryDetail(String deliveryId);
 }

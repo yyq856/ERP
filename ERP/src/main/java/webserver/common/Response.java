@@ -10,14 +10,16 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor // 全参构造器
 public class Response<T> {
     private int code;
-    private String message;
+    private String  message ;
+    private boolean success;
+
     private T data;
 
     public static <T> Response<T> success(T data) {
-        return new Response<>(200, "success", data);
+        return new Response<>(200, "success",true ,data);
     }
 
     public static <T> Response<T> error(String message) {
-        return new Response<>(500, message, null);
+        return new Response<>(500, message,true, null);
     }
 }

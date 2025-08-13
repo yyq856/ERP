@@ -17,7 +17,7 @@ public class SalesOrderDetailDTO {
 
     @Data
     public static class BasicInfo {
-        private String quotation_id;
+        private String salesQuotationId;
         private String so_id;
         private String soldToParty;
         private String shipToParty;
@@ -47,5 +47,28 @@ public class SalesOrderDetailDTO {
         private String taxValueUnit;
         private String pricingDate;
         private String orderProbability;
+        private List<PricingElement> pricingElements = List.of();
     }
+
+    @Data
+    public static class PricingElement {
+        private String cnty;
+        private String name;
+        private String amount;
+        private String city;
+        private String per;
+        private String uom;
+        private String conditionValue;
+        private String curr;
+        private String status;
+        private String numC;
+        private String atoMtsComponent;
+        private String oun;
+        private String cconDe;
+        private String un;
+        private String conditionValue2;
+        private String cdCur;
+        private Boolean stat;
+    }
+
 }

@@ -10,6 +10,9 @@ import webserver.pojo.SalesOrderDetailDTO;
 import webserver.pojo.SalesOrderSearchRequest;
 import webserver.service.SalesOrderService;
 
+import java.util.List;
+import java.util.Map;
+
 @Slf4j
 @RestController
 @RequestMapping("/api/so")
@@ -53,11 +56,8 @@ public class SalesOrderController {
         if (!StringUtils.hasText(soId)) {
             return Response.error("so_id不能为空");
         }
-        
-        // 验证meta.id和basicInfo.so_id是否一致
-        if (!request.getMeta().getId().equals(soId)) {
-            return Response.error("meta.id和so_id不一致");
-        }
+
+
         
         return salesOrderService.updateSalesOrder(soId, request);
     }
