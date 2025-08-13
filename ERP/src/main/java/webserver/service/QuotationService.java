@@ -1,10 +1,11 @@
 package webserver.service;
 
-import webserver.pojo.QuotationData;
-import webserver.pojo.QuotationDetailsResponse;
+import webserver.pojo.*;
+import webserver.common.Response;
 
 public interface QuotationService {
-    QuotationData createQuotationFromInquiry(String inquiryId);
-    QuotationDetailsResponse getQuotationDetails(String salesQuotationId);
-    QuotationDetailsResponse updateQuotation(QuotationDetailsResponse quotation);
+    Response<QuotationResponseDTO> createQuotationFromInquiry(CreateQuotationFromInquiryRequest request);
+    QuotationDetailsResponseDTO getQuotationDetails(String quotationId);
+    QuotationResponseDTO updateQuotation(QuotationResponseDTO quotation);
+    QuotationSearchResponseDTO searchQuotations(QuotationSearchRequestDTO request);
 }

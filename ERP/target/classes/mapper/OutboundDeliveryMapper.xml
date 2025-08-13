@@ -5,27 +5,51 @@
 
 <mapper namespace="webserver.mapper.OutboundDeliveryMapper">
 
+    <!-- 插入主表 -->
     <insert id="insertOutboundDeliveryFromSalesOrder" parameterType="string">
         INSERT INTO erp_outbound_delivery (
-            so_id, ship_tp, shipping_point, pick_date_plan, status
+        so_id, ship_tp, shipping_point, pick_date_plan, status
         )
         SELECT
-            so.so_id,
-            so.customer_no,
-            NULL,
-            CURDATE(),
-            'OPEN'
+        so.so_id,
+        so.ship_tp,
+        NULL,
+        CURDATE(),
+        'OPEN'
         FROM erp_sales_order_hdr so
         WHERE so.so_id = #{soId}
     </insert>
 
-    <select id="getDeliveryNumberBySalesOrderId" parameterType="string" resultType="string">
-        SELECT CONCAT('DEL-', dlv_id)
-        FROM erp_outbound_delivery
-        WHERE so_id = #{soId}
-        ORDER BY dlv_id DESC
-            LIMIT 1
+    <select id="getLastInsertedDeliveryId" resultType="long">
+        SELECT LAST_INSERT_ID()
     </select>
+
+    <select id="getSalesItemsBySalesOrderId" parameterType="string" resultType="webserver.pojo.SalesItemDTO">
+        SELECT
+            item_no AS itemNo,
+            mat_id AS matId,
+            quantity AS pickQuantity,
+            plt_id AS plantId,
+            storage_loc AS storageLoc
+        FROM erp_sales_item
+        WHERE so_id = #{soId}
+    </select>
+
+    <!-- 单条插入明细 -->
+    <insert id="insertOutboundDeliveryItem">
+        INSERT INTO erp_outbound_delivery_item (
+            dlv_id, item_no, mat_id, pick_quantity, plant_id, storage_loc, confirm_status
+        )
+        VALUES (
+                   #{dlvId},
+                   #{item.itemNo},
+                   #{item.matId},
+                   #{item.pickQuantity},
+                   #{item.plantId},
+                   #{item.storageLoc},
+                   'Not Completed'
+               )
+    </insert>
 
     <select id="getDeliverySummaries" resultType="webserver.pojo.OutboundDeliverySummaryDTO">
         SELECT
@@ -103,7 +127,7 @@
             LIMIT 1
     </select>
 
-    <update id="updateGIStatusToPosted">
+    <update id="updateGIStatusToPosted" parameterType="string">
         UPDATE erp_outbound_delivery
         SET
             gi_date = NOW(),
@@ -133,6 +157,14 @@
             status = 'COMPLETED'
         WHERE dlv_id = #{id}
     </update>
+
+    <!-- 更新该交货单所有明细的确认状态 -->
+    <update id="updateItemsConfirmStatusToPosted" parameterType="string">
+        UPDATE erp_outbound_delivery_item
+        SET confirm_status = 'Posted'
+        WHERE dlv_id = #{id}
+    </update>
+
 
     <update id="updateItemPostStatus">
         UPDATE erp_outbound_delivery_item

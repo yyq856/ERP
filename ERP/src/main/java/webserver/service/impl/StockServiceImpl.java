@@ -67,8 +67,8 @@ public class StockServiceImpl implements StockService {
     private StockLevelNode createNode(String level, double stage0Val, double stage1Val, int depth) {
         StockLevelData data = new StockLevelData();
         data.setLevel(level);
-        data.setQty_on_hand(stage0Val == 0 ? "" : String.valueOf((int)stage0Val));
-        data.setQty_committed(stage1Val == 0 ? "" : String.valueOf((int)stage1Val));
+        data.setStage0(stage0Val == 0 ? "" : String.valueOf((int)stage0Val));
+        data.setStage1(stage1Val == 0 ? "" : String.valueOf((int)stage1Val));
 
         StockLevelNode node = new StockLevelNode();
         node.setData(data);

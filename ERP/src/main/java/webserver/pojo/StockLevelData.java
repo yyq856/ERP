@@ -5,6 +5,6 @@ import lombok.Data;
 @Data
 public class StockLevelData {
     private String level;
-    private String qty_on_hand;
-    private String qty_committed;
+    private String stage0;
+    private String stage1;
 }

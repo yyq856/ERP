@@ -5,4 +5,5 @@ import lombok.Data;
 @Data
 public class CreateQuotationFromInquiryRequest {
     private String inquiryId;
+    private String customerId;
 }
