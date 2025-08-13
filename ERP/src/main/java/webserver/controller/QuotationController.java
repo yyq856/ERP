@@ -18,9 +18,9 @@ public class QuotationController {
         try {
             QuotationData quotationData = quotationService.createQuotationFromInquiry(request.getInquiryId());
             String msg = String.format("根据inquiry{%s}成功创建报价单{%s}", request.getInquiryId(), quotationData.getBasicInfo().getQuotation());
-            return new Response<>(200, msg, quotationData);
+            return new Response<>(200, msg, true, quotationData);
         } catch (Exception e) {
-            return new Response<>(500, "Quotation creation failed, please try again later.", null);
+            return new Response<>(500, "Quotation creation failed, please try again later.", false, null);
         }
     }
 
@@ -28,9 +28,9 @@ public class QuotationController {
     public Response<QuotationDetailsResponse> getQuotationDetails(@RequestBody QuotationDetailsRequest request) {
         try {
             QuotationDetailsResponse response = quotationService.getQuotationDetails(request.getSalesQuotationId());
-            return new Response<>(200, "初始化quotation{" + request.getSalesQuotationId() + "}成功", response);
+            return new Response<>(200, "初始化quotation{" + request.getSalesQuotationId() + "}成功", true, response);
         } catch (Exception e) {
-            return new Response<>(500, "Failed to load quotation details.", null);
+            return new Response<>(500, "Failed to load quotation details.", false, null);
         }
     }
 
@@ -38,9 +38,9 @@ public class QuotationController {
     public Response<QuotationDetailsResponse> updateQuotation(@RequestBody QuotationUpdateRequest request) {
         try {
             QuotationDetailsResponse updatedQuotation = quotationService.updateQuotation(request.getQuotation());
-            return new Response<>(200, "Sales Order saved successfully!", updatedQuotation);
+            return new Response<>(200, "Sales Order saved successfully!", true, updatedQuotation);
         } catch (Exception e) {
-            return new Response<>(500, "Update failed.", null);
+            return new Response<>(500, "Update failed.", false, null);
         }
     }
 }
