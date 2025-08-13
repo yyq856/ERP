@@ -9,6 +9,7 @@ import webserver.mapper.BpRelationshipMapper;
 import webserver.pojo.*;
 import webserver.service.BpRelationshipService;
 import webserver.util.DateUtil;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
@@ -22,7 +23,7 @@ public class BpRelationshipServiceImpl implements BpRelationshipService {
     @Autowired
     private BpRelationshipMapper bpRelationshipMapper;
     
-    
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
     @Override
     public BpRelationshipResponse register(BpRelationshipRegisterRequest request) {
@@ -100,9 +101,8 @@ public class BpRelationshipServiceImpl implements BpRelationshipService {
 
             content.put("basicInfo", basicInfoOuter);
             
-            // 动态数据（示例）
-            Map<String, Object> generalData = new HashMap<>();
-            generalData.put("testField", "Sample Value");
+            // 构建扩展数据响应
+            Map<String, Object> generalData = buildResponseGeneralData(relationship);
             content.put("generalData", generalData);
             
             // 表单结构
@@ -160,6 +160,9 @@ public class BpRelationshipServiceImpl implements BpRelationshipService {
             relationship.setManagement(1);
             relationship.setDepartment("01");  // 使用可能存在的部门代码
             relationship.setFunction("01");    // 使用可能存在的功能代码
+            
+            // 处理扩展数据
+            processExtendedData(relationship, request.getGeneralData());
             
             String message;
             String responseMessage;
@@ -232,6 +235,92 @@ public class BpRelationshipServiceImpl implements BpRelationshipService {
         }
         
         return NodeStructure.createDict("generalData", "General Data", children);
+    }
+    
+    /**
+     * 处理扩展数据，根据关系类型设置相应的字段
+     * @param relationship 业务伙伴关系对象
+     * @param generalData 前端传来的扩展数据
+     */
+    private void processExtendedData(BpRelationship relationship, Map<String, Object> generalData) {
+        if (generalData == null || generalData.isEmpty()) {
+            return;
+        }
+        
+        String relationCategory = relationship.getRelCategory();
+        
+        try {
+            if ("customer".equalsIgnoreCase(relationCategory)) {
+                // 处理 Customer 类型的扩展数据
+                relationship.setCustomerCode((String) generalData.get("customerCode"));
+                relationship.setCustomerName((String) generalData.get("customerName"));
+                relationship.setContactPerson((String) generalData.get("contactPerson"));
+                
+                log.info("处理Customer类型扩展数据: customerCode={}, customerName={}, contactPerson={}",
+                        relationship.getCustomerCode(), relationship.getCustomerName(), relationship.getContactPerson());
+                
+            } else if ("contactperson".equalsIgnoreCase(relationCategory) || "test".equalsIgnoreCase(relationCategory)) {
+                // 处理 ContactPerson 和 test 类型的扩展数据
+                relationship.setTestField((String) generalData.get("testField"));
+                relationship.setDescription((String) generalData.get("description"));
+                
+                log.info("处理{}类型扩展数据: testField={}, description={}",
+                        relationCategory, relationship.getTestField(), relationship.getDescription());
+            }
+            
+            // 将所有扩展数据以JSON格式存储，以备后续扩展使用
+            if (!generalData.isEmpty()) {
+                String extendedDataJson = objectMapper.writeValueAsString(generalData);
+                relationship.setExtendedData(extendedDataJson);
+                log.info("扩展数据JSON: {}", extendedDataJson);
+            }
+            
+        } catch (Exception e) {
+            log.error("处理扩展数据时发生错误: {}", e.getMessage(), e);
+            // 继续执行，不因为扩展数据处理失败而影响主要业务流程
+        }
+    }
+    
+    /**
+     * 构建响应中的扩展数据
+     * @param relationship 业务伙伴关系对象
+     * @return 扩展数据Map
+     */
+    private Map<String, Object> buildResponseGeneralData(BpRelationship relationship) {
+        Map<String, Object> generalData = new HashMap<>();
+        
+        String relationCategory = relationship.getRelCategory();
+        
+        if ("customer".equalsIgnoreCase(relationCategory)) {
+            if (relationship.getCustomerCode() != null) {
+                generalData.put("customerCode", relationship.getCustomerCode());
+            }
+            if (relationship.getCustomerName() != null) {
+                generalData.put("customerName", relationship.getCustomerName());
+            }
+            if (relationship.getContactPerson() != null) {
+                generalData.put("contactPerson", relationship.getContactPerson());
+            }
+        } else if ("contactperson".equalsIgnoreCase(relationCategory) || "test".equalsIgnoreCase(relationCategory)) {
+            if (relationship.getTestField() != null) {
+                generalData.put("testField", relationship.getTestField());
+            }
+            if (relationship.getDescription() != null) {
+                generalData.put("description", relationship.getDescription());
+            }
+        }
+        
+        // 如果有JSON扩展数据，也加入响应
+        if (StringUtils.hasText(relationship.getExtendedData())) {
+            try {
+                Map<String, Object> extendedData = objectMapper.readValue(relationship.getExtendedData(), Map.class);
+                generalData.putAll(extendedData);
+            } catch (Exception e) {
+                log.error("解析扩展数据JSON时发生错误: {}", e.getMessage());
+            }
+        }
+        
+        return generalData;
     }
     
 }

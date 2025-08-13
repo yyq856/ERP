@@ -5,6 +5,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 @Data
 @NoArgsConstructor
@@ -20,6 +21,17 @@ public class BpRelationship {
     private LocalDate validFrom;
     private LocalDate validTo;
     
-    // 扩展字段，用于存储动态数据（JSON格式）
-    private String generalDataJson;
+    // Customer 类型的扩展字段
+    private String customerCode;
+    private String customerName;
+    private String contactPerson;
+    
+    // ContactPerson 和 test 类型的扩展字段
+    private String testField;
+    private String description;
+    
+    // 通用扩展字段
+    private String extendedData; // JSON格式存储动态字段
+    private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
 }

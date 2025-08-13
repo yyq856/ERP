@@ -23,7 +23,7 @@ public class ValidateItemsController {
      * @param request 物品验证请求列表
      * @return 验证结果
      */
-    @PostMapping(value = {"/items-tab-query", "/inquiry/items-tab-query"},
+    @PostMapping(value = {"/api/app/items/items-tab-query", "/inquiry/items-tab-query"},
                  consumes = "application/json",
                  produces = "application/json")
     public ValidateItemsResponse validateItems(@RequestBody List<ValidateItemsRequest> request) {
