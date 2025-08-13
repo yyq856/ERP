@@ -5,7 +5,7 @@ import webserver.pojo.BillingGetRequest;
 import webserver.pojo.BillingEditRequest;
 
 import webserver.pojo.BillingSearchRequest;
-import webserver.pojo.ItemValidationRequest.Item;
+import webserver.pojo.ItemValidationRequest;
 
 import java.util.List;
 import java.util.Map;
@@ -45,5 +45,5 @@ public interface BillingService {
      * @param items 物品列表
      * @return 验证结果
      */
-    Map<String, Object> validateBillingItems(List<Item> items);
+    Map<String, Object> validateBillingItems(List<ItemValidationRequest> items);
 }

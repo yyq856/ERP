@@ -11,8 +11,8 @@ import webserver.service.BillingService;
 import webserver.pojo.BillingInitializeRequest;
 import webserver.pojo.BillingGetRequest;
 import webserver.pojo.BillingEditRequest;
-import webserver.pojo.ItemValidationRequest.Item;
-import webserver.pojo.ItemValidationRequest.PricingElement;
+import webserver.pojo.ItemValidationRequest;
+import webserver.pojo.ItemValidationRequest.PricingElementRequest;
 
 import java.util.*;
 
@@ -313,7 +313,7 @@ public class BillingServiceImpl implements BillingService {
     }
     
     @Override
-    public Map<String, Object> validateBillingItems(List<Item> items) {
+    public Map<String, Object> validateBillingItems(List<ItemValidationRequest> items) {
         Map<String, Object> response = new HashMap<>();
         
         // 构建响应数据
@@ -334,7 +334,7 @@ public class BillingServiceImpl implements BillingService {
         List<Map<String, Object>> breakdowns = new ArrayList<>();
         
         for (int i = 0; i < items.size(); i++) {
-            Item item = items.get(i);
+            ItemValidationRequest item = items.get(i);
             
             Map<String, Object> breakdown = new HashMap<>();
             breakdown.put("item", item.getItem());
@@ -354,7 +354,7 @@ public class BillingServiceImpl implements BillingService {
                 double quantity = Double.parseDouble(item.getOrderQuantity());
                 // 从定价元素中获取价格信息
                 if (item.getPricingElements() != null && !item.getPricingElements().isEmpty()) {
-                    for (PricingElement element : item.getPricingElements()) {
+                    for (PricingElementRequest element : item.getPricingElements()) {
                         if ("Base Price".equals(element.getName())) {
                             netValue = quantity * Double.parseDouble(element.getConditionValue());
                             currency = element.getCurr();
