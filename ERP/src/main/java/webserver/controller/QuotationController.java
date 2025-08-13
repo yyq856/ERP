@@ -7,6 +7,7 @@ import webserver.pojo.*;
 import webserver.service.QuotationService;
 
 @RestController
+@CrossOrigin(origins = "*")
 @RequestMapping("/api/quotation")
 @RequiredArgsConstructor
 public class QuotationController {

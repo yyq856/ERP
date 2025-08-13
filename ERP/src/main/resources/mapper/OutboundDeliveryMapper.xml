@@ -172,4 +172,9 @@
         WHERE dlv_id = #{deliveryId} AND item_no = #{item}
     </update>
 
+    <!-- 新增：根据交货单ID获取 ship_to_party（bp_id） -->
+    <select id="getShipToByDeliveryId" parameterType="long" resultType="long">
+        SELECT ship_tp FROM erp_outbound_delivery WHERE dlv_id = #{dlvId}
+    </select>
+
 </mapper>

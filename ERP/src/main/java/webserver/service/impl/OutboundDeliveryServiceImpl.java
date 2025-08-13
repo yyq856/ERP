@@ -1,11 +1,13 @@
 package webserver.service.impl;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import webserver.common.Response;
 import webserver.pojo.*;
 import webserver.service.OutboundDeliveryService;
 import webserver.mapper.OutboundDeliveryMapper;
+import webserver.mapper.StockMapper;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -16,6 +18,9 @@ import java.util.Map;
 public class OutboundDeliveryServiceImpl implements OutboundDeliveryService {
 
     private final OutboundDeliveryMapper outboundDeliveryMapper;
+
+    @Autowired
+    private StockMapper stockMapper;
 
     public OutboundDeliveryServiceImpl(OutboundDeliveryMapper outboundDeliveryMapper) {
         this.outboundDeliveryMapper = outboundDeliveryMapper;
@@ -38,6 +43,9 @@ public class OutboundDeliveryServiceImpl implements OutboundDeliveryService {
             if (!items.isEmpty()) {
                 for (SalesItemDTO item : items) {
                     outboundDeliveryMapper.insertOutboundDeliveryItem(dlvId, item);
+                    // 预留：若要在创建交货时“承诺库存”，可在此调用 reserveStock（当前先不启用）
+                    // Long bpId = outboundDeliveryMapper.getShipToByDeliveryId(dlvId);
+                    // stockMapper.reserveStock(item.getPlantId(), item.getMatId(), bpId, item.getStorageLoc(), item.getPickQuantity());
                 }
             }
 
@@ -148,6 +156,24 @@ public class OutboundDeliveryServiceImpl implements OutboundDeliveryService {
             // 更新该交货单所有明细的确认状态
             outboundDeliveryMapper.updateItemsConfirmStatusToPosted(id);
 
+            // 库存扣减与释放承诺
+            OutboundDeliveryDetailDTO detail = outboundDeliveryMapper.getOutboundDeliveryDetail(id);
+            Long bpId = null;
+            try { bpId = Long.valueOf(detail.getShipToParty()); } catch (Exception ignored) {}
+
+            List<OutboundDeliveryItemDTO> giItems = outboundDeliveryMapper.getDeliveryItems(id);
+            if (giItems != null) {
+                for (OutboundDeliveryItemDTO it : giItems) {
+                    Long plantId = parseLongSafe(it.getPlant());
+                    Long matId = parseLongSafe(it.getMaterial());
+                    String storageLoc = it.getStorageLocation();
+                    int qty = Math.round(it.getPickingQuantity());
+                    if (plantId != null && matId != null && qty > 0) {
+                        stockMapper.issueAndRelease(plantId, matId, bpId, storageLoc, qty);
+                    }
+                }
+            }
+
             // 查询更新后的汇总信息
             OutboundDeliverySummaryDTO summary = outboundDeliveryMapper.getDeliverySummary(id);
             summaries.add(summary);
@@ -175,6 +201,22 @@ public class OutboundDeliveryServiceImpl implements OutboundDeliveryService {
                 outboundDeliveryMapper.updateItemPostStatus(id, item.getItem());
             }
 
+            // 库存扣减与释放承诺
+            Long bpId = null;
+            try { bpId = Long.valueOf(detail.getShipToParty()); } catch (Exception ignored) {}
+            List<OutboundDeliveryItemDTO> giItems = req.getItems();
+            if (giItems != null) {
+                for (OutboundDeliveryItemDTO it : giItems) {
+                    Long plantId = parseLongSafe(it.getPlant());
+                    Long matId = parseLongSafe(it.getMaterial());
+                    String storageLoc = it.getStorageLocation();
+                    int qty = Math.round(it.getPickingQuantity());
+                    if (plantId != null && matId != null && qty > 0) {
+                        stockMapper.issueAndRelease(plantId, matId, bpId, storageLoc, qty);
+                    }
+                }
+            }
+
             // 设置返回 breakdown
             Map<String, Object> breakdown = new HashMap<>();
             breakdown.put("detail", outboundDeliveryMapper.getOutboundDeliveryDetail(id));
@@ -187,4 +229,8 @@ public class OutboundDeliveryServiceImpl implements OutboundDeliveryService {
         return Response.success(result);
     }
 
+    // 安全解析 Long
+    private Long parseLongSafe(String v){
+        try { return v==null? null: Long.valueOf(v); } catch (Exception e){ return null; }
+    }
 }

@@ -39,4 +39,7 @@ public interface OutboundDeliveryMapper {
     void updateItemsConfirmStatusToPosted(@Param("id") String deliveryId);
 
     void updateItemPostStatus(@Param("deliveryId") String deliveryId, @Param("item") String itemNo);
+
+    // 新增：根据交货单ID获取 ship_to_party（bp_id）
+    Long getShipToByDeliveryId(@Param("dlvId") Long dlvId);
 }
