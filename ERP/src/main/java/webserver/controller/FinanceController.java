@@ -3,9 +3,10 @@ package webserver.controller;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 import webserver.common.Response;
-import webserver.service.FinanceService;
 import webserver.pojo.SearchOpenItemsRequest;
+import webserver.service.FinanceService;
 
+import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -16,16 +17,61 @@ public class FinanceController {
     private FinanceService financeService;
     
     /**
-     * 搜索未清项接口
-     * 根据筛选条件搜索某公司的未清项
+     * 查询未清算账单（开放项目）
+     * @param request 查询条件
+     * @return 未清算账单列表
      */
     @PostMapping("/searchOpenItems")
-    public Response<Map<String, Object>> searchOpenItems(@RequestBody SearchOpenItemsRequest request) {
+    public Response<List<Map<String, Object>>> searchOpenItems(@RequestBody SearchOpenItemsRequest request) {
         try {
-            Map<String, Object> result = financeService.searchOpenItems(request);
-            return Response.success(result);
+            // 从请求体中提取accountID
+            if (request.getOpenItemSelection() == null) {
+                return Response.error("openItemSelection不能为空");
+            }
+            
+            Object accountIdObj = request.getOpenItemSelection().getAccountID();
+            if (accountIdObj == null) {
+                return Response.error("accountID不能为空");
+            }
+            
+            String accountId = accountIdObj.toString();
+            if (accountId.isEmpty()) {
+                return Response.error("accountID不能为空");
+            }
+            
+            List<Map<String, Object>> bills = financeService.getUnclearBillsByAccountId(accountId);
+            return Response.success(bills);
         } catch (Exception e) {
-            return Response.error("Failed to search open items: " + e.getMessage());
+            e.printStackTrace();
+            return Response.error("查询未清算账单失败: " + e.getMessage());
         }
     }
+    
+    /**
+     * 处理 incoming payment，更新账单状态并创建付款记录
+     * @param request 请求体
+     * @return 操作结果
+     */
+    @PostMapping("/postOpenItems")
+    public Response<Map<String, Object>> postOpenItems(@RequestBody Map<String, Object> request) {
+        try {
+            // 从请求体中提取account字段（账单ID）
+            Object accountObj = request.get("account");
+            if (accountObj == null) {
+                return Response.error("account字段不能为空");
+            }
+            
+            String billId = accountObj.toString();
+            if (billId.isEmpty()) {
+                return Response.error("account字段不能为空");
+            }
+            
+            Map<String, Object> result = financeService.processIncomingPayment(billId);
+            return Response.success(result);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return Response.error("处理incoming payment失败: " + e.getMessage());
+        }
+    }
+
 }

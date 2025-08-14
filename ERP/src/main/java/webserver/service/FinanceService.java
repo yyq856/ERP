@@ -1,14 +1,31 @@
 package webserver.service;
 
 import webserver.pojo.SearchOpenItemsRequest;
+
+import java.util.List;
 import java.util.Map;
 
 public interface FinanceService {
-    
+
     /**
      * 搜索未清项
      * @param request 搜索请求参数
      * @return 搜索结果
      */
     Map<String, Object> searchOpenItems(SearchOpenItemsRequest request);
+
+    /**
+     * 根据客户ID查询未清算的账单
+     * @param accountId 客户ID
+     * @return 未清算的账单列表
+     */
+    List<Map<String, Object>> getUnclearBillsByAccountId(String accountId);
+
+    /**
+     * 处理 incoming payment，更新账单状态并创建付款记录
+     * @param billId 账单ID
+     * @return 操作结果
+     */
+    Map<String, Object> processIncomingPayment(String billId);
+
 }

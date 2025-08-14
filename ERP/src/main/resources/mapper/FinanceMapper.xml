@@ -31,4 +31,69 @@
         ORDER BY bh.billing_date
         LIMIT 100
     </select>
+
+    <!-- 根据客户ID查询未清算的账单 -->
+    <select id="getUnclearBillsByAccountId" resultType="map">
+        SELECT
+            bh.bill_id AS billId,
+            bh.customer_id AS customerId,
+            DATE_FORMAT(bh.billing_date, '%Y-%m-%d') AS billingDate,
+            bh.net AS net,
+            bh.tax AS tax,
+            bh.gross AS gross,
+            bh.status AS status,
+            c.name AS customerName,
+            COALESCE(so.currency, 'USD') AS currency
+        FROM erp_billing_hdr bh
+        LEFT JOIN erp_customer c ON bh.customer_id = c.customer_id
+        LEFT JOIN erp_outbound_delivery od ON bh.dlv_id = od.dlv_id
+        LEFT JOIN erp_sales_order_hdr so ON od.so_id = so.so_id
+        WHERE bh.customer_id = #{accountId}
+          AND bh.status = 'UNCLEAR'
+        ORDER BY bh.billing_date DESC
+    </select>
+
+    <!-- 更新账单状态为CLEAR -->
+    <update id="updateBillStatusToClear">
+        UPDATE erp_billing_hdr
+        SET status = 'CLEAR'
+        WHERE bill_id = #{billId}
+    </update>
+
+    <!-- 获取账单详细信息用于创建付款记录 -->
+    <select id="getBillInfoForPayment" resultType="map">
+        SELECT
+            bh.bill_id AS billId,
+            bh.customer_id AS customerId,
+            bh.gross AS amount,
+            COALESCE(so.currency, 'USD') AS currency,
+            CURDATE() AS postingDate
+        FROM erp_billing_hdr bh
+        LEFT JOIN erp_outbound_delivery od ON bh.dlv_id = od.dlv_id
+        LEFT JOIN erp_sales_order_hdr so ON od.so_id = so.so_id
+        WHERE bh.bill_id = #{billId}
+    </select>
+
+    <!-- 插入付款记录 -->
+    <insert id="insertPayment" parameterType="map">
+        INSERT INTO erp_payment (
+            bill_id,
+            customer_id,
+            posting_date,
+            amount,
+            currency,
+            clearing_status
+        ) VALUES (
+            #{billId},
+            #{customerId},
+            #{postingDate},
+            #{amount},
+            #{currency},
+            'CLEAR'
+        )
+        <selectKey keyProperty="payId" order="AFTER" resultType="long">
+            SELECT LAST_INSERT_ID()
+        </selectKey>
+    </insert>
+
 </mapper>
