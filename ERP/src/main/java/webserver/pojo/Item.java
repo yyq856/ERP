@@ -1,0 +1,75 @@
+package webserver.pojo;
+
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+import java.time.LocalDateTime;
+
+/**
+ * 统一项目实体类
+ * 支持所有业务类型的完整ItemValidation字段结构
+ */
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+public class Item {
+    // 主键字段
+    private Long documentId;          // 文档ID (inquiry_id/quotation_id/so_id/dlv_id/bill_id)
+    private String documentType;      // 文档类型 (inquiry/quotation/sales/outbound/billdoc)
+    private Integer itemNo;           // 项目号
+    
+    // 基础字段
+    private Long matId;               // 物料ID (数字形式，用于数据库关联)
+    private Integer quantity;         // 数量 (数字形式)
+    private Float netPrice;           // 净价 (数字形式)
+    private Float itemValue;          // 项目总值
+    private Long plantId;             // 工厂ID
+    private String su;                // 单位
+    
+    // ItemValidation 完整字段结构
+    private String itemCode;          // 项目代码 (对应 item 字段)
+    private String materialCode;      // 物料代码 (对应 material 字段)
+    private String orderQuantityStr;  // 订单数量字符串 (对应 orderQuantity 字段)
+    private String orderQuantityUnit; // 订单数量单位 (对应 orderQuantityUnit 字段)
+    private String description;       // 物料描述 (对应 description 字段)
+    private String reqDelivDate;      // 要求交货日期 (对应 reqDelivDate 字段)
+    private String netValueStr;       // 净值字符串 (对应 netValue 字段)
+    private String netValueUnit;      // 净值单位 (对应 netValueUnit 字段)
+    private String taxValueStr;       // 税值字符串 (对应 taxValue 字段)
+    private String taxValueUnit;      // 税值单位 (对应 taxValueUnit 字段)
+    private String pricingDate;       // 定价日期 (对应 pricingDate 字段)
+    private String orderProbability;  // 订单概率 (对应 orderProbability 字段)
+    private String pricingElementsJson; // 定价元素JSON数据 (对应 pricingElements 字段)
+    
+    // 审计字段
+    private LocalDateTime createdTime; // 创建时间
+    private LocalDateTime updatedTime; // 更新时间
+    
+    /**
+     * 文档类型常量
+     */
+    public static class DocumentType {
+        public static final String INQUIRY = "inquiry";
+        public static final String QUOTATION = "quotation";
+        public static final String SALES = "sales";
+        public static final String OUTBOUND = "outbound";
+        public static final String BILLDOC = "billdoc";
+    }
+    
+    /**
+     * 构造方法 - 保持向后兼容
+     */
+    public Item(Long documentId, String documentType, Integer itemNo, Long matId, Integer quantity, 
+                Float netPrice, Float itemValue, Long plantId, String su) {
+        this.documentId = documentId;
+        this.documentType = documentType;
+        this.itemNo = itemNo;
+        this.matId = matId;
+        this.quantity = quantity;
+        this.netPrice = netPrice;
+        this.itemValue = itemValue;
+        this.plantId = plantId;
+        this.su = su;
+    }
+}

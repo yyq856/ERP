@@ -17,7 +17,7 @@ public interface InquiryMapper {
          * @param itemNo 项目号
          * @return 影响的行数
          */
-        @Delete("DELETE FROM erp_inquiry_item WHERE inquiry_id = #{inquiryId} AND item_no = #{itemNo}")
+        @Delete("DELETE FROM erp_item WHERE document_id = #{inquiryId} AND document_type = 'inquiry' AND item_no = #{itemNo}")
         int deleteInquiryItemByItemNo(@Param("inquiryId") Long inquiryId, @Param("itemNo") Integer itemNo);
 
         /**
@@ -25,7 +25,7 @@ public interface InquiryMapper {
          * @param item 询价单项目
          * @return 影响的行数
          */
-        @Update("UPDATE erp_inquiry_item SET mat_id = #{matId}, quantity = #{quantity}, net_price = #{netPrice}, item_value = #{itemValue}, plant_id = #{plantId}, su = #{su}, item_code = #{itemCode}, material_code = #{materialCode}, order_quantity_str = #{orderQuantityStr}, order_quantity_unit = #{orderQuantityUnit}, description = #{description}, req_deliv_date = #{reqDelivDate}, net_value_str = #{netValueStr}, net_value_unit = #{netValueUnit}, tax_value_str = #{taxValueStr}, tax_value_unit = #{taxValueUnit}, pricing_date = #{pricingDate}, order_probability = #{orderProbability}, pricing_elements_json = #{pricingElementsJson} WHERE inquiry_id = #{inquiryId} AND item_no = #{itemNo}")
+        @Update("UPDATE erp_item SET mat_id = #{matId}, quantity = #{quantity}, net_price = #{netPrice}, item_value = #{itemValue}, plant_id = #{plantId}, su = #{su}, item_code = #{itemCode}, material_code = #{materialCode}, order_quantity_str = #{orderQuantityStr}, order_quantity_unit = #{orderQuantityUnit}, description = #{description}, req_deliv_date = #{reqDelivDate}, net_value_str = #{netValueStr}, net_value_unit = #{netValueUnit}, tax_value_str = #{taxValueStr}, tax_value_unit = #{taxValueUnit}, pricing_date = #{pricingDate}, order_probability = #{orderProbability}, pricing_elements_json = #{pricingElementsJson} WHERE document_id = #{inquiryId} AND document_type = 'inquiry' AND item_no = #{itemNo}")
         int updateInquiryItem(InquiryItem item);
     
     /**
@@ -71,14 +71,14 @@ public interface InquiryMapper {
      * @param inquiryId 询价单ID
      * @return 询价单项目列表
      */
-    @Select("SELECT inquiry_id as inquiryId, item_no as itemNo, mat_id as matId, quantity, " +
+    @Select("SELECT document_id as inquiryId, item_no as itemNo, mat_id as matId, quantity, " +
             "net_price as netPrice, item_value as itemValue, plant_id as plantId, su, " +
             "item_code as itemCode, material_code as materialCode, order_quantity_str as orderQuantityStr, " +
             "order_quantity_unit as orderQuantityUnit, description, req_deliv_date as reqDelivDate, " +
             "net_value_str as netValueStr, net_value_unit as netValueUnit, tax_value_str as taxValueStr, " +
             "tax_value_unit as taxValueUnit, pricing_date as pricingDate, order_probability as orderProbability, " +
             "pricing_elements_json as pricingElementsJson " +
-            "FROM erp_inquiry_item WHERE inquiry_id = #{inquiryId} ORDER BY item_no")
+            "FROM erp_item WHERE document_id = #{inquiryId} AND document_type = 'inquiry' ORDER BY item_no")
     List<InquiryItem> findItemsByInquiryId(@Param("inquiryId") Long inquiryId);
     
     /**
@@ -86,11 +86,11 @@ public interface InquiryMapper {
      * @param item 询价单项目
      * @return 影响的行数
      */
-    @Insert("INSERT INTO erp_inquiry_item (inquiry_id, item_no, mat_id, quantity, net_price, " +
+    @Insert("INSERT INTO erp_item (document_id, document_type, item_no, mat_id, quantity, net_price, " +
             "item_value, plant_id, su, item_code, material_code, order_quantity_str, " +
             "order_quantity_unit, description, req_deliv_date, net_value_str, net_value_unit, " +
             "tax_value_str, tax_value_unit, pricing_date, order_probability, pricing_elements_json) " +
-            "VALUES (#{inquiryId}, #{itemNo}, #{matId}, #{quantity}, #{netPrice}, #{itemValue}, " +
+            "VALUES (#{inquiryId}, 'inquiry', #{itemNo}, #{matId}, #{quantity}, #{netPrice}, #{itemValue}, " +
             "#{plantId}, #{su}, #{itemCode}, #{materialCode}, #{orderQuantityStr}, " +
             "#{orderQuantityUnit}, #{description}, #{reqDelivDate}, #{netValueStr}, #{netValueUnit}, " +
             "#{taxValueStr}, #{taxValueUnit}, #{pricingDate}, #{orderProbability}, #{pricingElementsJson})")
@@ -101,7 +101,7 @@ public interface InquiryMapper {
      * @param inquiryId 询价单ID
      * @return 影响的行数
      */
-    @Delete("DELETE FROM erp_inquiry_item WHERE inquiry_id = #{inquiryId}")
+    @Delete("DELETE FROM erp_item WHERE document_id = #{inquiryId} AND document_type = 'inquiry'")
     int deleteInquiryItems(@Param("inquiryId") Long inquiryId);
     
     /**

@@ -7,6 +7,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 import webserver.mapper.InquiryMapper;
+import webserver.mapper.ItemMapper;
 import webserver.pojo.*;
 import webserver.service.InquiryService;
 import webserver.service.ValidateItemsService;
@@ -20,7 +21,10 @@ public class InquiryServiceImpl implements InquiryService {
 
     @Autowired
     private InquiryMapper inquiryMapper;
-    
+
+    @Autowired
+    private ItemMapper itemMapper;
+
     @Autowired
     private ValidateItemsService validateItemsService;
     
@@ -681,5 +685,64 @@ public class InquiryServiceImpl implements InquiryService {
             log.warn("解析询价单ID失败: {}", idStr);
             return null;
         }
+    }
+
+    /**
+     * 将InquiryItem转换为统一的Item
+     */
+    private Item convertInquiryItemToItem(InquiryItem inquiryItem) {
+        Item item = new Item();
+        item.setDocumentId(inquiryItem.getInquiryId());
+        item.setDocumentType(Item.DocumentType.INQUIRY);
+        item.setItemNo(inquiryItem.getItemNo());
+        item.setMatId(inquiryItem.getMatId());
+        item.setQuantity(inquiryItem.getQuantity());
+        item.setNetPrice(inquiryItem.getNetPrice());
+        item.setItemValue(inquiryItem.getItemValue());
+        item.setPlantId(inquiryItem.getPlantId());
+        item.setSu(inquiryItem.getSu());
+        item.setItemCode(inquiryItem.getItemCode());
+        item.setMaterialCode(inquiryItem.getMaterialCode());
+        item.setOrderQuantityStr(inquiryItem.getOrderQuantityStr());
+        item.setOrderQuantityUnit(inquiryItem.getOrderQuantityUnit());
+        item.setDescription(inquiryItem.getDescription());
+        item.setReqDelivDate(inquiryItem.getReqDelivDate());
+        item.setNetValueStr(inquiryItem.getNetValueStr());
+        item.setNetValueUnit(inquiryItem.getNetValueUnit());
+        item.setTaxValueStr(inquiryItem.getTaxValueStr());
+        item.setTaxValueUnit(inquiryItem.getTaxValueUnit());
+        item.setPricingDate(inquiryItem.getPricingDate());
+        item.setOrderProbability(inquiryItem.getOrderProbability());
+        item.setPricingElementsJson(inquiryItem.getPricingElementsJson());
+        return item;
+    }
+
+    /**
+     * 将统一的Item转换为InquiryItem
+     */
+    private InquiryItem convertItemToInquiryItem(Item item) {
+        InquiryItem inquiryItem = new InquiryItem();
+        inquiryItem.setInquiryId(item.getDocumentId());
+        inquiryItem.setItemNo(item.getItemNo());
+        inquiryItem.setMatId(item.getMatId());
+        inquiryItem.setQuantity(item.getQuantity());
+        inquiryItem.setNetPrice(item.getNetPrice());
+        inquiryItem.setItemValue(item.getItemValue());
+        inquiryItem.setPlantId(item.getPlantId());
+        inquiryItem.setSu(item.getSu());
+        inquiryItem.setItemCode(item.getItemCode());
+        inquiryItem.setMaterialCode(item.getMaterialCode());
+        inquiryItem.setOrderQuantityStr(item.getOrderQuantityStr());
+        inquiryItem.setOrderQuantityUnit(item.getOrderQuantityUnit());
+        inquiryItem.setDescription(item.getDescription());
+        inquiryItem.setReqDelivDate(item.getReqDelivDate());
+        inquiryItem.setNetValueStr(item.getNetValueStr());
+        inquiryItem.setNetValueUnit(item.getNetValueUnit());
+        inquiryItem.setTaxValueStr(item.getTaxValueStr());
+        inquiryItem.setTaxValueUnit(item.getTaxValueUnit());
+        inquiryItem.setPricingDate(item.getPricingDate());
+        inquiryItem.setOrderProbability(item.getOrderProbability());
+        inquiryItem.setPricingElementsJson(item.getPricingElementsJson());
+        return inquiryItem;
     }
 }

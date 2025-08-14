@@ -297,6 +297,43 @@ CREATE TABLE `erp_inquiry_item` (
   CONSTRAINT `erp_inquiry_item_ibfk_3` FOREIGN KEY (`plant_id`) REFERENCES `erp_plant_name` (`plant_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci COMMENT='询价单项目表 - 扩展支持完整ItemValidation字段';
 
+DROP TABLE IF EXISTS `erp_item`;
+CREATE TABLE `erp_item` (
+  `document_id` bigint NOT NULL COMMENT '文档ID (inquiry_id/quotation_id/so_id/dlv_id/bill_id)',
+  `document_type` varchar(20) COLLATE utf8mb4_general_ci NOT NULL COMMENT '文档类型 (inquiry/quotation/sales/outbound/billdoc)',
+  `item_no` smallint NOT NULL COMMENT '项目号',
+  `mat_id` bigint NOT NULL COMMENT '物料ID',
+  `quantity` smallint NOT NULL COMMENT '数量',
+  `net_price` float NOT NULL COMMENT '净价',
+  `item_value` float NOT NULL COMMENT '项目总值',
+  `plant_id` bigint NOT NULL COMMENT '工厂ID',
+  `su` varchar(10) COLLATE utf8mb4_general_ci NOT NULL COMMENT '单位',
+  `item_code` varchar(50) COLLATE utf8mb4_general_ci DEFAULT NULL COMMENT '项目代码',
+  `material_code` varchar(100) COLLATE utf8mb4_general_ci DEFAULT NULL COMMENT '物料代码',
+  `order_quantity_str` varchar(20) COLLATE utf8mb4_general_ci DEFAULT NULL COMMENT '订单数量字符串',
+  `order_quantity_unit` varchar(10) COLLATE utf8mb4_general_ci DEFAULT NULL COMMENT '订单数量单位',
+  `description` varchar(500) COLLATE utf8mb4_general_ci DEFAULT NULL COMMENT '物料描述',
+  `req_deliv_date` varchar(20) COLLATE utf8mb4_general_ci DEFAULT NULL COMMENT '要求交货日期',
+  `net_value_str` varchar(20) COLLATE utf8mb4_general_ci DEFAULT NULL COMMENT '净值字符串',
+  `net_value_unit` varchar(10) COLLATE utf8mb4_general_ci DEFAULT NULL COMMENT '净值单位',
+  `tax_value_str` varchar(20) COLLATE utf8mb4_general_ci DEFAULT NULL COMMENT '税值字符串',
+  `tax_value_unit` varchar(10) COLLATE utf8mb4_general_ci DEFAULT NULL COMMENT '税值单位',
+  `pricing_date` varchar(20) COLLATE utf8mb4_general_ci DEFAULT NULL COMMENT '定价日期',
+  `order_probability` varchar(10) COLLATE utf8mb4_general_ci DEFAULT NULL COMMENT '订单概率',
+  `pricing_elements_json` text COLLATE utf8mb4_general_ci COMMENT '定价元素JSON数据',
+  `created_time` timestamp DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `updated_time` timestamp DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  PRIMARY KEY (`document_id`,`document_type`,`item_no`),
+  KEY `mat_id` (`mat_id`),
+  KEY `plant_id` (`plant_id`),
+  KEY `idx_item_material_code` (`material_code`),
+  KEY `idx_item_item_code` (`item_code`),
+  KEY `idx_item_document_type` (`document_type`),
+  KEY `idx_item_document_id_type` (`document_id`, `document_type`),
+  CONSTRAINT `erp_item_ibfk_1` FOREIGN KEY (`mat_id`) REFERENCES `erp_material` (`mat_id`),
+  CONSTRAINT `erp_item_ibfk_2` FOREIGN KEY (`plant_id`) REFERENCES `erp_plant_name` (`plant_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci COMMENT='统一项目表 - 支持所有业务类型的完整ItemValidation字段';
+
 DROP TABLE IF EXISTS `erp_item_validation_config`;
 CREATE TABLE `erp_item_validation_config` (
   `config_id` bigint NOT NULL AUTO_INCREMENT COMMENT '配置ID',
