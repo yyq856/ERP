@@ -114,7 +114,7 @@ public class SalesOrderServiceImpl implements SalesOrderService {
         basicInfo.setSalesQuotationId(convertToString(orderData.get("quotationId")));
         basicInfo.setSo_id(convertToString(orderData.get("soId")));
         basicInfo.setSoldToParty(convertToString(orderData.get("soldToParty"))); // 客户ID而不是客户名称
-        basicInfo.setShipToParty(convertToString(orderData.get("shipToParty")));
+        basicInfo.setShipToParty(convertToString(orderData.get("shipToParty"))); // 客户ID而不是客户名称
         basicInfo.setCustomerReference(convertToString(orderData.get("customerReference")));
         basicInfo.setNetValue(convertToString(orderData.get("netValue")));
         basicInfo.setNetValueUnit(convertToString(orderData.get("currency")));
@@ -343,7 +343,9 @@ public class SalesOrderServiceImpl implements SalesOrderService {
         // 5. 金额处理
         try {
             if (StringUtils.hasText(request.getBasicInfo().getNetValue())) {
-                double netValue = Double.parseDouble(request.getBasicInfo().getNetValue());
+                // 移除千位分隔符（逗号）后再解析
+                String netValueStr = request.getBasicInfo().getNetValue().replaceAll(",", "");
+                double netValue = Double.parseDouble(netValueStr);
                 order.setNetValue(netValue);
                 order.setTaxValue(netValue * 0.1);  // 假设10%税
                 order.setGrossValue(netValue + order.getTaxValue());

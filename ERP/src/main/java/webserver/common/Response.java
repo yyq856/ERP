@@ -20,6 +20,6 @@ public class Response<T> {
     }
 
     public static <T> Response<T> error(String message) {
-        return new Response<>(500, message,true, null);
+        return new Response<>(500, message,false, null);
     }
 }
