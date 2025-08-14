@@ -10,7 +10,46 @@ import java.util.List;
 public class QuotationResponse {
     private boolean success;
     private String message;
-    private QuotationData data;
+    private Object data;
+
+    /**
+     * 成功响应
+     * @param data 数据
+     * @param message 消息
+     * @return 响应对象
+     */
+    public static QuotationResponse success(Object data, String message) {
+        QuotationResponse response = new QuotationResponse();
+        response.setSuccess(true);
+        response.setMessage(message);
+        response.setData(data);
+        return response;
+    }
+
+    /**
+     * 成功响应 - 默认消息
+     * @param data 数据
+     * @return 响应对象
+     */
+    public static QuotationResponse success(Object data) {
+        return success(data, "操作成功");
+    }
+
+    /**
+     * 错误响应
+     * @param message 错误消息
+     * @return 响应对象
+     */
+    public static QuotationResponse error(String message) {
+        QuotationResponse response = new QuotationResponse();
+        response.setSuccess(false);
+        response.setMessage(message);
+        response.setData(null);
+        return response;
+    }
+
+    // 保留原有的内部类以保持向后兼容
+    private QuotationData quotationData;
 
     @Data
     public static class QuotationData {

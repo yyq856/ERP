@@ -5,9 +5,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
 import webserver.common.Response;
-import webserver.pojo.SalesOrderCreateRequest;
-import webserver.pojo.SalesOrderDetailDTO;
-import webserver.pojo.SalesOrderSearchRequest;
+import webserver.pojo.*;
 import webserver.service.SalesOrderService;
 
 import java.util.List;
@@ -58,7 +56,18 @@ public class SalesOrderController {
         }
 
 
-        
+
         return salesOrderService.updateSalesOrder(soId, request);
+    }
+
+    /**
+     * 物品批量查询
+     * @param items 物品查询列表
+     * @return 响应结果
+     */
+    @PostMapping("/items-tab-query")
+    public SalesOrderResponse itemsTabQuery(@RequestBody List<SalesOrderItemsTabQueryRequest.ItemQuery> items) {
+        log.info("物品批量查询请求，项目数: {}", items != null ? items.size() : 0);
+        return salesOrderService.itemsTabQuery(items);
     }
 }

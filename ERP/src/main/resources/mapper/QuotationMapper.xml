@@ -27,19 +27,33 @@
         WHERE inquiry_id = #{inquiryId}
     </select>
 
-    <!-- 查询询价单明细 -->
+    <!-- 查询询价单明细 - 使用统一的erp_item表 -->
     <select id="selectInquiryItemsById" parameterType="string" resultType="webserver.pojo.InquiryItemDTO">
         SELECT
-            inquiry_id AS inquiryId,
+            document_id AS inquiryId,
             item_no AS itemNo,
             mat_id AS matId,
             quantity,
             net_price AS netPrice,
             item_value AS itemValue,
             plant_id AS plantId,
-            su
-        FROM erp_inquiry_item
-        WHERE inquiry_id = #{inquiryId}
+            su,
+            item_code AS itemCode,
+            material_code AS materialCode,
+            order_quantity_str AS orderQuantityStr,
+            order_quantity_unit AS orderQuantityUnit,
+            description,
+            req_deliv_date AS reqDelivDate,
+            net_value_str AS netValueStr,
+            net_value_unit AS netValueUnit,
+            tax_value_str AS taxValueStr,
+            tax_value_unit AS taxValueUnit,
+            pricing_date AS pricingDate,
+            order_probability AS orderProbability,
+            pricing_elements_json AS pricingElementsJson
+        FROM erp_item
+        WHERE document_id = #{inquiryId} AND document_type = 'inquiry'
+        ORDER BY item_no
     </select>
 
     <!-- 插入报价单 -->
@@ -55,15 +69,22 @@
                  )
     </insert>
 
-    <!-- 批量插入报价单明细 -->
+    <!-- 批量插入报价单明细 - 使用统一的erp_item表 -->
     <insert id="insertQuotationItemsFromInquiry">
+        INSERT INTO erp_item (
+            document_id, document_type, item_no, mat_id, quantity, net_price,
+            item_value, plant_id, su, item_code, material_code, order_quantity_str,
+            order_quantity_unit, description, req_deliv_date, net_value_str,
+            net_value_unit, tax_value_str, tax_value_unit, pricing_date,
+            order_probability, pricing_elements_json
+        ) VALUES
         <foreach collection="items" item="item" separator=",">
-            INSERT INTO erp_quotation_item (
-            quotation_id, item_no, mat_id, quantity, net_price,
-            item_discount_pct, item_value, plant_id, su, cnty, tax_value
-            ) VALUES (
-            #{quotationId}, #{item.itemNo}, #{item.matId}, #{item.quantity}, #{item.netPrice},
-            0, #{item.itemValue}, #{item.plantId}, #{item.su}, 0, 0
+            (
+                #{quotationId}, 'quotation', #{item.itemNo}, #{item.matId}, #{item.quantity}, #{item.netPrice},
+                #{item.itemValue}, #{item.plantId}, #{item.su}, #{item.itemCode}, #{item.materialCode},
+                #{item.orderQuantityStr}, #{item.orderQuantityUnit}, #{item.description}, #{item.reqDelivDate},
+                #{item.netValueStr}, #{item.netValueUnit}, #{item.taxValueStr}, #{item.taxValueUnit},
+                #{item.pricingDate}, #{item.orderProbability}, #{item.pricingElementsJson}
             )
         </foreach>
     </insert>

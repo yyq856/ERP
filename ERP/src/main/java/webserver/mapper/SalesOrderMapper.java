@@ -34,10 +34,13 @@ public interface SalesOrderMapper {
     @Options(useGeneratedKeys = true, keyProperty = "soId")
     int insertSalesOrder(SalesOrder order);
 
-    @Insert("INSERT INTO erp_sales_item (" +
-            "so_id, item_no, mat_id, plt_id, storage_loc, quantity, su, net_price, discount_pct, status" +
+    @Insert("INSERT INTO erp_item (" +
+            "document_type, document_id, item_no, mat_id, plant_id, quantity, su, net_price, net_value_str, net_value_unit, " +
+            "tax_value_str, tax_value_unit, description, req_deliv_date, pricing_date, order_probability" +
             ") VALUES (" +
-            "#{soId}, #{itemNo}, #{matId}, #{plantId}, #{storageLocation}, #{quantity}, #{unit}, #{netPrice}, 0, 'OPEN')")
+            "'sales_order', #{soId}, #{itemNo}, #{matId}, #{plantId}, #{quantity}, #{unit}, #{netPrice}, " +
+            "CAST(#{netPrice} * #{quantity} AS CHAR), 'USD', CAST(#{netPrice} * #{quantity} * 0.1 AS CHAR), 'USD', " +
+            "(SELECT mat_desc FROM erp_material WHERE mat_id = #{matId}), NOW(), NOW(), '100%')")
     int insertSalesOrderItem(@Param("soId") Long soId,
                              @Param("itemNo") int itemNo,
                              @Param("matId") Long matId,
@@ -79,7 +82,7 @@ public interface SalesOrderMapper {
                              @Param("unit") String unit,
                              @Param("netPrice") double netPrice);
                              
-    @Delete("DELETE FROM erp_sales_item WHERE so_id = #{soId}")
+    @Delete("DELETE FROM erp_item WHERE document_type = 'sales_order' AND document_id = #{soId}")
     int deleteSalesOrderItemsBySoId(@Param("soId") Long soId);
 
     @Delete("DELETE FROM erp_pricing_element WHERE document_type = #{documentType} AND document_id = #{documentId}")

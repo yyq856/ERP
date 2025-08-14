@@ -103,6 +103,30 @@ public interface InquiryMapper {
      */
     @Delete("DELETE FROM erp_item WHERE document_id = #{inquiryId} AND document_type = 'inquiry'")
     int deleteInquiryItems(@Param("inquiryId") Long inquiryId);
+
+    /**
+     * 删除文档的所有项目 - 使用统一的erp_item表（通用方法）
+     * @param documentId 文档ID
+     * @param documentType 文档类型
+     * @return 影响的行数
+     */
+    @Delete("DELETE FROM erp_item WHERE document_id = #{documentId} AND document_type = #{documentType}")
+    int deleteDocumentItemsFromUnifiedTable(@Param("documentId") Long documentId, @Param("documentType") String documentType);
+
+    /**
+     * 插入文档项目到统一的erp_item表（通用方法）
+     * @param item 项目实体
+     * @param documentType 文档类型
+     * @return 影响的行数
+     */
+    @Insert("INSERT INTO erp_item (document_id, document_type, item_no, mat_id, quantity, net_price, item_value, " +
+            "plant_id, su, item_code, material_code, order_quantity_str, order_quantity_unit, description, req_deliv_date, " +
+            "net_value_str, net_value_unit, tax_value_str, tax_value_unit, pricing_date, order_probability, pricing_elements_json) " +
+            "VALUES (#{item.inquiryId}, #{documentType}, #{item.itemNo}, #{item.matId}, #{item.quantity}, #{item.netPrice}, #{item.itemValue}, " +
+            "#{item.plantId}, #{item.su}, #{item.itemCode}, #{item.materialCode}, #{item.orderQuantityStr}, " +
+            "#{item.orderQuantityUnit}, #{item.description}, #{item.reqDelivDate}, #{item.netValueStr}, #{item.netValueUnit}, " +
+            "#{item.taxValueStr}, #{item.taxValueUnit}, #{item.pricingDate}, #{item.orderProbability}, #{item.pricingElementsJson})")
+    int insertDocumentItemToUnifiedTable(@Param("item") InquiryItem item, @Param("documentType") String documentType);
     
     /**
      * 检查询价单是否存在

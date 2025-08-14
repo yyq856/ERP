@@ -114,8 +114,8 @@ public class ValidateItemsServiceImpl implements ValidateItemsService {
             ItemValidationRequest item, int itemNumber) {
         ItemValidationResponse.ItemBreakdown breakdown = new ItemValidationResponse.ItemBreakdown();
         
-        // 设置基本信息
-        breakdown.setItem(String.valueOf(itemNumber)); // 行号-按顺序生成
+        // 设置基本信息 - Query操作保留用户输入的item号，只在缺失时自动补全
+        breakdown.setItem(StringUtils.hasText(item.getItem()) ? item.getItem() : String.valueOf(itemNumber));
         breakdown.setMaterial(item.getMaterial());
         
         try {

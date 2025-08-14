@@ -1,11 +1,6 @@
 package webserver.service;
 
-import webserver.pojo.BillingInitializeRequest;
-import webserver.pojo.BillingGetRequest;
-import webserver.pojo.BillingEditRequest;
-
-import webserver.pojo.BillingSearchRequest;
-import webserver.pojo.ItemValidationRequest;
+import webserver.pojo.*;
 
 import java.util.List;
 import java.util.Map;
@@ -46,4 +41,11 @@ public interface BillingService {
      * @return 验证结果
      */
     Map<String, Object> validateBillingItems(List<ItemValidationRequest> items);
+
+    /**
+     * 物品批量查询
+     * @param items 物品查询列表
+     * @return 响应结果
+     */
+    BillingResponse itemsTabQuery(List<BillingItemsTabQueryRequest.ItemQuery> items);
 }

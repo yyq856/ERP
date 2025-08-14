@@ -1,0 +1,90 @@
+{
+  "quotationData": {
+    "meta": {
+      "id": "40"
+    },
+    "basicInfo": {
+      "quotation": "40",
+      "soldToParty": "1",
+      "shipToParty": "1",
+      "customerReference": "",
+      "netValue": 0,
+      "netValueUnit": "USD",
+      "customerReferenceDate": ""
+    },
+    "itemOverview": {
+      "validFrom": "",
+      "validTo": "",
+      "reqDelivDate": "",
+      "expectOralVal": "0.0",
+      "expectOralValUnit": "",
+      "items": [
+        {
+          "item": "1",
+          "material": "4001",
+          "orderQuantity": "3",
+          "orderQuantityUnit": "PC",
+          "description": "test material 3",
+          "reqDelivDate": "2025-08-14",
+          "netValue": "3600",
+          "netValueUnit": "CNY",
+          "taxValue": "468",
+          "taxValueUnit": "CNY",
+          "pricingDate": "2025-08-14",
+          "orderProbability": "100",
+          "pricingElements": [
+            {
+              "cnty": "BASE",
+              "name": "base price",
+              "amount": "1200.0",
+              "city": "CNY",
+              "per": "1",
+              "uom": "PC",
+              "conditionValue": "3600.0",
+              "curr": "CNY",
+              "status": "",
+              "numC": "",
+              "atoMtsComponent": "",
+              "oun": "",
+              "cconDe": "",
+              "un": "",
+              "conditionValue2": "",
+              "cdCur": "",
+              "stat": true
+            }
+          ]
+        },
+        {
+          "item": "",
+          "material": "",
+          "orderQuantity": "",
+          "orderQuantityUnit": "",
+          "description": "",
+          "reqDelivDate": "",
+          "netValue": "",
+          "netValueUnit": "",
+          "taxValue": "",
+          "taxValueUnit": "",
+          "pricingDate": "",
+          "orderProbability": "",
+          "pricingElements": []
+        },
+        {
+          "item": "",
+          "material": "",
+          "orderQuantity": "",
+          "orderQuantityUnit": "",
+          "description": "",
+          "reqDelivDate": "",
+          "netValue": "",
+          "netValueUnit": "",
+          "taxValue": "",
+          "taxValueUnit": "",
+          "pricingDate": "",
+          "orderProbability": "",
+          "pricingElements": []
+        }
+      ]
+    }
+  }
+}

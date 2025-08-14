@@ -10,6 +10,7 @@ import webserver.mapper.InquiryMapper;
 import webserver.mapper.ItemMapper;
 import webserver.pojo.*;
 import webserver.service.InquiryService;
+import webserver.service.UnifiedItemService;
 import webserver.service.ValidateItemsService;
 
 import java.time.LocalDate;
@@ -27,7 +28,10 @@ public class InquiryServiceImpl implements InquiryService {
 
     @Autowired
     private ValidateItemsService validateItemsService;
-    
+
+    @Autowired
+    private UnifiedItemService unifiedItemService;
+
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     @Override
@@ -467,60 +471,59 @@ public class InquiryServiceImpl implements InquiryService {
     }
     
     /**
-     * 更新询价单项目 - 使用完整的 ItemValidation 字段结构
+     * 更新询价单项目 - 使用统一的更新方法
      */
     private void updateInquiryItemsWithFullFields(Long inquiryId, InquiryEditRequest.ItemOverview itemOverview) {
-        log.info("智能更新询价单项目，inquiryId: {}", inquiryId);
+        log.info("使用统一方法更新询价单项目，inquiryId: {}", inquiryId);
         if (inquiryId == null) {
             log.error("inquiryId 为空，无法更新项目");
             throw new IllegalArgumentException("inquiryId 不能为空");
         }
-        // 查询数据库现有项目
-        List<InquiryItem> dbItems = inquiryMapper.findItemsByInquiryId(inquiryId);
-        Map<Integer, InquiryItem> dbItemMap = new HashMap<>();
-        for (InquiryItem dbItem : dbItems) {
-            dbItemMap.put(dbItem.getItemNo(), dbItem);
+
+        // 获取items列表
+        List<InquiryEditRequest.InquiryItemDetail> items = (itemOverview != null && itemOverview.getItems() != null)
+            ? itemOverview.getItems() : Collections.emptyList();
+
+        // 使用真正统一的更新方法 - 删除所有现有items，按顺序重新分配行号
+        // 转换为统一的前端数据格式
+        List<Map<String, Object>> frontendItems = convertInquiryItemsToFrontendFormat(items);
+
+        // 调用统一服务
+        unifiedItemService.updateDocumentItems(inquiryId, "inquiry", frontendItems);
+
+        log.info("统一方法更新询价单项目完成，inquiryId: {}, items数量: {}", inquiryId, items.size());
+    }
+
+    /**
+     * 将InquiryItemDetail转换为统一的前端数据格式
+     */
+    private List<Map<String, Object>> convertInquiryItemsToFrontendFormat(List<InquiryEditRequest.InquiryItemDetail> items) {
+        List<Map<String, Object>> frontendItems = new ArrayList<>();
+
+        for (InquiryEditRequest.InquiryItemDetail item : items) {
+            Map<String, Object> frontendItem = new HashMap<>();
+
+            // 基础字段
+            frontendItem.put("item", item.getItem());
+            frontendItem.put("material", item.getMaterial());
+            frontendItem.put("orderQuantity", item.getOrderQuantity());
+            frontendItem.put("orderQuantityUnit", item.getOrderQuantityUnit());
+            frontendItem.put("description", item.getDescription());
+
+            // ItemValidation字段
+            frontendItem.put("reqDelivDate", item.getReqDelivDate());
+            frontendItem.put("netValue", item.getNetValue());
+            frontendItem.put("netValueUnit", item.getNetValueUnit());
+            frontendItem.put("taxValue", item.getTaxValue());
+            frontendItem.put("taxValueUnit", item.getTaxValueUnit());
+            frontendItem.put("pricingDate", item.getPricingDate());
+            frontendItem.put("orderProbability", item.getOrderProbability());
+            frontendItem.put("pricingElements", item.getPricingElements());
+
+            frontendItems.add(frontendItem);
         }
-        // 前端传来的项目
-        List<InquiryEditRequest.InquiryItemDetail> reqItems = (itemOverview != null && itemOverview.getItems() != null) ? itemOverview.getItems() : Collections.emptyList();
-        Set<Integer> reqItemNos = new HashSet<>();
-        int insertIndex = 1;
-    String overviewReqDelivDate = itemOverview != null ? itemOverview.getReqDelivDate() : null;
-    for (InquiryEditRequest.InquiryItemDetail itemDetail : reqItems) {
-            // material 为空则跳过
-            if (!org.springframework.util.StringUtils.hasText(itemDetail.getMaterial())) {
-                log.info("跳过 material 为空的项目: index={}, description={}", insertIndex, itemDetail.getDescription());
-                insertIndex++;
-                continue;
-            }
-            Integer itemNo = null;
-            try {
-                itemNo = Integer.parseInt(itemDetail.getItem());
-            } catch (Exception e) {
-                itemNo = insertIndex;
-            }
-            reqItemNos.add(itemNo);
-            InquiryItem item = buildInquiryItemFromDetail(inquiryId, itemNo, itemDetail, overviewReqDelivDate);
-            if (dbItemMap.containsKey(itemNo)) {
-                // 已存在，更新
-                inquiryMapper.updateInquiryItem(item);
-                log.info("更新项目 itemNo={}, reqDelivDate={}", itemNo, item.getReqDelivDate());
-            } else {
-                // 不存在，插入
-                inquiryMapper.insertInquiryItem(item);
-                log.info("插入新项目 itemNo={}, reqDelivDate={}", itemNo, item.getReqDelivDate());
-            }
-            insertIndex++;
-        }
-        // 删除数据库有但前端没传的项目
-        for (InquiryItem dbItem : dbItems) {
-            if (!reqItemNos.contains(dbItem.getItemNo())) {
-                // 只删单个项目
-                // 你可以实现 deleteInquiryItemByItemNo 方法
-                log.info("需删除项目 itemNo={}", dbItem.getItemNo());
-                // inquiryMapper.deleteInquiryItemByItemNo(inquiryId, dbItem.getItemNo());
-            }
-        }
+
+        return frontendItems;
     }
     
     /**
@@ -745,4 +748,6 @@ public class InquiryServiceImpl implements InquiryService {
         inquiryItem.setPricingElementsJson(item.getPricingElementsJson());
         return inquiryItem;
     }
+
+    // 旧的updateDocumentItems方法已删除，现在使用UnifiedItemService
 }

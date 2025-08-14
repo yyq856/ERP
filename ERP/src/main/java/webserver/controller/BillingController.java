@@ -1,5 +1,6 @@
 package webserver.controller;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 import webserver.pojo.*;
@@ -7,6 +8,7 @@ import webserver.service.BillingService;
 
 import java.util.*;
 
+@Slf4j
 @RestController
 @CrossOrigin(origins = "*")
 @RequestMapping("/api/app/billing")
@@ -132,5 +134,16 @@ public class BillingController {
             response.put("message", "Failed to search billing documents: " + e.getMessage());
             return response;
         }
+    }
+
+    /**
+     * 物品批量查询
+     * @param items 物品查询列表
+     * @return 响应结果
+     */
+    @PostMapping("/items-tab-query")
+    public BillingResponse itemsTabQuery(@RequestBody List<BillingItemsTabQueryRequest.ItemQuery> items) {
+        log.info("物品批量查询请求，项目数: {}", items != null ? items.size() : 0);
+        return billingService.itemsTabQuery(items);
     }
 }

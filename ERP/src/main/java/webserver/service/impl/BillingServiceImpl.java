@@ -6,13 +6,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import webserver.mapper.BillingMapper;
-import webserver.pojo.BillingSearchRequest;
+import webserver.pojo.*;
 import webserver.service.BillingService;
-import webserver.pojo.BillingInitializeRequest;
-import webserver.pojo.BillingGetRequest;
-import webserver.pojo.BillingEditRequest;
-import webserver.pojo.ItemValidationRequest;
-import webserver.pojo.ItemValidationRequest.PricingElementRequest;
+import webserver.service.ValidateItemsService;
 
 import java.util.*;
 
@@ -23,6 +19,9 @@ public class BillingServiceImpl implements BillingService {
     
     @Autowired
     private BillingMapper billingMapper;
+
+    @Autowired
+    private ValidateItemsService validateItemsService;
     
     @Override
     public Map<String, Object> initializeBilling(BillingInitializeRequest request) {
@@ -354,7 +353,7 @@ public class BillingServiceImpl implements BillingService {
                 double quantity = Double.parseDouble(item.getOrderQuantity());
                 // 从定价元素中获取价格信息
                 if (item.getPricingElements() != null && !item.getPricingElements().isEmpty()) {
-                    for (PricingElementRequest element : item.getPricingElements()) {
+                    for (ItemValidationRequest.PricingElementRequest element : item.getPricingElements()) {
                         if ("Base Price".equals(element.getName())) {
                             netValue = quantity * Double.parseDouble(element.getConditionValue());
                             currency = element.getCurr();
@@ -414,5 +413,106 @@ public class BillingServiceImpl implements BillingService {
         response.put("data", data);
         
         return response;
+    }
+
+    @Override
+    public BillingResponse itemsTabQuery(List<BillingItemsTabQueryRequest.ItemQuery> items) {
+        try {
+            if (items == null || items.isEmpty()) {
+                return BillingResponse.error("查询项目不能为空");
+            }
+
+            // 转换为 ItemValidationRequest 格式并调用验证服务（复用inquiry的逻辑）
+            List<ItemValidationRequest> validationRequests = convertBillingItemsToValidationRequests(items);
+            ItemValidationResponse validationResponse = validateItemsService.validateItems(validationRequests);
+
+            // 将验证结果转换为 Billing 的响应格式
+            Map<String, Object> data = convertValidationResponseToBillingFormat(validationResponse);
+
+            log.info("物品批量查询成功，查询项目数: {}", items.size());
+            return BillingResponse.success(data, "批量查询成功");
+
+        } catch (Exception e) {
+            log.error("物品批量查询异常: {}", e.getMessage(), e);
+            return BillingResponse.error("服务器内部错误");
+        }
+    }
+
+    /**
+     * 转换 BillingItemsTabQueryRequest.ItemQuery 到 ItemValidationRequest
+     */
+    private List<ItemValidationRequest> convertBillingItemsToValidationRequests(List<BillingItemsTabQueryRequest.ItemQuery> items) {
+        List<ItemValidationRequest> validationRequests = new ArrayList<>();
+
+        for (BillingItemsTabQueryRequest.ItemQuery queryItem : items) {
+            ItemValidationRequest request = new ItemValidationRequest();
+            request.setItem(queryItem.getItem());
+            request.setMaterial(queryItem.getMaterial());
+            request.setOrderQuantity(queryItem.getOrderQuantity());
+            request.setOrderQuantityUnit(queryItem.getOrderQuantityUnit());
+            request.setDescription(queryItem.getDescription());
+            request.setReqDelivDate(queryItem.getReqDelivDate());
+            request.setNetValue(queryItem.getNetValue());
+            request.setNetValueUnit(queryItem.getNetValueUnit());
+            request.setTaxValue(queryItem.getTaxValue());
+            request.setTaxValueUnit(queryItem.getTaxValueUnit());
+            request.setPricingDate(queryItem.getPricingDate());
+            request.setOrderProbability(queryItem.getOrderProbability());
+            validationRequests.add(request);
+        }
+
+        return validationRequests;
+    }
+
+    /**
+     * 将验证结果转换为 Billing 的响应格式
+     */
+    private Map<String, Object> convertValidationResponseToBillingFormat(ItemValidationResponse validationResponse) {
+        Map<String, Object> data = new HashMap<>();
+
+        if (validationResponse != null && validationResponse.getData() != null) {
+            // 转换验证结果
+            if (validationResponse.getData().getResult() != null) {
+                Map<String, Object> result = new HashMap<>();
+                result.put("allDataLegal", validationResponse.getData().getResult().getAllDataLegal());
+                result.put("badRecordIndices", validationResponse.getData().getResult().getBadRecordIndices());
+                data.put("result", result);
+            }
+
+            // 转换汇总信息
+            if (validationResponse.getData().getGeneralData() != null) {
+                Map<String, Object> summary = new HashMap<>();
+                summary.put("totalNetValue", validationResponse.getData().getGeneralData().getNetValue());
+                summary.put("totalNetValueUnit", validationResponse.getData().getGeneralData().getNetValueUnit());
+                summary.put("totalExpectOralVal", validationResponse.getData().getGeneralData().getExpectOralVal());
+                summary.put("totalExpectOralValUnit", validationResponse.getData().getGeneralData().getExpectOralValUnit());
+                data.put("summary", summary);
+            }
+
+            // 转换明细列表
+            if (validationResponse.getData().getBreakdowns() != null) {
+                List<Map<String, Object>> breakdowns = new ArrayList<>();
+                for (ItemValidationResponse.ItemBreakdown breakdown : validationResponse.getData().getBreakdowns()) {
+                    Map<String, Object> breakdownMap = new HashMap<>();
+                    breakdownMap.put("item", breakdown.getItem());
+                    breakdownMap.put("material", breakdown.getMaterial());
+                    breakdownMap.put("orderQuantity", breakdown.getOrderQuantity());
+                    breakdownMap.put("orderQuantityUnit", breakdown.getOrderQuantityUnit());
+                    breakdownMap.put("description", breakdown.getDescription());
+                    breakdownMap.put("reqDelivDate", breakdown.getReqDelivDate());
+                    breakdownMap.put("netValue", breakdown.getNetValue());
+                    breakdownMap.put("netValueUnit", breakdown.getNetValueUnit());
+                    breakdownMap.put("taxValue", breakdown.getTaxValue());
+                    breakdownMap.put("taxValueUnit", breakdown.getTaxValueUnit());
+                    breakdownMap.put("pricingDate", breakdown.getPricingDate());
+                    breakdownMap.put("orderProbability", breakdown.getOrderProbability());
+                    breakdownMap.put("pricingElements", breakdown.getPricingElements());
+                    breakdowns.add(breakdownMap);
+                }
+                data.put("breakdowns", breakdowns);
+            }
+        }
+
+        return data;
     }
 }

@@ -11,6 +11,8 @@ import webserver.mapper.OutboundDeliveryMapper;
 import webserver.mapper.SalesOrderMapper;
 import webserver.pojo.*;
 import webserver.service.SalesOrderService;
+import webserver.service.ValidateItemsService;
+import webserver.service.UnifiedItemService;
 
 import java.math.BigDecimal;
 import java.text.DecimalFormat;
@@ -27,6 +29,12 @@ public class SalesOrderServiceImpl implements SalesOrderService {
 
     @Autowired
     private OutboundDeliveryMapper outboundDeliveryMapper;
+
+    @Autowired
+    private ValidateItemsService validateItemsService;
+
+    @Autowired
+    private UnifiedItemService unifiedItemService;
 
     @Override
     public Response<?> searchSalesOrders(SalesOrderSearchRequest request) {
@@ -235,9 +243,13 @@ public class SalesOrderServiceImpl implements SalesOrderService {
             Long soId = order.getSoId();
             log.info("销售订单头创建成功，订单ID: {}", soId);
 
-            // 5. 插入订单项目
+            // 5. 插入订单项目 - 使用统一方法
             if (request.getItemOverview() != null && request.getItemOverview().getItems() != null) {
-                insertOrderItems(soId, request.getItemOverview().getItems());
+                // 转换为统一的前端数据格式
+                List<Map<String, Object>> frontendItems = convertSalesOrderItemsToFrontendFormat(request.getItemOverview().getItems());
+
+                // 调用统一服务
+                unifiedItemService.updateDocumentItems(soId, "sales_order", frontendItems);
 
                 // 6. 插入定价元素
                 insertPricingElements(soId, request.getItemOverview().getItems());
@@ -256,6 +268,38 @@ public class SalesOrderServiceImpl implements SalesOrderService {
             log.error("创建销售订单失败: ", e);
             return Response.error("Operation failed.");
         }
+    }
+
+    /**
+     * 将SalesOrderCreateRequest.Item转换为统一的前端数据格式
+     */
+    private List<Map<String, Object>> convertSalesOrderItemsToFrontendFormat(List<SalesOrderCreateRequest.Item> items) {
+        List<Map<String, Object>> frontendItems = new ArrayList<>();
+
+        for (SalesOrderCreateRequest.Item item : items) {
+            Map<String, Object> frontendItem = new HashMap<>();
+
+            // 基础字段
+            frontendItem.put("item", item.getItem());
+            frontendItem.put("material", item.getMaterial());
+            frontendItem.put("orderQuantity", item.getOrderQuantity());
+            frontendItem.put("orderQuantityUnit", item.getOrderQuantityUnit());
+            frontendItem.put("description", item.getDescription());
+
+            // ItemValidation字段
+            frontendItem.put("reqDelivDate", item.getReqDelivDate());
+            frontendItem.put("netValue", item.getNetValue());
+            frontendItem.put("netValueUnit", item.getNetValueUnit());
+            frontendItem.put("taxValue", item.getTaxValue());
+            frontendItem.put("taxValueUnit", item.getTaxValueUnit());
+            frontendItem.put("pricingDate", item.getPricingDate());
+            frontendItem.put("orderProbability", item.getOrderProbability());
+            frontendItem.put("pricingElements", item.getPricingElements());
+
+            frontendItems.add(frontendItem);
+        }
+
+        return frontendItems;
     }
 
     /**
@@ -368,43 +412,7 @@ public class SalesOrderServiceImpl implements SalesOrderService {
         return order;
     }
 
-    /**
-     * 插入订单项目
-     * @param soId 订单ID
-     * @param items 订单项目列表
-     */
-    private void insertOrderItems(Long soId, List<SalesOrderCreateRequest.Item> items) {
-        log.info("开始插入订单项目，订单ID: {}, 项目数量: {}", soId, items.size());
-
-        for (int i = 0; i < items.size(); i++) {
-            SalesOrderCreateRequest.Item item = items.get(i);
-
-            // 解析物料ID
-            Long matId = parseMaterialId(item.getMaterial());
-
-            // 解析数量
-            int quantity = parseQuantity(item.getOrderQuantity());
-
-            // 解析单价
-            double netPrice = parseNetPrice(item.getNetValue());
-
-            // 插入订单项目
-            int result = salesOrderMapper.insertSalesOrderItem(
-                    soId, i + 1, matId, 1000L, "0001",
-                    quantity, item.getOrderQuantityUnit(), netPrice
-            );
-
-            if (result <= 0) {
-                log.error("插入订单项目失败: 项目号 {}", i + 1);
-                throw new RuntimeException("插入订单项目失败: 项目号 " + (i + 1));
-            }
-
-            log.debug("订单项目插入成功: 订单ID={}, 项目号={}, 物料ID={}, 数量={}, 单价={}",
-                    soId, i + 1, matId, quantity, netPrice);
-        }
-
-        log.info("订单项目插入完成，订单ID: {}", soId);
-    }
+    // insertOrderItems方法已删除，现在使用UnifiedItemService
 
     /**
      * 插入定价元素
@@ -576,14 +584,15 @@ public class SalesOrderServiceImpl implements SalesOrderService {
                 return Response.error("更新订单头失败");
             }
             
-            // 5. 删除原有订单项目
-            salesOrderMapper.deleteSalesOrderItemsBySoId(order.getSoId());
-            
-            // 6. 插入新的订单项目
+            // 5. 更新订单项目 - 使用统一方法
             if (request.getItemOverview() != null && request.getItemOverview().getItems() != null) {
-                insertOrderItems(order.getSoId(), request.getItemOverview().getItems());
+                // 转换为统一的前端数据格式
+                List<Map<String, Object>> frontendItems = convertSalesOrderItemsToFrontendFormat(request.getItemOverview().getItems());
 
-                // 7. 删除原有的定价元素
+                // 调用统一服务（会自动删除现有items并重新插入）
+                unifiedItemService.updateDocumentItems(order.getSoId(), "sales_order", frontendItems);
+
+                // 6. 删除原有的定价元素
                 deletePricingElements(order.getSoId());
 
                 // 8. 插入新的定价元素
@@ -631,6 +640,107 @@ public class SalesOrderServiceImpl implements SalesOrderService {
         response.setData(dataContent);
 
         return response;
+    }
+
+    @Override
+    public SalesOrderResponse itemsTabQuery(List<SalesOrderItemsTabQueryRequest.ItemQuery> items) {
+        try {
+            if (items == null || items.isEmpty()) {
+                return SalesOrderResponse.error("查询项目不能为空");
+            }
+
+            // 转换为 ItemValidationRequest 格式并调用验证服务（复用inquiry的逻辑）
+            List<ItemValidationRequest> validationRequests = convertSalesOrderItemsToValidationRequests(items);
+            ItemValidationResponse validationResponse = validateItemsService.validateItems(validationRequests);
+
+            // 将验证结果转换为 SalesOrder 的响应格式
+            Map<String, Object> data = convertValidationResponseToSalesOrderFormat(validationResponse);
+
+            log.info("物品批量查询成功，查询项目数: {}", items.size());
+            return SalesOrderResponse.success(data, "批量查询成功");
+
+        } catch (Exception e) {
+            log.error("物品批量查询异常: {}", e.getMessage(), e);
+            return SalesOrderResponse.error("服务器内部错误");
+        }
+    }
+
+    /**
+     * 转换 SalesOrderItemsTabQueryRequest.ItemQuery 到 ItemValidationRequest
+     */
+    private List<ItemValidationRequest> convertSalesOrderItemsToValidationRequests(List<SalesOrderItemsTabQueryRequest.ItemQuery> items) {
+        List<ItemValidationRequest> validationRequests = new ArrayList<>();
+
+        for (SalesOrderItemsTabQueryRequest.ItemQuery queryItem : items) {
+            ItemValidationRequest request = new ItemValidationRequest();
+            request.setItem(queryItem.getItem());
+            request.setMaterial(queryItem.getMaterial());
+            request.setOrderQuantity(queryItem.getOrderQuantity());
+            request.setOrderQuantityUnit(queryItem.getOrderQuantityUnit());
+            request.setDescription(queryItem.getDescription());
+            request.setReqDelivDate(queryItem.getReqDelivDate());
+            request.setNetValue(queryItem.getNetValue());
+            request.setNetValueUnit(queryItem.getNetValueUnit());
+            request.setTaxValue(queryItem.getTaxValue());
+            request.setTaxValueUnit(queryItem.getTaxValueUnit());
+            request.setPricingDate(queryItem.getPricingDate());
+            request.setOrderProbability(queryItem.getOrderProbability());
+            validationRequests.add(request);
+        }
+
+        return validationRequests;
+    }
+
+    /**
+     * 将验证结果转换为 SalesOrder 的响应格式
+     */
+    private Map<String, Object> convertValidationResponseToSalesOrderFormat(ItemValidationResponse validationResponse) {
+        Map<String, Object> data = new HashMap<>();
+
+        if (validationResponse != null && validationResponse.getData() != null) {
+            // 转换验证结果
+            if (validationResponse.getData().getResult() != null) {
+                Map<String, Object> result = new HashMap<>();
+                result.put("allDataLegal", validationResponse.getData().getResult().getAllDataLegal());
+                result.put("badRecordIndices", validationResponse.getData().getResult().getBadRecordIndices());
+                data.put("result", result);
+            }
+
+            // 转换汇总信息
+            if (validationResponse.getData().getGeneralData() != null) {
+                Map<String, Object> summary = new HashMap<>();
+                summary.put("totalNetValue", validationResponse.getData().getGeneralData().getNetValue());
+                summary.put("totalNetValueUnit", validationResponse.getData().getGeneralData().getNetValueUnit());
+                summary.put("totalExpectOralVal", validationResponse.getData().getGeneralData().getExpectOralVal());
+                summary.put("totalExpectOralValUnit", validationResponse.getData().getGeneralData().getExpectOralValUnit());
+                data.put("summary", summary);
+            }
+
+            // 转换明细列表
+            if (validationResponse.getData().getBreakdowns() != null) {
+                List<Map<String, Object>> breakdowns = new ArrayList<>();
+                for (ItemValidationResponse.ItemBreakdown breakdown : validationResponse.getData().getBreakdowns()) {
+                    Map<String, Object> breakdownMap = new HashMap<>();
+                    breakdownMap.put("item", breakdown.getItem());
+                    breakdownMap.put("material", breakdown.getMaterial());
+                    breakdownMap.put("orderQuantity", breakdown.getOrderQuantity());
+                    breakdownMap.put("orderQuantityUnit", breakdown.getOrderQuantityUnit());
+                    breakdownMap.put("description", breakdown.getDescription());
+                    breakdownMap.put("reqDelivDate", breakdown.getReqDelivDate());
+                    breakdownMap.put("netValue", breakdown.getNetValue());
+                    breakdownMap.put("netValueUnit", breakdown.getNetValueUnit());
+                    breakdownMap.put("taxValue", breakdown.getTaxValue());
+                    breakdownMap.put("taxValueUnit", breakdown.getTaxValueUnit());
+                    breakdownMap.put("pricingDate", breakdown.getPricingDate());
+                    breakdownMap.put("orderProbability", breakdown.getOrderProbability());
+                    breakdownMap.put("pricingElements", breakdown.getPricingElements());
+                    breakdowns.add(breakdownMap);
+                }
+                data.put("breakdowns", breakdowns);
+            }
+        }
+
+        return data;
     }
 
 }
