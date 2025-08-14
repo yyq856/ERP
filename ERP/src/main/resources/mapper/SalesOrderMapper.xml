@@ -47,8 +47,7 @@
             so.so_id AS soId,
             so.quote_id AS quotationId,
             so.sold_tp AS soldToParty,
-            c2.name AS shipToParty,
-            so.ship_tp AS shipToPartyId,
+            so.ship_tp AS shipToParty,
             q.cust_ref AS customerReference,
             DATE_FORMAT(q.customer_reference_date, '%Y-%m-%d') AS customerReferenceDate,
             DATE_FORMAT(so.req_delivery_date, '%Y-%m-%d') AS reqDeliveryDate,
@@ -58,7 +57,6 @@
         FROM
             erp_sales_order_hdr so
                 LEFT JOIN erp_customer c ON so.sold_tp = c.customer_id
-                LEFT JOIN erp_customer c2 ON so.ship_tp = c2.customer_id
                 LEFT JOIN erp_quotation q ON so.quote_id = q.quotation_id
         WHERE so.so_id = #{soId}
     </select>

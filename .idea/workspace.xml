@@ -4,9 +4,11 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="fd40e6ca-a706-415b-9e01-5f1f597c5af3" name="更改" comment="creatsalesorder修改">
+    <list default="true" id="fd40e6ca-a706-415b-9e01-5f1f597c5af3" name="更改" comment="删除错误处理">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/ERP/src/main/java/webserver/mapper/SalesOrderMapper.java" beforeDir="false" afterPath="$PROJECT_DIR$/ERP/src/main/java/webserver/mapper/SalesOrderMapper.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ERP/src/main/java/webserver/service/impl/SalesOrderServiceImpl.java" beforeDir="false" afterPath="$PROJECT_DIR$/ERP/src/main/java/webserver/service/impl/SalesOrderServiceImpl.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ERP/src/main/resources/mapper/SalesOrderMapper.xml" beforeDir="false" afterPath="$PROJECT_DIR$/ERP/src/main/resources/mapper/SalesOrderMapper.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ERP/target/classes/mapper/SalesOrderMapper.xml" beforeDir="false" afterPath="$PROJECT_DIR$/ERP/target/classes/mapper/SalesOrderMapper.xml" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -182,7 +184,9 @@
       <workItem from="1754977957279" duration="53000" />
       <workItem from="1754978018826" duration="14540000" />
       <workItem from="1754995247628" duration="10396000" />
-      <workItem from="1755072690394" duration="5747000" />
+      <workItem from="1755072690394" duration="9232000" />
+      <workItem from="1755155781030" duration="919000" />
+      <workItem from="1755156778547" duration="1372000" />
     </task>
     <task id="LOCAL-00001" summary="搜索控制">
       <option name="closed" value="true" />
@@ -360,7 +364,47 @@
       <option name="project" value="LOCAL" />
       <updated>1755008408908</updated>
     </task>
-    <option name="localTasksCounter" value="23" />
+    <task id="LOCAL-00023" summary="creatsalesorder修改">
+      <option name="closed" value="true" />
+      <created>1755096363844</created>
+      <option name="number" value="00023" />
+      <option name="presentableId" value="LOCAL-00023" />
+      <option name="project" value="LOCAL" />
+      <updated>1755096363844</updated>
+    </task>
+    <task id="LOCAL-00024" summary="creatsalesorder修改id">
+      <option name="closed" value="true" />
+      <created>1755096703499</created>
+      <option name="number" value="00024" />
+      <option name="presentableId" value="LOCAL-00024" />
+      <option name="project" value="LOCAL" />
+      <updated>1755096703499</updated>
+    </task>
+    <task id="LOCAL-00025" summary="getsalesorder修改id">
+      <option name="closed" value="true" />
+      <created>1755098136614</created>
+      <option name="number" value="00025" />
+      <option name="presentableId" value="LOCAL-00025" />
+      <option name="project" value="LOCAL" />
+      <updated>1755098136614</updated>
+    </task>
+    <task id="LOCAL-00026" summary="删除错误处理">
+      <option name="closed" value="true" />
+      <created>1755102886710</created>
+      <option name="number" value="00026" />
+      <option name="presentableId" value="LOCAL-00026" />
+      <option name="project" value="LOCAL" />
+      <updated>1755102886710</updated>
+    </task>
+    <task id="LOCAL-00027" summary="删除错误处理">
+      <option name="closed" value="true" />
+      <created>1755156923121</created>
+      <option name="number" value="00027" />
+      <option name="presentableId" value="LOCAL-00027" />
+      <option name="project" value="LOCAL" />
+      <updated>1755156923121</updated>
+    </task>
+    <option name="localTasksCounter" value="28" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -408,7 +452,10 @@
     <MESSAGE value="salesorder-search返回格式更改二周目" />
     <MESSAGE value="salesorder-search返回格式更改三周目" />
     <MESSAGE value="creatsalesorder修改" />
-    <option name="LAST_COMMIT_MESSAGE" value="creatsalesorder修改" />
+    <MESSAGE value="creatsalesorder修改id" />
+    <MESSAGE value="getsalesorder修改id" />
+    <MESSAGE value="删除错误处理" />
+    <option name="LAST_COMMIT_MESSAGE" value="删除错误处理" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
