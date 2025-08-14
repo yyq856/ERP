@@ -10,6 +10,8 @@ import java.time.LocalDate;
 @NoArgsConstructor
 @AllArgsConstructor
 public class Inquiry {
+    /** 送货日期 */
+    private LocalDate reqDelivDate;
     private Long inquiryId;
     private Long custId;
     private String inquiryType;

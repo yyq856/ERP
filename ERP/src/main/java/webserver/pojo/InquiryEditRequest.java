@@ -25,13 +25,14 @@ public class InquiryEditRequest {
     @NoArgsConstructor
     @AllArgsConstructor
     public static class BasicInfo {
-        private String inquiry;
-        private String soldToParty;
-        private String shipToParty;
-        private String customerReference;
-        private Double netValue;
-        private String netValueUnit;
-        private String customerReferenceDate;
+    private String inquiry;
+    private String soldToParty;
+    private String shipToParty;
+    private String customerReference;
+    private Double netValue;
+    private String netValueUnit;
+    private String customerReferenceDate;
+    private String status; // 新增，支持主表状态的更新
     }
     
     @Data
