@@ -555,12 +555,7 @@ public class SalesOrderServiceImpl implements SalesOrderService {
                 return Response.error("请求数据不能为空");
             }
             
-            // 2. 验证meta.id和basicInfo.so_id是否一致
-            if (!StringUtils.hasText(request.getMeta().getId()) || 
-                !request.getMeta().getId().equals(soId)) {
-                log.warn("meta.id和请求路径ID不一致");
-                return Response.error("meta.id和请求路径ID不一致");
-            }
+
             
             if (!StringUtils.hasText(request.getBasicInfo().getSo_id()) || 
                 !request.getBasicInfo().getSo_id().equals(soId)) {
