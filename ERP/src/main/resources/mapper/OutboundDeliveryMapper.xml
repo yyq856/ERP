@@ -13,7 +13,7 @@
         SELECT
         so.so_id,
         so.ship_tp,
-        NULL,
+        so.sold_tp,
         CURDATE(),
         'OPEN'
         FROM erp_sales_order_hdr so
@@ -100,13 +100,14 @@
             odi.pick_quantity AS pickingQuantity,
             odi.plant_id AS plant,
             p.plant_name AS plantName,
+            odi.confirm_status AS confirmationStatus,
             odi.storage_loc AS storageLocation,
             s.name AS storageLocationDescription
         FROM erp_outbound_delivery_item odi
                  LEFT JOIN erp_material m ON odi.mat_id = m.mat_id
                  LEFT JOIN erp_plant_name p ON odi.plant_id = p.plant_id
                  LEFT JOIN erp_storage_location s ON odi.storage_loc = s.loc_id
-        WHERE odi.dlv_id = #{deliveryId}
+        WHERE odi.dlv_id = #{deliveryId} AND odi.confirm_status="Not Completed"
     </select>
 
     <select id="findItemByMaterialAndPlant" resultType="webserver.pojo.OutboundDeliveryItemDTO">
@@ -176,6 +177,12 @@
     <!-- 新增：根据交货单ID获取 ship_to_party（bp_id） -->
     <select id="getShipToByDeliveryId" parameterType="long" resultType="long">
         SELECT ship_tp FROM erp_outbound_delivery WHERE dlv_id = #{dlvId}
+    </select>
+
+    <select id="getStreetAndCityByCustomerId" parameterType="string" resultType="string">
+        SELECT TRIM(CONCAT_WS(' ', street, city))
+        FROM erp_customer
+        WHERE customer_id = #{customerId}
     </select>
 
 </mapper>

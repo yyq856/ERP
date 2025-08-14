@@ -17,11 +17,11 @@ public class OutboundDeliveryDetailDTO {
     private String giStatus;
     private String shipToParty;
     private String address;
-    private String grossWeight;
+    private float grossWeight;
     private String grossWeightUnit;
-    private String netWeight;
+    private float netWeight;
     private String netWeightUnit;
-    private String volume;
+    private float volume;
     private String volumeUnit;
     private String priority;
     private String shippingPoint;

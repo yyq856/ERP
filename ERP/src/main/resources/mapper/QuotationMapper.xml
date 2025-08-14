@@ -73,4 +73,13 @@
         SELECT LAST_INSERT_ID()
     </select>
 
+    <select id="getExpectedOralVal" parameterType="string" resultType="string">
+        SELECT
+            CAST(q.probability / 100.0 * SUM(qi.net_price * qi.quantity) AS CHAR) AS expectedOralVal
+        FROM erp_quotation q
+                 JOIN erp_quotation_item qi ON q.quotation_id = qi.quotation_id
+        WHERE q.quotation_id = #{quotationId}
+        GROUP BY q.probability
+    </select>
+
 </mapper>

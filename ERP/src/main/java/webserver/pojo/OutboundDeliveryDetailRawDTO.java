@@ -8,7 +8,7 @@ public class OutboundDeliveryDetailRawDTO {
     private String plannedGIDate;
     private String actualGIDate;
     private String soId;
-    private String shipToParty;     // 原 ship_tp
+    private String shipToParty;
     private String shippingPoint;
     private String pickingStatus;
     private String giStatus;

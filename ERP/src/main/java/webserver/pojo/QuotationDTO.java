@@ -16,6 +16,7 @@ public class QuotationDTO {
     private Long shipTp;
     private String custRef;
     private Date customerReferenceDate;
+    private Date reqDelivDate;
     private Date validFromDate;
     private Date validToDate;
     private Float probability;

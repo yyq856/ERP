@@ -2,6 +2,7 @@ package webserver.mapper;
 
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
+import org.apache.ibatis.annotations.Select;
 import webserver.pojo.*;
 
 import java.util.List;
@@ -37,6 +38,5 @@ public interface OutboundDeliveryMapper {
 
     void updateItemPostStatus(@Param("deliveryId") String deliveryId, @Param("item") String itemNo);
 
-    // 新增：根据交货单ID获取 ship_to_party（bp_id）
-    Long getShipToByDeliveryId(@Param("dlvId") Long dlvId);
+    String getStreetAndCityByCustomerId(@Param("customerId") String customerId);
 }

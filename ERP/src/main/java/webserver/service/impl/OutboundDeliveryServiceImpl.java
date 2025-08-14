@@ -43,9 +43,6 @@ public class OutboundDeliveryServiceImpl implements OutboundDeliveryService {
             if (!items.isEmpty()) {
                 for (SalesItemDTO item : items) {
                     outboundDeliveryMapper.insertOutboundDeliveryItem(dlvId, item);
-                    // 预留：若要在创建交货时“承诺库存”，可在此调用 reserveStock（当前先不启用）
-                    // Long bpId = outboundDeliveryMapper.getShipToByDeliveryId(dlvId);
-                    // stockMapper.reserveStock(item.getPlantId(), item.getMatId(), bpId, item.getStorageLoc(), item.getPickQuantity());
                 }
             }
 
@@ -104,6 +101,11 @@ public class OutboundDeliveryServiceImpl implements OutboundDeliveryService {
         detail.setShippingPoint(raw.getShippingPoint() != null ? raw.getShippingPoint() : "");
         detail.setPickingStatus(raw.getPickingStatus() != null ? raw.getPickingStatus() : "Not Started");
         detail.setGiStatus(raw.getGiStatus() != null ? raw.getGiStatus() : "Not Started");
+        if(raw.getGiStatus() != null) detail.setOverallStatus("Completed");
+        else if(raw.getPickingStatus() != null) detail.setOverallStatus("Picked");
+        else detail.setOverallStatus("Not Started");
+        detail.setAddress(outboundDeliveryMapper.getStreetAndCityByCustomerId(raw.getShipToParty()));
+        detail.setGrossWeightUnit("KG");
 
         // 查询明细
         List<OutboundDeliveryItemDTO> items = outboundDeliveryMapper.getDeliveryItems(deliveryId);
@@ -111,21 +113,21 @@ public class OutboundDeliveryServiceImpl implements OutboundDeliveryService {
         // 如果明细为空，也保证返回结构
         if (items == null) items = new ArrayList<>();
 
+        float sum=0;
         // 填充默认值（非空处理和格式化）
         for (OutboundDeliveryItemDTO item : items) {
             if (item.getMaterialDescription() == null) item.setMaterialDescription("");
-            if (item.getDeliveryQuantity() == null) item.setDeliveryQuantity("0");
             if (item.getDeliveryQuantityUnit() == null) item.setDeliveryQuantityUnit("EA");
             if (item.getPickingQuantity() == null) item.setPickingQuantity("0");
+            item.setDeliveryQuantity(item.getPickingQuantity());
             if (item.getPickingQuantityUnit() == null) item.setPickingQuantityUnit("EA");
-            if (item.getPickingStatus() == null) item.setPickingStatus("Not Started");
             if (item.getConfirmationStatus() == null) item.setConfirmationStatus("Not Confirmed");
+            item.setPickingStatus(item.getConfirmationStatus());
             if (item.getSalesOrder() == null) item.setSalesOrder("");
             if (item.getItemType() == null) item.setItemType("TAN");
             if (item.getOriginalDeliveryQuantity() == null) item.setOriginalDeliveryQuantity("0 EA");
             if (item.getConversionRate() == null) item.setConversionRate("1.000");
             if (item.getBaseUnitDeliveryQuantity() == null) item.setBaseUnitDeliveryQuantity("0 EA");
-            if (item.getGrossWeight() == null) item.setGrossWeight("0.0 KG");
             if (item.getNetWeight() == null) item.setNetWeight("0.0 KG");
             if (item.getVolume() == null) item.setVolume("0.0 M3");
             if (item.getPlant() == null) item.setPlant("1000");
@@ -133,8 +135,10 @@ public class OutboundDeliveryServiceImpl implements OutboundDeliveryService {
             if (item.getStorageLocationDescription() == null) item.setStorageLocationDescription("");
             if (item.getStorageBin() == null) item.setStorageBin("");
             if (item.getMaterialAvailability() == null) item.setMaterialAvailability("");
+            sum += item.getGrossWeight();
         }
 
+        detail.setGrossWeight(sum);
         detail.setItems(new OutboundDeliveryDetailDTO.ItemsWrapper());
         detail.getItems().setItems(items);
 
@@ -239,6 +243,11 @@ public class OutboundDeliveryServiceImpl implements OutboundDeliveryService {
             detail.setShippingPoint(raw.getShippingPoint() != null ? raw.getShippingPoint() : "");
             detail.setPickingStatus(raw.getPickingStatus() != null ? raw.getPickingStatus() : "Not Started");
             detail.setGiStatus(raw.getGiStatus() != null ? raw.getGiStatus() : "Not Started");
+            if(raw.getGiStatus() != null) detail.setOverallStatus("Completed");
+            else if(raw.getPickingStatus() != null) detail.setOverallStatus("Picked");
+            else detail.setOverallStatus("Not Started");
+            detail.setAddress(outboundDeliveryMapper.getStreetAndCityByCustomerId(raw.getShipToParty()));
+            detail.setGrossWeightUnit("KG");
 
             Long bpId = null;
             try { bpId = Long.valueOf(detail.getShipToParty()); } catch (Exception ignored) {}
@@ -247,6 +256,8 @@ public class OutboundDeliveryServiceImpl implements OutboundDeliveryService {
 
             if (giItems != null) {
                 for (OutboundDeliveryItemDTO it : giItems) {
+                    it.setPickingStatus(it.getConfirmationStatus());
+                    it.setDeliveryQuantity(it.getPickingQuantity());
                     Long plantId = parseLongSafe(it.getPlant());
                     Long matId = parseLongSafe(it.getMaterial());
                     String storageLoc = it.getStorageLocation();
@@ -313,8 +324,9 @@ public class OutboundDeliveryServiceImpl implements OutboundDeliveryService {
             updatedDetail.setActualGIDate(raw.getActualGIDate() != null ? raw.getActualGIDate() : "");
             updatedDetail.setShipToParty(raw.getShipToParty() != null ? raw.getShipToParty() : "");
             updatedDetail.setShippingPoint(raw.getShippingPoint() != null ? raw.getShippingPoint() : "");
-            updatedDetail.setPickingStatus(raw.getPickingStatus() != null ? raw.getPickingStatus() : "Not Started");
-            updatedDetail.setGiStatus(raw.getGiStatus() != null ? raw.getGiStatus() : "Not Started");
+
+            updatedDetail.setAddress(outboundDeliveryMapper.getStreetAndCityByCustomerId(raw.getShipToParty()));
+            updatedDetail.setGrossWeightUnit("KG");
             List<OutboundDeliveryItemDTO> updatedItems = outboundDeliveryMapper.getDeliveryItems(id);
             if (updatedItems == null) updatedItems = new ArrayList<>();
 
@@ -330,15 +342,17 @@ public class OutboundDeliveryServiceImpl implements OutboundDeliveryService {
             }
 
             if (updatedDetail.getPickingStatus() == null) updatedDetail.setPickingStatus("Completed");
-            if (updatedDetail.getOverallStatus() == null) updatedDetail.setOverallStatus("Completed");
             if (updatedDetail.getGiStatus() == null) updatedDetail.setGiStatus("Posted");
+            if(raw.getGiStatus() != null) updatedDetail.setOverallStatus("Completed");
+            else if(raw.getPickingStatus() != null) updatedDetail.setOverallStatus("Picked");
+            else updatedDetail.setOverallStatus("Not Started");
 
             // 填充默认值 - items
             for (OutboundDeliveryItemDTO item : updatedItems) {
-                if (item.getPickingStatus() == null) item.setPickingStatus("Completed");
                 if (item.getConfirmationStatus() == null) item.setConfirmationStatus("Posted");
+                item.setPickingStatus(item.getConfirmationStatus());
                 if (item.getMaterialDescription() == null) item.setMaterialDescription("");
-                if (item.getDeliveryQuantity() == null) item.setDeliveryQuantity("0");
+                item.setDeliveryQuantity(item.getPickingQuantity());
                 if (item.getDeliveryQuantityUnit() == null) item.setDeliveryQuantityUnit("EA");
                 if (item.getPickingQuantity() == null) item.setPickingQuantity("0");
                 if (item.getPickingQuantityUnit() == null) item.setPickingQuantityUnit("EA");
@@ -347,7 +361,6 @@ public class OutboundDeliveryServiceImpl implements OutboundDeliveryService {
                 if (item.getOriginalDeliveryQuantity() == null) item.setOriginalDeliveryQuantity("0 EA");
                 if (item.getConversionRate() == null) item.setConversionRate("1.000");
                 if (item.getBaseUnitDeliveryQuantity() == null) item.setBaseUnitDeliveryQuantity("0 EA");
-                if (item.getGrossWeight() == null) item.setGrossWeight("0.0 KG");
                 if (item.getNetWeight() == null) item.setNetWeight("0.0 KG");
                 if (item.getVolume() == null) item.setVolume("0.0 M3");
                 if (item.getPlant() == null) item.setPlant("1000");
@@ -372,7 +385,6 @@ public class OutboundDeliveryServiceImpl implements OutboundDeliveryService {
         result.put("breakdowns", breakdowns);
         return Response.success(result);
     }
-
 
     // 安全解析 Long
     private Long parseLongSafe(String v){

@@ -9,6 +9,7 @@ import webserver.common.Response;
 import webserver.service.QuotationService;
 
 import java.text.SimpleDateFormat;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -71,8 +72,11 @@ public class QuotationServiceImpl implements QuotationService {
         itemOverview.setValidFrom(inquiry.getValidFromDate().toString());
         itemOverview.setValidTo(inquiry.getValidToDate().toString());
         itemOverview.setReqDelivDate(inquiry.getValidFromDate().toString());
-        itemOverview.setExpectedOralVal("0");        // 示例，可根据需求改
-        itemOverview.setExpectedOralValUnit("USD");  // 示例
+        itemOverview.setReqDelivDate(
+                inquiry.getCustomerReferenceDate().plusDays(7).toString()
+        );
+        itemOverview.setExpectOralVal(quotationMapper.getExpectedOralVal(String.valueOf(quotationId)));
+        itemOverview.setExpectOralValUnit("USD");
 
         List<QuotationItemDTO> items = new ArrayList<>();
         /*
@@ -106,6 +110,9 @@ public class QuotationServiceImpl implements QuotationService {
                 quotationMapper.selectQuotationItemsByQuotationId(quotationId);
 
         QuotationDetailsResponseDTO details = buildResponseDTO1(quotation, quotationItems);
+
+        details.getItemOverview().setExpectOralVal(quotationMapper.getExpectedOralVal(quotationId));
+        details.getItemOverview().setExpectOralValUnit("USD");
 
         // 外层包装
         QuotationResponseDTO1 response = new QuotationResponseDTO1();
@@ -149,8 +156,13 @@ public class QuotationServiceImpl implements QuotationService {
             itemOverview.setValidTo(new SimpleDateFormat("yyyy-MM-dd").format(quotation.getValidToDate()));
         }
         itemOverview.setReqDelivDate("");
-        itemOverview.setExpectedOralVal("");
-        itemOverview.setExpectedOralValUnit("");
+        if (quotation.getReqDelivDate() != null) {
+            itemOverview.setReqDelivDate(
+                    new SimpleDateFormat("yyyy-MM-dd").format(quotation.getReqDelivDate())
+            );
+        }
+        itemOverview.setExpectOralVal(quotationMapper.getExpectedOralVal(String.valueOf(quotation.getQuotationId())));
+        itemOverview.setExpectOralValUnit("USD");
 
         List<QuotationItemDTO> itemDTOs = new ArrayList<>();
         for (QuotationItemEntity item : items) {

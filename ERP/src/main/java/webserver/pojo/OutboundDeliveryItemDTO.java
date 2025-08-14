@@ -18,7 +18,7 @@ public class OutboundDeliveryItemDTO {
     private String originalDeliveryQuantity = "0 EA"; // 默认
     private String conversionRate = "1.000"; // 默认
     private String baseUnitDeliveryQuantity = "0 EA"; // 默认
-    private String grossWeight = "0.0 KG"; // 默认
+    private float grossWeight = (float) 0.0; // 默认
     private String netWeight = "0.0 KG";   // 默认
     private String volume = "0.0 M3";      // 默认
     private String plant = "1000";         // 默认

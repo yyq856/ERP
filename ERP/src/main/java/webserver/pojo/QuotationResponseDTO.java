@@ -30,8 +30,8 @@ public class QuotationResponseDTO {
         private String validFrom;
         private String validTo;
         private String reqDelivDate;
-        private String expectedOralVal;
-        private String expectedOralValUnit;
+        private String expectOralVal;
+        private String expectOralValUnit;
         private List<QuotationItemDTO> items;
     }
 }

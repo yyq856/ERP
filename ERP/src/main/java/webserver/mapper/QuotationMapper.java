@@ -37,6 +37,7 @@ public interface QuotationMapper {
                     customer_reference_date AS customerReferenceDate,
                     valid_from_date AS validFromDate,
                     valid_to_date AS validToDate,
+                    DATE_ADD(customer_reference_date, INTERVAL 7 DAY) AS reqDelivDate,
                     probability,
                     net_value AS netValue,
                     status,
@@ -120,4 +121,5 @@ public interface QuotationMapper {
     })
     List<Map<String, Object>> searchQuotations(QuotationSearchRequestDTO request);
 
+    String getExpectedOralVal(@Param("quotationId") String quotationId);
 }
