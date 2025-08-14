@@ -31,7 +31,7 @@ public class SearchOpenItemsRequest {
     
     @Data
     public static class OpenItemSelection {
-        private Float accountID;
+        private Object accountID;  // 使用Object类型以兼容字符串和数字
         private String accountType; // 只有customer和vendor
     }
 }
