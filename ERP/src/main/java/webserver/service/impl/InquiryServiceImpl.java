@@ -37,13 +37,17 @@ public class InquiryServiceImpl implements InquiryService {
             // 生成默认值
             Map<String, Object> content = new HashMap<>();
             Map<String, Object> itemOverview = new HashMap<>();
-            
+
             // 设置默认的请求交货日期（30天后）
             LocalDate defaultReqDelivDate = LocalDate.now().plusDays(30);
             itemOverview.put("reqDelivDate", defaultReqDelivDate.toString());
-            
+
+            // 初始化items为空列表，用户自行填写
+            List<Map<String, Object>> items = new ArrayList<>();
+            itemOverview.put("items", items);
+
             content.put("itemOverview", itemOverview);
-            
+
             Map<String, Object> data = new HashMap<>();
             data.put("content", content);
             
@@ -559,13 +563,10 @@ public class InquiryServiceImpl implements InquiryService {
         item.setOrderQuantityStr(itemDetail.getOrderQuantity());
         item.setOrderQuantityUnit(itemDetail.getOrderQuantityUnit());
         item.setDescription(itemDetail.getDescription());
-        // 优先用 itemDetail 的 reqDelivDate，如果没有则兜底用 overview 的 reqDelivDate，最后为当前日期加一个月
+        // 优先用 itemDetail 的 reqDelivDate，如果没有则兜底用 overview 的 reqDelivDate，不再兜底为当前日期
         String reqDelivDate = itemDetail.getReqDelivDate();
         if (!org.springframework.util.StringUtils.hasText(reqDelivDate)) {
             reqDelivDate = overviewReqDelivDate;
-        }
-        if (!org.springframework.util.StringUtils.hasText(reqDelivDate)) {
-            reqDelivDate = java.time.LocalDate.now().plusMonths(1).toString();
         }
         item.setReqDelivDate(reqDelivDate);
         item.setNetValueStr(itemDetail.getNetValue());
