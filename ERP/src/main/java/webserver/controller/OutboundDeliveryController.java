@@ -42,8 +42,13 @@ public class OutboundDeliveryController {
     }
 
     @PostMapping("/items-tab-query")
-    public Response<ValidateItemsResponse> validateItems(@RequestBody List<OutboundDeliveryItemDTO> requestItems) {
-        return outboundDeliveryService.validateAndCompleteDeliveryItems(requestItems);
+    public Response<ValidateItemsResponse.ValidateItemsData> validateItems(@RequestBody List<OutboundDeliveryItemDTO> requestItems) {
+        Response<ValidateItemsResponse> serviceResponse = outboundDeliveryService.validateAndCompleteDeliveryItems(requestItems);
+        if (serviceResponse.isSuccess()) {
+            return Response.success(serviceResponse.getData().getData());
+        } else {
+            return Response.error(serviceResponse.getMessage());
+        }
     }
 
     @PostMapping("/post-gis-by-id")

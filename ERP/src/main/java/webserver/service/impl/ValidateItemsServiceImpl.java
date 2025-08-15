@@ -425,19 +425,24 @@ public class ValidateItemsServiceImpl implements ValidateItemsService {
             // 转换总体数据
             if (response.getData().getGeneralData() != null) {
                 ValidateItemsResponse.GeneralData generalData = new ValidateItemsResponse.GeneralData();
-                generalData.setNetValue(response.getData().getGeneralData().getNetValue());
-                generalData.setNetValueUnit(response.getData().getGeneralData().getNetValueUnit());
-                generalData.setExpectOralVal(response.getData().getGeneralData().getExpectOralVal());
-                generalData.setExpectOralValUnit(response.getData().getGeneralData().getExpectOralValUnit());
+                // 对于非outbound delivery的情况，设置默认值
+                generalData.setPickingStatus("N/A");
+                generalData.setOverallStatus("N/A");
+                generalData.setGiStatus("N/A");
+                generalData.setReadyToPost(false);
+                generalData.setGrossWeight("0.000");
+                generalData.setGrossWeightUnit("KG");
+                generalData.setNetWeight("0.000");
+                generalData.setNetWeightUnit("KG");
+                generalData.setVolume("0.000");
+                generalData.setVolumeUnit("m³");
                 convertedData.setGeneralData(generalData);
             }
-            
-            // 转换明细列表
+
+            // 转换明细列表 - 这里需要转换为OutboundDeliveryItemDTO
             if (response.getData().getBreakdowns() != null) {
-                List<ValidateItemsResponse.ItemBreakdown> breakdowns = response.getData().getBreakdowns().stream()
-                    .map(this::convertToValidateItemsBreakdown)
-                    .collect(Collectors.toList());
-                convertedData.setBreakdowns(breakdowns);
+                // 对于非outbound delivery的情况，返回空列表
+                convertedData.setBreakdowns(new ArrayList<>());
             }
         }
         

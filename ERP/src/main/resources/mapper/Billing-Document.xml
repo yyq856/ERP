@@ -36,7 +36,7 @@
         WHERE c.customer_id = #{soldToParty}
           AND so.req_delivery_date &lt;= #{billingDate}
           AND so.status = 'COMPLETED'
-          AND od.status = 'COMPLETED'
+          AND od.overall_status = 'Completed'
           AND NOT EXISTS (
             SELECT 1
             FROM erp_outbound_delivery od2
@@ -46,38 +46,7 @@
         ORDER BY so.so_id, si.item_no
     </select>
 
-    <!-- 根据交货单ID获取开票项目列表 -->
-    <select id="getBillingItemsByDeliveryId" resultType="map">
-        SELECT
-            si.item_no AS item,
-            m.mat_id AS material,
-            si.quantity AS orderQuantity,
-            m.base_uom AS orderQuantityUnit,
-            m.mat_desc AS description,
-            DATE_FORMAT(so.req_delivery_date, '%Y-%m-%d') AS reqDelivDate,
-            FORMAT(si.net_price * si.quantity, 2) AS netValue,
-            so.currency AS netValueUnit,
-            FORMAT((si.net_price * si.quantity) * 0.1, 2) AS taxValue,
-            so.currency AS taxValueUnit,
-            DATE_FORMAT(so.doc_date, '%Y-%m-%d') AS pricingDate,
-            '95' AS orderProbability,
-            od.dlv_id AS dlvId
-        FROM erp_sales_order_hdr so
-                 JOIN erp_customer c ON so.customer_no = c.customer_id
-                 JOIN erp_sales_item si ON so.so_id = si.so_id
-                 JOIN erp_material m ON si.mat_id = m.mat_id
-                 JOIN erp_outbound_delivery od ON so.so_id = od.so_id
-        WHERE od.dlv_id = #{deliveryId}
-          AND so.status = 'COMPLETED'
-          AND od.status = 'COMPLETED'
-          AND NOT EXISTS (
-            SELECT 1
-            FROM erp_outbound_delivery od2
-                     JOIN erp_billing_hdr bh ON od2.dlv_id = bh.dlv_id
-            WHERE od2.so_id = so.so_id
-        )
-        ORDER BY so.so_id, si.item_no
-    </select>
+
 
     <!-- 根据开票凭证号获取开票凭证基本信息 -->
     <select id="getBillingHeader" resultType="map">
@@ -99,47 +68,47 @@
     <!-- 根据开票凭证号获取开票凭证项目信息 -->
     <select id="getBillingItemsById" resultType="map">
         SELECT
-            bi.item_no AS item,
-            m.mat_id AS material,
-            bi.quantity AS orderQuantity,
+            CAST(bi.item_no AS CHAR) AS item,
+            CAST(m.mat_id AS CHAR) AS material,
+            CAST(bi.quantity AS CHAR) AS orderQuantity,
             m.base_uom AS orderQuantityUnit,
             m.mat_desc AS description,
+            DATE_FORMAT(bh.billing_date, '%Y-%m-%d') AS reqDelivDate,
             FORMAT(bi.net_price * bi.quantity, 2) AS netValue,
             so.currency AS netValueUnit,
             FORMAT(bi.net_price * bi.quantity * bi.tax_rate / 100, 2) AS taxValue,
             so.currency AS taxValueUnit,
             DATE_FORMAT(bh.billing_date, '%Y-%m-%d') AS pricingDate,
             '100' AS orderProbability,
-            od.dlv_id AS dlvId
+            ei.pricing_elements_json AS pricingElements,
+            '' AS status,
+            '' AS numC,
+            '' AS atoMtsComponent,
+            '' AS oun,
+            '' AS cconDe,
+            '' AS un,
+            '' AS conditionValue2,
+            '' AS cdCur,
+            TRUE AS stat
         FROM erp_billing_item bi
-                 JOIN erp_billing_hdr bh ON bi.bill_id = bh.bill_id
-                 JOIN erp_material m ON bi.mat_id = m.mat_id
-                 JOIN erp_outbound_delivery od ON bh.dlv_id = od.dlv_id
-                 JOIN erp_sales_order_hdr so ON od.so_id = so.so_id
+        JOIN erp_billing_hdr bh ON bi.bill_id = bh.bill_id
+        JOIN erp_material m ON bi.mat_id = m.mat_id
+        JOIN erp_outbound_delivery od ON bh.dlv_id = od.dlv_id
+        JOIN erp_sales_order_hdr so ON od.so_id = so.so_id
+        LEFT JOIN erp_item ei ON od.so_id = ei.document_id AND ei.document_type = 'sales_order' AND ei.item_no = bi.item_no
         WHERE bi.bill_id = #{billingDocumentId}
         ORDER BY bi.item_no
     </select>
 
     <!-- 根据交货单ID获取客户ID -->
     <select id="getCustomerIdByDeliveryId" resultType="string">
-        SELECT so.customer_no
+        SELECT CAST(so.customer_no AS CHAR)
         FROM erp_outbound_delivery od
-                 JOIN erp_sales_order_hdr so ON od.so_id = so.so_id
+        JOIN erp_sales_order_hdr so ON od.so_id = so.so_id
         WHERE od.dlv_id = #{dlvId}
     </select>
 
-    <!-- 根据交货单ID获取交货单信息 -->
-    <select id="getDeliveryById" resultType="map">
-        SELECT
-            od.dlv_id AS deliveryId,
-            CAST(so.customer_no AS CHAR) AS customerId,
-            c.name AS customerName,
-            DATE_FORMAT(od.gi_date, '%Y-%m-%d') AS deliveryDate
-        FROM erp_outbound_delivery od
-                 JOIN erp_sales_order_hdr so ON od.so_id = so.so_id
-                 JOIN erp_customer c ON so.customer_no = c.customer_id
-        WHERE od.dlv_id = #{deliveryId}
-    </select>
+
 
     <!-- 检查交货单是否存在 -->
     <select id="checkDeliveryExists" resultType="int">
@@ -152,7 +121,7 @@
     <select id="isDeliveryCompleted" resultType="boolean">
         SELECT COUNT(*) > 0
         FROM erp_outbound_delivery
-        WHERE dlv_id = #{deliveryId} AND status = 'COMPLETED'
+        WHERE dlv_id = #{deliveryId} AND overall_status = 'Completed'
     </select>
 
     <!-- 创建开票凭证 -->
@@ -284,6 +253,52 @@
         FROM erp_pricing_element pe
         WHERE pe.document_type = 'sales_order' AND pe.document_id = #{soId} AND pe.item_no = #{itemNo}
         ORDER BY pe.element_id
+    </select>
+
+    <!-- 根据交货单ID获取交货单信息 -->
+    <select id="getDeliveryById" resultType="map">
+        SELECT
+            od.dlv_id AS deliveryId,
+            od.so_id AS salesOrderId,
+            od.overall_status AS status,
+            c.customer_id AS customerId,
+            c.name AS customerName
+        FROM erp_outbound_delivery od
+        JOIN erp_customer c ON od.ship_tp = c.customer_id
+        WHERE od.dlv_id = #{deliveryId}
+    </select>
+
+    <!-- 根据交货单ID获取开票项目列表 -->
+    <select id="getBillingItemsByDeliveryId" resultType="map">
+        SELECT
+            CAST(ei.item_no AS CHAR) AS item,
+            ei.material_code AS material,
+            ei.order_quantity_str AS orderQuantity,
+            ei.order_quantity_unit AS orderQuantityUnit,
+            m.mat_desc AS description,
+            ei.req_deliv_date AS reqDelivDate,
+            FORMAT(ei.item_value, 2) AS netValue,
+            so.currency AS netValueUnit,
+            FORMAT(ei.item_value * 0.13, 2) AS taxValue,
+            so.currency AS taxValueUnit,
+            ei.pricing_date AS pricingDate,
+            ei.order_probability AS orderProbability,
+            ei.pricing_elements_json AS pricingElements,
+            '' AS status,
+            '' AS numC,
+            '' AS atoMtsComponent,
+            '' AS oun,
+            '' AS cconDe,
+            '' AS un,
+            '' AS conditionValue2,
+            '' AS cdCur,
+            TRUE AS stat
+        FROM erp_outbound_delivery od
+        JOIN erp_item ei ON od.so_id = ei.document_id AND ei.document_type = 'sales_order'
+        JOIN erp_material m ON ei.mat_id = m.mat_id
+        JOIN erp_sales_order_hdr so ON od.so_id = so.so_id
+        WHERE od.dlv_id = #{deliveryId}
+        ORDER BY ei.item_no
     </select>
 
 </mapper>

@@ -19,7 +19,7 @@ public class ValidateItemsResponse {
     public static class ValidateItemsData {
         private ValidationResult result;
         private GeneralData generalData;
-        private List<ItemBreakdown> breakdowns;
+        private List<OutboundDeliveryItemDTO> breakdowns;
     }
     
     @Data
@@ -34,10 +34,16 @@ public class ValidateItemsResponse {
     @NoArgsConstructor
     @AllArgsConstructor
     public static class GeneralData {
-        private String netValue;               // 总净值
-        private String netValueUnit;           // 总净值单位
-        private String expectOralVal;          // 总预期口头值
-        private String expectOralValUnit;      // 总预期口头值单位
+        private String pickingStatus;          // 拣货状态
+        private String overallStatus;          // 总体状态
+        private String giStatus;               // 出库状态
+        private Boolean readyToPost;           // 是否准备过账
+        private String grossWeight;            // 总毛重
+        private String grossWeightUnit;        // 总毛重单位
+        private String netWeight;              // 总净重
+        private String netWeightUnit;          // 总净重单位
+        private String volume;                 // 总体积
+        private String volumeUnit;             // 总体积单位
     }
     
     @Data

@@ -449,7 +449,7 @@ public class SearchApiController {
     // 22) 交货单ID
     @PostMapping("/delivery-id")
     public Map<String, Object> deliveryId(@RequestBody(required = false) Map<String, Object> body) {
-        StringBuilder sql = new StringBuilder("SELECT dlv_id AS result, '' AS description, shipping_point AS shippingPoint, ship_tp AS shipToParty, pick_date_plan AS pickingDate, NULL AS loadingDate, gi_date AS plannedGIDate, NULL AS deliveryDate, status AS pickingStatus FROM erp_outbound_delivery WHERE 1=1");
+        StringBuilder sql = new StringBuilder("SELECT dlv_id AS result, '' AS description, shipping_point AS shippingPoint, ship_tp AS shipToParty, planned_gi_date AS pickingDate, loading_date AS loadingDate, planned_gi_date AS plannedGIDate, delivery_date AS deliveryDate, picking_status AS pickingStatus FROM erp_outbound_delivery WHERE 1=1");
         List<Object> args = new ArrayList<>();
         if (body != null) {
             Object v;
@@ -463,7 +463,7 @@ public class SearchApiController {
                 for (Object o : list) {
                     if (o instanceof Map<?, ?> m && m.get("status") != null) {
                         sql.append(first ? "" : " OR ");
-                        sql.append("status = ?");
+                        sql.append("picking_status = ?");
                         args.add(m.get("status"));
                         first = false;
                     }

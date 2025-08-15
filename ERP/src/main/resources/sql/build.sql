@@ -392,6 +392,16 @@ CREATE TABLE `erp_material` (
   CONSTRAINT `chk_std_price_positive` CHECK ((`srd_price` >= 0))
 ) ENGINE=InnoDB AUTO_INCREMENT=10006 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
+-- 扩展物料基础重量与体积字段（按需新增）
+ALTER TABLE `erp_material`
+  ADD COLUMN `base_gross_weight` decimal(13,3) DEFAULT NULL COMMENT '基础毛重',
+  ADD COLUMN `base_gross_weight_unit` varchar(10) COLLATE utf8mb4_general_ci DEFAULT NULL COMMENT '基础毛重单位',
+  ADD COLUMN `base_net_weight` decimal(13,3) DEFAULT NULL COMMENT '基础净重',
+  ADD COLUMN `base_net_weight_unit` varchar(10) COLLATE utf8mb4_general_ci DEFAULT NULL COMMENT '基础净重单位',
+  ADD COLUMN `base_volume` decimal(13,3) DEFAULT NULL COMMENT '基础体积',
+  ADD COLUMN `base_volume_unit` varchar(10) COLLATE utf8mb4_general_ci DEFAULT NULL COMMENT '基础体积单位';
+
+
 DROP TABLE IF EXISTS `erp_material_document`;
 CREATE TABLE `erp_material_document` (
   `material_document_id` bigint NOT NULL AUTO_INCREMENT COMMENT '物料凭证ID',
@@ -459,39 +469,63 @@ CREATE TABLE `erp_order_status` (
 DROP TABLE IF EXISTS `erp_outbound_delivery`;
 CREATE TABLE `erp_outbound_delivery` (
   `dlv_id` bigint NOT NULL AUTO_INCREMENT COMMENT '交货单ID',
-  `so_id` bigint NOT NULL,
-  `ship_tp` bigint NOT NULL,
-  `shipping_point` varchar(10) COLLATE utf8mb4_general_ci DEFAULT NULL,
-  `pick_date_plan` date DEFAULT NULL,
-  `gi_date` date DEFAULT NULL,
-  `status` varchar(10) COLLATE utf8mb4_general_ci DEFAULT NULL,
+  `so_id` bigint NOT NULL COMMENT '关联销售订单ID',
+  `ship_tp` bigint NOT NULL COMMENT '送达方客户ID',
+  `shipping_point` varchar(50) COLLATE utf8mb4_general_ci DEFAULT NULL COMMENT '装运点/发运点',
+  `posted` tinyint(1) DEFAULT '0' COMMENT '是否已过账',
+  `ready_to_post` tinyint(1) DEFAULT '0' COMMENT '是否准备好过账',
+  `actual_gi_date` date DEFAULT NULL COMMENT '实际发货日期',
+  `planned_gi_date` date DEFAULT NULL COMMENT '计划发货日期(来自SO)',
+  `actual_date` date DEFAULT NULL COMMENT '实际日期（过账时）',
+  `loading_date` date DEFAULT NULL COMMENT '装载日期(来自SO)',
+  `delivery_date` date DEFAULT NULL COMMENT '交货日期(来自SO)',
+  `picking_status` varchar(20) COLLATE utf8mb4_general_ci DEFAULT 'IN_PROGRESS' COMMENT '拣配状态',
+  `overall_status` varchar(20) COLLATE utf8mb4_general_ci DEFAULT 'IN_PROGRESS' COMMENT '整体状态',
+  `gi_status` varchar(20) COLLATE utf8mb4_general_ci DEFAULT 'IN_PROGRESS' COMMENT '发货状态',
+  `address` varchar(200) COLLATE utf8mb4_general_ci DEFAULT NULL COMMENT '送达地址',
+  `gross_weight` decimal(13,3) DEFAULT NULL COMMENT '总毛重',
+  `gross_weight_unit` varchar(10) COLLATE utf8mb4_general_ci DEFAULT NULL COMMENT '毛重单位',
+  `net_weight` decimal(13,3) DEFAULT NULL COMMENT '总净重',
+  `net_weight_unit` varchar(10) COLLATE utf8mb4_general_ci DEFAULT NULL COMMENT '净重单位',
+  `volume` decimal(13,3) DEFAULT NULL COMMENT '总体积',
+  `volume_unit` varchar(10) COLLATE utf8mb4_general_ci DEFAULT NULL COMMENT '体积单位',
+  `priority` varchar(50) COLLATE utf8mb4_general_ci DEFAULT 'Normal Items' COMMENT '优先级',
+  `created_time` timestamp NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `updated_time` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
   PRIMARY KEY (`dlv_id`),
   KEY `so_id` (`so_id`),
   KEY `ship_tp` (`ship_tp`),
-  KEY `status` (`status`),
   CONSTRAINT `erp_outbound_delivery_ibfk_1` FOREIGN KEY (`so_id`) REFERENCES `erp_sales_order_hdr` (`so_id`),
-  CONSTRAINT `erp_outbound_delivery_ibfk_2` FOREIGN KEY (`ship_tp`) REFERENCES `erp_customer` (`customer_id`),
-  CONSTRAINT `erp_outbound_delivery_ibfk_3` FOREIGN KEY (`status`) REFERENCES `erp_order_status` (`status_code`)
-) ENGINE=InnoDB AUTO_INCREMENT=1028 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
-DROP TABLE IF EXISTS `erp_outbound_delivery_item`;
-CREATE TABLE `erp_outbound_delivery_item` (
-  `dlv_id` bigint NOT NULL,
-  `item_no` smallint NOT NULL,
-  `mat_id` bigint NOT NULL,
-  `pick_quantity` smallint NOT NULL,
-  `plant_id` bigint NOT NULL,
-  `storage_loc` varchar(10) COLLATE utf8mb4_general_ci NOT NULL,
-  `confirm_status` varchar(20) COLLATE utf8mb4_general_ci DEFAULT 'NOT_CONFIRMED' COMMENT '确认状态',
-  PRIMARY KEY (`dlv_id`,`item_no`),
-  KEY `mat_id` (`mat_id`),
-  KEY `plant_id` (`plant_id`),
-  KEY `storage_loc` (`storage_loc`),
-  CONSTRAINT `erp_outbound_delivery_item_ibfk_1` FOREIGN KEY (`dlv_id`) REFERENCES `erp_outbound_delivery` (`dlv_id`),
-  CONSTRAINT `erp_outbound_delivery_item_ibfk_2` FOREIGN KEY (`mat_id`) REFERENCES `erp_material` (`mat_id`),
-  CONSTRAINT `erp_outbound_delivery_item_ibfk_3` FOREIGN KEY (`plant_id`) REFERENCES `erp_plant_name` (`plant_id`),
-  CONSTRAINT `erp_outbound_delivery_item_ibfk_4` FOREIGN KEY (`storage_loc`) REFERENCES `erp_storage_location` (`loc_id`)
+  CONSTRAINT `erp_outbound_delivery_ibfk_2` FOREIGN KEY (`ship_tp`) REFERENCES `erp_customer` (`customer_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+DROP TABLE IF EXISTS `erp_outbound_item`;
+CREATE TABLE `erp_outbound_item` (
+  `dlv_id` bigint NOT NULL COMMENT '出库交货单ID',
+  `item_no` smallint NOT NULL COMMENT '行项目号',
+  `ref_document_id` bigint NOT NULL COMMENT '引用的erp_item.document_id (销售订单ID)',
+  `ref_document_type` varchar(20) COLLATE utf8mb4_general_ci NOT NULL COMMENT '引用的erp_item.document_type (固定为sales)',
+  `ref_item_no` smallint NOT NULL COMMENT '引用的erp_item.item_no (销售订单行项目号)',
+  `picking_quantity` decimal(13,3) NOT NULL DEFAULT 0 COMMENT '拣配数量',
+  `picking_status` varchar(20) COLLATE utf8mb4_general_ci NOT NULL DEFAULT 'Completed' COMMENT '拣配状态',
+  `confirmation_status` varchar(20) COLLATE utf8mb4_general_ci NOT NULL DEFAULT 'Not Confirmed' COMMENT '确认状态',
+  `item_type` varchar(20) COLLATE utf8mb4_general_ci NOT NULL DEFAULT 'Standard' COMMENT '项目类型',
+  `conversion_rate` decimal(13,3) NOT NULL DEFAULT 1.000 COMMENT '转换率',
+  `storage_loc` varchar(10) COLLATE utf8mb4_general_ci DEFAULT NULL COMMENT '库存地点(用户输入)',
+  `storage_bin` varchar(30) COLLATE utf8mb4_general_ci DEFAULT NULL COMMENT '储位(用户输入)',
+  `gross_weight` decimal(13,3) DEFAULT NULL COMMENT '毛重(数值)',
+  `gross_weight_unit` varchar(10) COLLATE utf8mb4_general_ci DEFAULT NULL COMMENT '毛重单位',
+  `net_weight` decimal(13,3) DEFAULT NULL COMMENT '净重(数值)',
+  `net_weight_unit` varchar(10) COLLATE utf8mb4_general_ci DEFAULT NULL COMMENT '净重单位',
+  `volume` decimal(13,3) DEFAULT NULL COMMENT '体积(数值)',
+  `volume_unit` varchar(10) COLLATE utf8mb4_general_ci DEFAULT NULL COMMENT '体积单位',
+  `created_time` timestamp NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `updated_time` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  PRIMARY KEY (`dlv_id`,`item_no`),
+  KEY `idx_outbound_item_ref` (`ref_document_id`,`ref_document_type`,`ref_item_no`),
+  KEY `idx_outbound_item_storage_loc` (`storage_loc`),
+  CONSTRAINT `fk_outbound_item_dlv` FOREIGN KEY (`dlv_id`) REFERENCES `erp_outbound_delivery` (`dlv_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci COMMENT='出库交货单物品表，引用销售订单的统一erp_item记录';
 
 DROP TABLE IF EXISTS `erp_payment`;
 CREATE TABLE `erp_payment` (

@@ -8,7 +8,9 @@ import org.springframework.transaction.annotation.Transactional;
 import webserver.mapper.BillingMapper;
 import webserver.pojo.*;
 import webserver.service.BillingService;
+import webserver.service.UnifiedItemService;
 import webserver.service.ValidateItemsService;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.util.*;
 
@@ -19,6 +21,9 @@ public class BillingServiceImpl implements BillingService {
     
     @Autowired
     private BillingMapper billingMapper;
+
+    @Autowired
+    private UnifiedItemService unifiedItemService;
 
     @Autowired
     private ValidateItemsService validateItemsService;
@@ -93,26 +98,32 @@ public class BillingServiceImpl implements BillingService {
         
         // 如果指定了deliveryId，从交货单获取项目信息
         if (deliveryId != null && !deliveryId.isEmpty()) {
-            items = billingMapper.getBillingItemsByDeliveryId(deliveryId);
-            
-            // 为每个项目添加定价元素
-            for (Map<String, Object> item : items) {
-                // 从项目中获取必要的信息来查询定价元素
-                String dlvId = (String) item.get("dlvId");
-                if (dlvId != null) {
-                    // 获取交货单对应的销售订单ID和项目号
-                    Map<String, Object> deliveryInfo = billingMapper.getDeliveryInfo(dlvId);
-                    if (deliveryInfo != null) {
-                        Long soId = (Long) deliveryInfo.get("soId");
-                        Integer itemNo = (Integer) deliveryInfo.get("itemNo");
-                        
-                        if (soId != null && itemNo != null) {
-                            // 获取定价元素
-                            List<Map<String, Object>> pricingElements = billingMapper.getPricingElements(soId, itemNo);
-                            item.put("pricingElements", pricingElements);
+            // 首先获取交货单对应的销售订单ID
+            Map<String, Object> deliveryInfo = billingMapper.getDeliveryById(deliveryId);
+            if (deliveryInfo != null) {
+                Object salesOrderIdObj = deliveryInfo.get("salesOrderId");
+                if (salesOrderIdObj != null) {
+                    try {
+                        Long soId;
+                        if (salesOrderIdObj instanceof Long) {
+                            soId = (Long) salesOrderIdObj;
+                        } else {
+                            soId = Long.parseLong(salesOrderIdObj.toString());
                         }
+                        // 使用统一item服务获取销售订单的items（包含完整的pricingElements）
+                        items = unifiedItemService.getDocumentItemsAsFrontendFormat(soId, "sales_order");
+                        log.info("从统一item服务获取到 {} 个items", items.size());
+                    } catch (Exception e) {
+                        log.warn("销售订单ID格式错误: {}, 错误: {}", salesOrderIdObj, e.getMessage());
+                        items = new ArrayList<>();
                     }
+                } else {
+                    log.warn("无法获取交货单 {} 对应的销售订单ID", deliveryId);
+                    items = new ArrayList<>();
                 }
+            } else {
+                log.warn("无法找到交货单: {}", deliveryId);
+                items = new ArrayList<>();
             }
         }
         
@@ -132,25 +143,34 @@ public class BillingServiceImpl implements BillingService {
             return null; // 未找到开票凭证
         }
         
-        // 获取开票凭证项目信息
-        List<Map<String, Object>> billingItems = billingMapper.getBillingItemsById(billingDocumentId);
-        
-        // 为每个项目添加定价元素
-        for (Map<String, Object> item : billingItems) {
-            // 从项目中获取交货单ID
-            Object dlvIdObj = item.get("dlvId");
-            if (dlvIdObj != null) {
-                String dlvId = dlvIdObj.toString();
-                // 获取交货单对应的销售订单ID和项目号
-                Map<String, Object> deliveryInfo = billingMapper.getDeliveryInfo(dlvId);
-                if (deliveryInfo != null) {
-                    Long soId = (Long) deliveryInfo.get("soId");
-                    Integer itemNo = (Integer) deliveryInfo.get("itemNo");
-                    
-                    if (soId != null && itemNo != null) {
-                        // 获取定价元素
-                        List<Map<String, Object>> pricingElements = billingMapper.getPricingElements(soId, itemNo);
-                        item.put("pricingElements", pricingElements);
+        // 使用统一item服务获取开票凭证项目信息
+        List<Map<String, Object>> billingItems;
+        try {
+            Long documentId = Long.parseLong(billingDocumentId);
+            billingItems = unifiedItemService.getDocumentItemsAsFrontendFormat(documentId, "billing_doc");
+            log.info("从统一item服务获取到开票凭证{}的{}个items", billingDocumentId, billingItems.size());
+        } catch (Exception e) {
+            log.warn("使用统一item服务获取开票凭证items失败，回退到旧方式: {}", e.getMessage());
+            // 回退到旧方式
+            billingItems = billingMapper.getBillingItemsById(billingDocumentId);
+
+            // 为每个项目添加定价元素
+            for (Map<String, Object> item : billingItems) {
+                // 从项目中获取交货单ID
+                Object dlvIdObj = item.get("dlvId");
+                if (dlvIdObj != null) {
+                    String dlvId = dlvIdObj.toString();
+                    // 获取交货单对应的销售订单ID和项目号
+                    Map<String, Object> deliveryInfo = billingMapper.getDeliveryInfo(dlvId);
+                    if (deliveryInfo != null) {
+                        Long soId = (Long) deliveryInfo.get("soId");
+                        Integer itemNo = (Integer) deliveryInfo.get("itemNo");
+
+                        if (soId != null && itemNo != null) {
+                            // 获取定价元素
+                            List<Map<String, Object>> pricingElements = billingMapper.getPricingElements(soId, itemNo);
+                            item.put("pricingElements", pricingElements);
+                        }
                     }
                 }
             }
@@ -213,6 +233,17 @@ public class BillingServiceImpl implements BillingService {
                     throw new RuntimeException("更新时basicInfo不能为空");
                 }
                 
+                // 处理netValue中的逗号分隔符
+                if (basicInfo.getNetValue() != null) {
+                    basicInfo.setNetValue(basicInfo.getNetValue().replace(",", ""));
+                }
+                if (basicInfo.getTaxValue() != null) {
+                    basicInfo.setTaxValue(basicInfo.getTaxValue().replace(",", ""));
+                }
+                if (basicInfo.getGrossValue() != null) {
+                    basicInfo.setGrossValue(basicInfo.getGrossValue().replace(",", ""));
+                }
+
                 log.debug("更新开票凭证: {}", billingId);
                 billingMapper.updateBilling(request);
                 
@@ -229,12 +260,23 @@ public class BillingServiceImpl implements BillingService {
                 if (basicInfo.getPayerId() == null || basicInfo.getPayerId().isEmpty()) {
                     // 如果没有 payerId，尝试从数据库获取客户ID
                     String deliveryId = basicInfo.getDeliveryId();
+                    log.info("尝试从交货单 {} 获取客户ID", deliveryId);
                     if (deliveryId != null && !deliveryId.isEmpty()) {
                         String customerId = billingMapper.getCustomerIdByDeliveryId(deliveryId);
+                        log.info("从交货单 {} 获取到客户ID: {}", deliveryId, customerId);
                         if (customerId != null && !customerId.isEmpty()) {
                             basicInfo.setPayerId(customerId);
+                            log.info("设置payerId为: {}", customerId);
+                        } else {
+                            log.warn("无法从交货单 {} 获取客户ID，使用默认值", deliveryId);
+                            basicInfo.setPayerId("1"); // 设置默认客户ID
                         }
+                    } else {
+                        log.warn("deliveryId为空，使用默认客户ID");
+                        basicInfo.setPayerId("1"); // 设置默认客户ID
                     }
+                } else {
+                    log.info("使用提供的payerId: {}", basicInfo.getPayerId());
                 }
                 
                 // 确保必要的字段有默认值
@@ -256,25 +298,43 @@ public class BillingServiceImpl implements BillingService {
                 log.debug("生成开票凭证ID: {}", billingId);
             }
             
-            // 插入项目
+            // 插入项目到erp_billing_item表
             if (itemOverview != null && itemOverview.getItems() != null) {
                 List<BillingEditRequest.Item> items = itemOverview.getItems();
                 if (!items.isEmpty()) {
-                    log.debug("插入{}个项目", items.size());
+                    log.debug("插入{}个项目到erp_billing_item表", items.size());
+                    int validItemNo = 1; // 有效项目的序号
                     for (int i = 0; i < items.size(); i++) {
                         BillingEditRequest.Item item = items.get(i);
                         if (item != null) {
+                            // 过滤空的item - 检查material字段是否有效
+                            if (item.getMaterial() == null || item.getMaterial().trim().isEmpty()) {
+                                log.debug("跳过空的item: index={}, material为空", i + 1);
+                                continue;
+                            }
+
                             // 添加项目号
                             Map<String, Object> itemMap = new HashMap<>();
-                            itemMap.put("itemNo", i + 1);
+                            itemMap.put("itemNo", validItemNo);
                             itemMap.put("materialId", item.getMaterialId() != null ? item.getMaterialId() : "1");
                             itemMap.put("quantity", item.getQuantity() != null ? item.getQuantity() : "0");
                             itemMap.put("netPrice", item.getNetPrice() != null ? item.getNetPrice() : "0.00");
                             itemMap.put("taxRate", item.getTaxRate() != null ? item.getTaxRate() : "10");
-                            
-                            log.debug("插入项目 {}: {}", i + 1, itemMap);
+
+                            log.debug("插入项目 {}: {}", validItemNo, itemMap);
                             billingMapper.insertBillingItem(billingId, itemMap);
+                            validItemNo++; // 只有有效项目才增加序号
                         }
+                    }
+
+                    // 🔥 调用统一item服务，将数据写入erp_item表
+                    try {
+                        Long documentId = Long.parseLong(billingId);
+                        List<Map<String, Object>> unifiedItems = convertBillingItemsToUnifiedFormat(items);
+                        unifiedItemService.updateDocumentItems(documentId, "billing_doc", unifiedItems);
+                        log.info("成功调用统一item服务，写入{}个items到erp_item表", unifiedItems.size());
+                    } catch (Exception e) {
+                        log.error("调用统一item服务失败: {}", e.getMessage(), e);
                     }
                 } else {
                     log.debug("没有项目需要插入");
@@ -514,5 +574,147 @@ public class BillingServiceImpl implements BillingService {
         }
 
         return data;
+    }
+
+    /**
+     * 将BillingEditRequest.Item转换为统一的前端数据格式
+     * 参考inquiry的实现方式
+     */
+    /**
+     * 转换开票凭证项目为统一item服务格式（用于存储到数据库）
+     */
+    private List<Map<String, Object>> convertBillingItemsToUnifiedFormat(List<BillingEditRequest.Item> items) {
+        List<Map<String, Object>> unifiedItems = new ArrayList<>();
+
+        for (BillingEditRequest.Item item : items) {
+            // 过滤空的item - 检查material字段是否有效
+            if (item.getMaterial() == null || item.getMaterial().trim().isEmpty()) {
+                log.debug("跳过空的item: material为空");
+                continue;
+            }
+
+            Map<String, Object> unifiedItem = new HashMap<>();
+
+            // 基本字段
+            unifiedItem.put("item", item.getItem() != null ? item.getItem() : "");
+            unifiedItem.put("material", item.getMaterial());
+            unifiedItem.put("orderQuantity", item.getOrderQuantity() != null ? item.getOrderQuantity() : "1");
+            unifiedItem.put("orderQuantityUnit", item.getOrderQuantityUnit() != null ? item.getOrderQuantityUnit() : "EA");
+            unifiedItem.put("description", item.getDescription() != null ? item.getDescription() : "");
+            unifiedItem.put("reqDelivDate", item.getReqDelivDate() != null ? item.getReqDelivDate() : "");
+            unifiedItem.put("netValue", item.getNetValue() != null ? item.getNetValue().toString() : "0");
+            unifiedItem.put("netValueUnit", item.getNetValueUnit() != null ? item.getNetValueUnit() : "CNY");
+            unifiedItem.put("taxValue", item.getTaxValue() != null ? item.getTaxValue().toString() : "0");
+            unifiedItem.put("taxValueUnit", item.getTaxValueUnit() != null ? item.getTaxValueUnit() : "CNY");
+            unifiedItem.put("pricingDate", item.getPricingDate() != null ? item.getPricingDate() : "");
+            unifiedItem.put("orderProbability", item.getOrderProbability() != null ? item.getOrderProbability() : "100");
+
+            // 处理定价元素 - 直接传递List对象给统一item服务
+            if (item.getPricingElements() != null && !item.getPricingElements().isEmpty()) {
+                // 直接传递List对象，统一item服务会自动序列化为JSON字符串
+                unifiedItem.put("pricingElements", item.getPricingElements());
+                log.debug("统一格式pricingElements: {} 个元素", item.getPricingElements().size());
+            } else {
+                // 创建默认的定价元素List
+                List<Map<String, Object>> defaultPricingElements = new ArrayList<>();
+                Map<String, Object> defaultElement = new HashMap<>();
+                defaultElement.put("cnty", "BASE");
+                defaultElement.put("name", "基本价格");
+                defaultElement.put("amount", item.getNetValue() != null ? item.getNetValue().toString() : "0.00");
+                defaultElement.put("city", "CNY");
+                defaultElement.put("per", "1");
+                defaultElement.put("uom", "EA");
+                defaultElement.put("conditionValue", item.getNetValue() != null ? item.getNetValue().toString() : "0.00");
+                defaultElement.put("curr", "CNY");
+                defaultElement.put("status", "");
+                defaultElement.put("numC", "");
+                defaultElement.put("atoMtsComponent", "");
+                defaultElement.put("oun", "");
+                defaultElement.put("cconDe", "");
+                defaultElement.put("un", "");
+                defaultElement.put("conditionValue2", "");
+                defaultElement.put("cdCur", "");
+                defaultElement.put("stat", true);
+                defaultPricingElements.add(defaultElement);
+
+                unifiedItem.put("pricingElements", defaultPricingElements);
+                log.debug("默认统一格式pricingElements: 1 个默认元素");
+            }
+
+            unifiedItems.add(unifiedItem);
+        }
+
+        return unifiedItems;
+    }
+
+    /**
+     * 转换开票凭证项目为前端格式（用于返回给前端）
+     */
+    private List<Map<String, Object>> convertBillingItemsToFrontendFormat(List<BillingEditRequest.Item> items) {
+        List<Map<String, Object>> frontendItems = new ArrayList<>();
+
+        for (BillingEditRequest.Item item : items) {
+            // 过滤空的item - 检查material字段是否有效
+            if (item.getMaterial() == null || item.getMaterial().trim().isEmpty()) {
+                log.debug("跳过空的item: material为空");
+                continue;
+            }
+
+            Map<String, Object> frontendItem = new HashMap<>();
+
+            // 基础字段 - 只使用BillingEditRequest.Item中实际存在的字段
+            frontendItem.put("item", item.getItem());
+            frontendItem.put("material", item.getMaterial());
+            frontendItem.put("orderQuantity", item.getOrderQuantity());
+            frontendItem.put("orderQuantityUnit", item.getOrderQuantityUnit());
+            frontendItem.put("description", item.getDescription());
+            frontendItem.put("reqDelivDate", item.getReqDelivDate());
+            frontendItem.put("netValue", item.getNetValue());
+            frontendItem.put("netValueUnit", item.getNetValueUnit());
+            frontendItem.put("taxValue", item.getTaxValue());
+            frontendItem.put("taxValueUnit", item.getTaxValueUnit());
+            frontendItem.put("pricingDate", item.getPricingDate());
+            frontendItem.put("orderProbability", item.getOrderProbability());
+
+            // 处理定价元素 - 直接使用对象数组，但需要转换为JSON字符串存储到数据库
+            log.debug("处理item的pricingElements: {}", item.getPricingElements());
+            if (item.getPricingElements() != null && !item.getPricingElements().isEmpty()) {
+                try {
+                    // 将PricingElement列表转换为JSON字符串存储到数据库
+                    ObjectMapper objectMapper = new ObjectMapper();
+                    String pricingElementsJson = objectMapper.writeValueAsString(item.getPricingElements());
+                    log.debug("序列化后的pricingElements: {}", pricingElementsJson);
+                    frontendItem.put("pricingElements", pricingElementsJson);
+                } catch (Exception e) {
+                    log.warn("序列化定价元素失败: {}", e.getMessage());
+                    frontendItem.put("pricingElements", "[]");
+                }
+            } else {
+                log.debug("pricingElements为空，创建默认值");
+                // 创建默认的定价元素JSON字符串
+                String defaultPricingElements = String.format(
+                    "[{\"cnty\":\"BASE\",\"name\":\"基本价格\",\"amount\":\"%s\",\"city\":\"CNY\",\"per\":\"1\",\"uom\":\"EA\",\"conditionValue\":\"%s\",\"curr\":\"CNY\",\"status\":\"\",\"numC\":\"\",\"atoMtsComponent\":\"\",\"oun\":\"\",\"cconDe\":\"\",\"un\":\"\",\"conditionValue2\":\"\",\"cdCur\":\"\",\"stat\":true}]",
+                    item.getNetPrice() != null ? item.getNetPrice() : "0.00",
+                    item.getNetValue() != null ? item.getNetValue() : "0.00"
+                );
+                log.debug("默认pricingElements: {}", defaultPricingElements);
+                frontendItem.put("pricingElements", defaultPricingElements);
+            }
+
+            // 其他必需字段 - 使用默认值
+            frontendItem.put("status", "");
+            frontendItem.put("numC", "");
+            frontendItem.put("atoMtsComponent", "");
+            frontendItem.put("oun", "");
+            frontendItem.put("cconDe", "");
+            frontendItem.put("un", "");
+            frontendItem.put("conditionValue2", "");
+            frontendItem.put("cdCur", "");
+            frontendItem.put("stat", true);
+
+            frontendItems.add(frontendItem);
+        }
+
+        return frontendItems;
     }
 }
