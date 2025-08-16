@@ -223,16 +223,6 @@ public class MaterialDocumentServiceImpl implements MaterialDocumentService {
             mainDetail.setDlvId(processFlow.getDlvId() != null ? processFlow.getDlvId().toString() : null);
             mainDetail.setBillId(processFlow.getBillId() != null ? processFlow.getBillId().toString() : null);
             processFlowDetails.add(mainDetail);
-
-            // 如果有交货单关联且与主记录不同，添加交货单详情记录
-            if (processFlow.getDlvId() != null && processFlow.getBillId() != null) {
-                MaterialDocumentDetailResponse.ProcessFlowDetail dlvDetail =
-                    new MaterialDocumentDetailResponse.ProcessFlowDetail();
-                dlvDetail.setDlvId(processFlow.getDlvId().toString());
-                dlvDetail.setMaterialDocument(materialDocument.getMaterialDocumentId().toString());
-                dlvDetail.setBillId(null);
-                processFlowDetails.add(dlvDetail);
-            }
         } else {
             // 如果没有业务流程信息，创建基础记录
             MaterialDocumentDetailResponse.ProcessFlowDetail materialDocDetail =
@@ -264,9 +254,9 @@ public class MaterialDocumentServiceImpl implements MaterialDocumentService {
                 throw new RuntimeException("交货单没有已过账的项目: " + deliveryId);
             }
 
-            // 3. 生成物料凭证号
+            // 3. 生成物料凭证号（基于全局主键ID，确保唯一性）
             String currentYear = String.valueOf(LocalDate.now().getYear());
-            String materialDocumentNumber = materialDocumentMapper.generateNextMaterialDocumentNumber(currentYear);
+            String materialDocumentNumber = materialDocumentMapper.generateNextMaterialDocumentNumber();
 
             // 4. 创建物料凭证头记录
             MaterialDocument materialDocument = new MaterialDocument();

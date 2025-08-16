@@ -29,7 +29,7 @@ public class InquiryEditRequest {
     private String soldToParty;
     private String shipToParty;
     private String customerReference;
-    private Double netValue;
+    private String netValue;  // 改为String类型，支持千分位分隔符
     private String netValueUnit;
     private String customerReferenceDate;
     private String status; // 新增，支持主表状态的更新

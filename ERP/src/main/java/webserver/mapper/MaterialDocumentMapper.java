@@ -127,14 +127,12 @@ public interface MaterialDocumentMapper {
     int updateBillingAssociation(@Param("materialDocumentId") Long materialDocumentId, @Param("billId") Long billId);
 
     /**
-     * 生成下一个物料凭证号
-     * @param year 年份
+     * 生成下一个物料凭证号（基于全局主键ID，6位数字补零）
      * @return 物料凭证号
      */
-    @Select("SELECT CONCAT('MD', LPAD(COALESCE(MAX(CAST(SUBSTRING(material_document, 3) AS UNSIGNED)), 0) + 1, 3, '0')) " +
-            "FROM erp_material_document " +
-            "WHERE material_document_year = #{year}")
-    String generateNextMaterialDocumentNumber(@Param("year") String year);
+    @Select("SELECT CONCAT('MD', LPAD(COALESCE(MAX(material_document_id), 0) + 1, 6, '0')) " +
+            "FROM erp_material_document")
+    String generateNextMaterialDocumentNumber();
 
     /**
      * 根据交货单ID查找Material Document ID

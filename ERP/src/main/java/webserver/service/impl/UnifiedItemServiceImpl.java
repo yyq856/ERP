@@ -10,7 +10,12 @@ import webserver.pojo.Item;
 import webserver.pojo.QuotationItemDTO;
 import webserver.pojo.PricingElementDTO;
 import webserver.service.UnifiedItemService;
+import webserver.service.SalesOrderCalculationService;
+import webserver.event.SalesOrderItemsUpdatedEvent;
 import com.fasterxml.jackson.core.type.TypeReference;
+import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.transaction.event.TransactionalEventListener;
+import org.springframework.transaction.event.TransactionPhase;
 
 import java.util.*;
 
@@ -24,7 +29,13 @@ public class UnifiedItemServiceImpl implements UnifiedItemService {
 
     @Autowired
     private ItemMapper itemMapper;
-    
+
+    @Autowired
+    private SalesOrderCalculationService salesOrderCalculationService;
+
+    @Autowired
+    private ApplicationEventPublisher eventPublisher;
+
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     @Override
@@ -69,8 +80,34 @@ public class UnifiedItemServiceImpl implements UnifiedItemService {
             
             log.info("成功插入items数量: {}", insertedCount);
         }
-        
+
+        // 🔥 如果是销售订单，发布事件以在事务提交后触发金额重新计算
+        if ("sales_order".equals(documentType)) {
+            log.info("销售订单items更新完成，发布事件以触发金额重新计算，soId: {}", documentId);
+            eventPublisher.publishEvent(new SalesOrderItemsUpdatedEvent(documentId));
+        }
+
         log.info("统一更新文档items完成，documentId: {}, documentType: {}", documentId, documentType);
+    }
+
+    /**
+     * 监听销售订单明细更新事件，在事务提交后触发金额重新计算
+     */
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+    public void handleSalesOrderItemsUpdated(SalesOrderItemsUpdatedEvent event) {
+        try {
+            Long soId = event.getSalesOrderId();
+            log.info("事务提交后处理销售订单明细更新事件，开始重新计算金额，soId: {}", soId);
+
+            boolean success = salesOrderCalculationService.recalculateAndUpdateSalesOrderAmounts(soId);
+            if (success) {
+                log.info("销售订单 {} 金额自动重新计算成功", soId);
+            } else {
+                log.warn("销售订单 {} 金额自动重新计算失败", soId);
+            }
+        } catch (Exception e) {
+            log.error("销售订单 {} 金额自动重新计算时出错: {}", event.getSalesOrderId(), e.getMessage(), e);
+        }
     }
 
     @Override

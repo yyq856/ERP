@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="webserver.mapper.CustomerBalanceMapper">
+
+    <!-- 获取客户余额 -->
+    <select id="getCustomerBalance" resultType="map">
+        SELECT 
+            customer_id AS customerId,
+            company_code AS companyCode,
+            balance,
+            currency,
+            last_updated AS lastUpdated,
+            created_time AS createdTime
+        FROM erp_customer_balance
+        WHERE customer_id = #{customerId}
+          AND company_code = #{companyCode}
+          AND currency = #{currency}
+    </select>
+
+    <!-- 创建客户余额记录（如果不存在） -->
+    <insert id="createCustomerBalanceIfNotExists">
+        INSERT IGNORE INTO erp_customer_balance (
+            customer_id,
+            company_code,
+            balance,
+            currency
+        ) VALUES (
+            #{customerId},
+            #{companyCode},
+            0.00,
+            #{currency}
+        )
+    </insert>
+
+    <!-- 更新客户余额（如果不存在则创建） -->
+    <update id="updateCustomerBalance">
+        INSERT INTO erp_customer_balance (customer_id, company_code, currency, balance, last_updated)
+        VALUES (#{customerId}, #{companyCode}, #{currency}, #{amount}, CURRENT_TIMESTAMP)
+        ON DUPLICATE KEY UPDATE
+            balance = balance + #{amount},
+            last_updated = CURRENT_TIMESTAMP
+    </update>
+
+    <!-- 获取客户余额（如果不存在则创建） -->
+    <select id="getOrCreateCustomerBalance" resultType="java.math.BigDecimal">
+        SELECT COALESCE(balance, 0.00) AS balance
+        FROM erp_customer_balance
+        WHERE customer_id = #{customerId}
+          AND company_code = #{companyCode}
+          AND currency = #{currency}
+        LIMIT 1
+    </select>
+
+    <!-- 获取指定公司和货币的总余额 -->
+    <select id="getTotalBalanceByCompanyAndCurrency" resultType="java.math.BigDecimal">
+        SELECT COALESCE(SUM(balance), 0.00) AS totalBalance
+        FROM erp_customer_balance
+        WHERE company_code = #{companyCode}
+          AND currency = #{currency}
+    </select>
+
+    <!-- 获取所有余额记录 -->
+    <select id="getAllBalances" resultType="map">
+        SELECT
+            CONCAT(customer_id, ':', company_code, ':', currency) AS balanceKey,
+            balance
+        FROM erp_customer_balance
+        ORDER BY customer_id, company_code, currency
+    </select>
+
+</mapper>

@@ -172,12 +172,16 @@ INSERT IGNORE INTO erp_storage_location (loc_id, name) VALUES
 -- 20. 订单状态表
 INSERT IGNORE INTO erp_order_status (status_code, description) VALUES 
 ('OPEN', 'Open'),
-('PROC', 'Processing'),
-('COMP', 'Completed'),
-('CANC', 'Cancelled'),
-('HOLD', 'On Hold'),
-('SHIP', 'Shipped'),
-('DELV', 'Delivered');
+('UNCLEAR', 'Unclear'),
+('COMPLETED', 'Completed'),
+('CLEAR', 'Clear');
+-- ('OPEN', 'Open'),
+-- ('PROC', 'Processing'),
+-- ('COMP', 'Completed'),
+-- ('CANC', 'Cancelled'),
+-- ('HOLD', 'On Hold'),
+-- ('SHIP', 'Shipped'),
+-- ('DELV', 'Delivered');
 
 -- 21. 管理级别表
 INSERT IGNORE INTO erp_management (level_id, description) VALUES 

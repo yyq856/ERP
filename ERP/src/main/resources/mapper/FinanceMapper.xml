@@ -8,22 +8,25 @@
             bh.bill_id AS journalEntry,
             DATE_FORMAT(bh.billing_date, '%Y-%m-%d') AS journalEntryDate,
             c.name AS account,
-            bh.gross AS amount,
+            COALESCE(bh.net, bh.gross, so.net_value, so.gross_value, 0.0) AS amount,
             COALESCE(so.currency, 'USD') AS amountUnit,
             'Invoice' AS journalEntryType,
-            DATE_ADD(bh.billing_date, INTERVAL 30 DAY) AS netDueDate,
+            DATE_FORMAT(bh.billing_date, '%Y-%m-%d') AS netDueDate,
             CONCAT('Bill ID: ', bh.bill_id) AS assignment,
-            '1000' AS companyCode
+            COALESCE(c.company_code, '1000') AS companyCode
         FROM erp_billing_hdr bh
         JOIN erp_customer c ON bh.customer_id = c.customer_id
-        JOIN erp_outbound_delivery od ON bh.dlv_id = od.dlv_id
-        JOIN erp_sales_order_hdr so ON od.so_id = so.so_id
-        WHERE bh.status = 'UNCLEAR'
-          <if test="openItemSelection != null and openItemSelection.accountID != null">
-              AND c.customer_id = #{openItemSelection.accountID}
+        LEFT JOIN erp_outbound_delivery od ON bh.dlv_id = od.dlv_id
+        LEFT JOIN erp_sales_order_hdr so ON od.so_id = so.so_id
+        WHERE bh.status = 'OPEN'
+          <if test="generalInformation != null and generalInformation.companyCode != null">
+              AND c.company_code = #{generalInformation.companyCode}
           </if>
-          <if test="openItemSelection != null and openItemSelection.accountType != null and openItemSelection.accountType == 'vendor'">
-              AND 1=0  <!-- 目前只支持customer类型 -->
+          <if test="generalInformation != null and generalInformation.customerID != null">
+              AND bh.customer_id = #{generalInformation.customerID}
+          </if>
+          <if test="currency != null">
+              AND COALESCE(so.currency, 'USD') = #{currency}
           </if>
         ORDER BY bh.billing_date
         LIMIT 100
@@ -35,7 +38,7 @@
             bh.bill_id AS journalEntry,
             DATE_FORMAT(bh.billing_date, '%Y-%m-%d') AS journalEntryDate,
             c.name AS account,
-            bh.gross AS amount,
+            COALESCE(bh.net, bh.gross, so.net_value, so.gross_value, 0.0) AS amount,
             COALESCE(so.currency, 'USD') AS amountUnit,
             'Invoice' AS journalEntryType,
             DATE_ADD(bh.billing_date, INTERVAL 30 DAY) AS netDueDate,
@@ -46,7 +49,7 @@
         LEFT JOIN erp_outbound_delivery od ON bh.dlv_id = od.dlv_id
         LEFT JOIN erp_sales_order_hdr so ON od.so_id = so.so_id
         WHERE bh.customer_id = #{accountId}
-          AND bh.status = 'UNCLEAR'
+          AND bh.status = 'OPEN'
         ORDER BY bh.billing_date DESC
     </select>
 
@@ -60,7 +63,7 @@
     <!-- 更新账单状态为UNCLEAR -->
     <update id="updateBillStatusToUnclear">
         UPDATE erp_billing_hdr
-        SET status = 'UNCLEAR'
+        SET status = 'OPEN'
         WHERE bill_id = #{billId}
     </update>
 
@@ -69,7 +72,7 @@
         SELECT
             bh.bill_id AS billId,
             bh.customer_id AS customerId,
-            bh.gross AS amount,
+            COALESCE(bh.net, bh.gross, so.net_value, so.gross_value, 0.0) AS amount,
             COALESCE(so.currency, 'USD') AS currency,
             CURDATE() AS postingDate
         FROM erp_billing_hdr bh
@@ -99,6 +102,16 @@
             SELECT LAST_INSERT_ID()
         </selectKey>
     </insert>
+
+    <!-- 根据账户ID获取客户ID -->
+    <select id="getCustomerIdByAccountId" resultType="long">
+        SELECT customer_id
+        FROM erp_customer
+        WHERE customer_id = #{accountId}
+           OR name = #{accountId}
+           OR company_code = #{accountId}
+        LIMIT 1
+    </select>
 
     <!-- 调试查询：获取所有账单信息 -->
     <select id="getAllBillsForDebug" resultType="map">

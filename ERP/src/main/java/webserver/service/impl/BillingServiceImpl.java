@@ -10,6 +10,7 @@ import webserver.mapper.MaterialDocumentMapper;
 import webserver.pojo.*;
 import webserver.service.BillingService;
 import webserver.service.MaterialDocumentService;
+import webserver.service.SalesOrderCalculationService;
 import webserver.service.UnifiedItemService;
 import webserver.service.ValidateItemsService;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -35,6 +36,9 @@ public class BillingServiceImpl implements BillingService {
 
     @Autowired
     private MaterialDocumentMapper materialDocumentMapper;
+
+    @Autowired
+    private SalesOrderCalculationService salesOrderCalculationService;
     
     @Override
     public Map<String, Object> initializeBilling(BillingInitializeRequest request) {
@@ -94,8 +98,44 @@ public class BillingServiceImpl implements BillingService {
         basicInfo.put("type", "Invoice");
         basicInfo.put("id", "");
         basicInfo.put("deliveryId", deliveryId != null ? deliveryId : "");
-        basicInfo.put("netValue", "0.00");
-        basicInfo.put("netValueUnit", "USD");
+
+        // 🔥 从销售订单获取 netValue 和 currency
+        String netValue = "0.00";
+        String currency = "USD";
+        if (deliveryId != null && !deliveryId.isEmpty()) {
+            Map<String, Object> deliveryInfo = billingMapper.getDeliveryById(deliveryId);
+            if (deliveryInfo != null) {
+                Object salesOrderIdObj = deliveryInfo.get("salesOrderId");
+                if (salesOrderIdObj != null) {
+                    try {
+                        Long soId;
+                        if (salesOrderIdObj instanceof Long) {
+                            soId = (Long) salesOrderIdObj;
+                        } else {
+                            soId = Long.parseLong(salesOrderIdObj.toString());
+                        }
+                        // 获取销售订单的金额信息
+                        Map<String, Object> salesOrderInfo = salesOrderCalculationService.getSalesOrderInfo(soId);
+                        if (salesOrderInfo != null) {
+                            Object netValueObj = salesOrderInfo.get("netValue");
+                            Object currencyObj = salesOrderInfo.get("currency");
+                            if (netValueObj != null) {
+                                netValue = String.format("%.2f", ((Number) netValueObj).doubleValue());
+                            }
+                            if (currencyObj != null) {
+                                currency = currencyObj.toString();
+                            }
+                            log.info("从销售订单 {} 获取金额信息: netValue={}, currency={}", soId, netValue, currency);
+                        }
+                    } catch (Exception e) {
+                        log.warn("获取销售订单金额信息失败: {}", e.getMessage());
+                    }
+                }
+            }
+        }
+
+        basicInfo.put("netValue", netValue);
+        basicInfo.put("netValueUnit", currency);
         basicInfo.put("payer", customer != null ? customer.get("name") : (soldToParty != null ? soldToParty : ""));
         basicInfo.put("billingDate", billingDate != null ? billingDate : java.time.LocalDate.now().toString());
         result.put("basicInfo", basicInfo);

@@ -5,11 +5,12 @@ import lombok.Data;
 @Data
 public class SearchOpenItemsRequest {
     private GeneralInformation generalInformation;
-    private BankDate bankDate;
+    private BankData bankData;
     private OpenItemSelection openItemSelection;
     
     @Data
     public static class GeneralInformation {
+        private String customerID;      // 🔥 新增：客户ID
         private String companyCode;
         private String journalEntryDate;
         private String journalEntryType;
@@ -18,7 +19,7 @@ public class SearchOpenItemsRequest {
     }
     
     @Data
-    public static class BankDate {
+    public static class BankData {
         private String glAccount;
         private Amount amount;
     }
