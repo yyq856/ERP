@@ -86,4 +86,19 @@ public class FinanceServiceImpl implements FinanceService {
         }
     }
 
+    @Override
+    public List<Map<String, Object>> getAllBillsForDebug() {
+        return financeMapper.getAllBillsForDebug();
+    }
+
+    @Override
+    public boolean updateBillStatusToUnclear(String billId) {
+        try {
+            int updated = financeMapper.updateBillStatusToUnclear(billId);
+            return updated > 0;
+        } catch (Exception e) {
+            throw new RuntimeException("更新账单状态为UNCLEAR失败: " + e.getMessage(), e);
+        }
+    }
+
 }

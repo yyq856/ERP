@@ -9,11 +9,11 @@
             DATE_FORMAT(bh.billing_date, '%Y-%m-%d') AS journalEntryDate,
             c.name AS account,
             bh.gross AS amount,
-            so.currency AS amountUnit,
+            COALESCE(so.currency, 'USD') AS amountUnit,
             'Invoice' AS journalEntryType,
             DATE_ADD(bh.billing_date, INTERVAL 30 DAY) AS netDueDate,
             CONCAT('Bill ID: ', bh.bill_id) AS assignment,
-            so.company_code AS companyCode
+            '1000' AS companyCode
         FROM erp_billing_hdr bh
         JOIN erp_customer c ON bh.customer_id = c.customer_id
         JOIN erp_outbound_delivery od ON bh.dlv_id = od.dlv_id
@@ -25,9 +25,6 @@
           <if test="openItemSelection != null and openItemSelection.accountType != null and openItemSelection.accountType == 'vendor'">
               AND 1=0  <!-- 目前只支持customer类型 -->
           </if>
-          <if test="generalInformation != null and generalInformation.companyCode != null and generalInformation.companyCode != ''">
-              AND so.company_code = #{generalInformation.companyCode}
-          </if>
         ORDER BY bh.billing_date
         LIMIT 100
     </select>
@@ -35,15 +32,15 @@
     <!-- 根据客户ID查询未清算的账单 -->
     <select id="getUnclearBillsByAccountId" resultType="map">
         SELECT
-            bh.bill_id AS billId,
-            bh.customer_id AS customerId,
-            DATE_FORMAT(bh.billing_date, '%Y-%m-%d') AS billingDate,
-            bh.net AS net,
-            bh.tax AS tax,
-            bh.gross AS gross,
-            bh.status AS status,
-            c.name AS customerName,
-            COALESCE(so.currency, 'USD') AS currency
+            bh.bill_id AS journalEntry,
+            DATE_FORMAT(bh.billing_date, '%Y-%m-%d') AS journalEntryDate,
+            c.name AS account,
+            bh.gross AS amount,
+            COALESCE(so.currency, 'USD') AS amountUnit,
+            'Invoice' AS journalEntryType,
+            DATE_ADD(bh.billing_date, INTERVAL 30 DAY) AS netDueDate,
+            CONCAT('Bill ID: ', bh.bill_id) AS assignment,
+            '1000' AS companyCode
         FROM erp_billing_hdr bh
         LEFT JOIN erp_customer c ON bh.customer_id = c.customer_id
         LEFT JOIN erp_outbound_delivery od ON bh.dlv_id = od.dlv_id
@@ -57,6 +54,13 @@
     <update id="updateBillStatusToClear">
         UPDATE erp_billing_hdr
         SET status = 'CLEAR'
+        WHERE bill_id = #{billId}
+    </update>
+
+    <!-- 更新账单状态为UNCLEAR -->
+    <update id="updateBillStatusToUnclear">
+        UPDATE erp_billing_hdr
+        SET status = 'UNCLEAR'
         WHERE bill_id = #{billId}
     </update>
 
@@ -95,5 +99,28 @@
             SELECT LAST_INSERT_ID()
         </selectKey>
     </insert>
+
+    <!-- 调试查询：获取所有账单信息 -->
+    <select id="getAllBillsForDebug" resultType="map">
+        SELECT
+            bh.bill_id AS billId,
+            bh.customer_id AS customerId,
+            c.name AS customerName,
+            DATE_FORMAT(bh.billing_date, '%Y-%m-%d') AS billingDate,
+            bh.net AS net,
+            bh.tax AS tax,
+            bh.gross AS gross,
+            bh.status AS status,
+            bh.dlv_id AS deliveryId,
+            od.so_id AS salesOrderId,
+            COALESCE(so.currency, 'USD') AS currency,
+            '1000' AS companyCode
+        FROM erp_billing_hdr bh
+        LEFT JOIN erp_customer c ON bh.customer_id = c.customer_id
+        LEFT JOIN erp_outbound_delivery od ON bh.dlv_id = od.dlv_id
+        LEFT JOIN erp_sales_order_hdr so ON od.so_id = so.so_id
+        ORDER BY bh.bill_id DESC
+        LIMIT 20
+    </select>
 
 </mapper>

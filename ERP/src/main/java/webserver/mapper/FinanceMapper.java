@@ -30,6 +30,13 @@ public interface FinanceMapper {
      * @return 更新记录数
      */
     int updateBillStatusToClear(@Param("billId") String billId);
+
+    /**
+     * 更新账单状态为UNCLEAR
+     * @param billId 账单ID
+     * @return 更新记录数
+     */
+    int updateBillStatusToUnclear(@Param("billId") String billId);
     
     /**
      * 获取账单详细信息用于创建付款记录
@@ -44,5 +51,11 @@ public interface FinanceMapper {
      * @return 插入记录数
      */
     int insertPayment(Map<String, Object> payment);
+
+    /**
+     * 调试方法：获取所有账单信息
+     * @return 所有账单列表
+     */
+    List<Map<String, Object>> getAllBillsForDebug();
 
 }

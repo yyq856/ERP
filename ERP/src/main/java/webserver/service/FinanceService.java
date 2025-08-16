@@ -28,4 +28,17 @@ public interface FinanceService {
      */
     Map<String, Object> processIncomingPayment(String billId);
 
+    /**
+     * 调试方法：获取所有账单信息
+     * @return 所有账单列表
+     */
+    List<Map<String, Object>> getAllBillsForDebug();
+
+    /**
+     * 更新账单状态为UNCLEAR
+     * @param billId 账单ID
+     * @return 操作结果
+     */
+    boolean updateBillStatusToUnclear(String billId);
+
 }

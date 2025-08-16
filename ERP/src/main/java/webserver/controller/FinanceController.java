@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.Map;
 
 @RestController
+@CrossOrigin(origins = "*")
 @RequestMapping("/api/finance")
 public class FinanceController {
     
@@ -60,17 +61,49 @@ public class FinanceController {
             if (accountObj == null) {
                 return Response.error("account字段不能为空");
             }
-            
+
             String billId = accountObj.toString();
             if (billId.isEmpty()) {
                 return Response.error("account字段不能为空");
             }
-            
+
             Map<String, Object> result = financeService.processIncomingPayment(billId);
             return Response.success(result);
         } catch (Exception e) {
             e.printStackTrace();
             return Response.error("处理incoming payment失败: " + e.getMessage());
+        }
+    }
+
+    /**
+     * 调试接口：查询账单状态
+     */
+    @GetMapping("/debug/bills")
+    public Response<List<Map<String, Object>>> debugBills() {
+        try {
+            List<Map<String, Object>> bills = financeService.getAllBillsForDebug();
+            return Response.success(bills);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return Response.error("查询账单失败: " + e.getMessage());
+        }
+    }
+
+    /**
+     * 调试接口：更新账单状态为UNCLEAR
+     */
+    @PostMapping("/debug/updateStatusToUnclear/{billId}")
+    public Response<String> updateStatusToUnclear(@PathVariable String billId) {
+        try {
+            boolean success = financeService.updateBillStatusToUnclear(billId);
+            if (success) {
+                return Response.success("账单状态已更新为UNCLEAR");
+            } else {
+                return Response.error("更新失败，账单不存在或状态未改变");
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            return Response.error("更新账单状态失败: " + e.getMessage());
         }
     }
 

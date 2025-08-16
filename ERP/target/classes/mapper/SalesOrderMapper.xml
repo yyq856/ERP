@@ -63,23 +63,21 @@
     <!-- ✅ 新增销售订单项目查询 -->
     <select id="getSalesOrderItems" resultType="map">
         SELECT
-            si.item_no AS item,
-            m.mat_id AS material,
-            si.quantity AS orderQuantity,
-            si.su AS orderQuantityUnit,
-            m.mat_desc AS description,
-            DATE_FORMAT(so.req_delivery_date, '%Y-%m-%d') AS reqDelivDate,
-            FORMAT(si.net_price * si.quantity, 2) AS netValue,
-            so.currency AS netValueUnit,
-            FORMAT((si.net_price * si.quantity) * 0.1, 2) AS taxValue,
-            so.currency AS taxValueUnit,
-            DATE_FORMAT(so.doc_date, '%Y-%m-%d') AS pricingDate,
-            '100%' AS orderProbability
+            ei.item_no AS item,
+            ei.mat_id AS material,
+            ei.quantity AS orderQuantity,
+            ei.su AS orderQuantityUnit,
+            ei.description,
+            DATE_FORMAT(ei.req_deliv_date, '%Y-%m-%d') AS reqDelivDate,
+            ei.net_value_str AS netValue,
+            ei.net_value_unit AS netValueUnit,
+            ei.tax_value_str AS taxValue,
+            ei.tax_value_unit AS taxValueUnit,
+            DATE_FORMAT(ei.pricing_date, '%Y-%m-%d') AS pricingDate,
+            ei.order_probability AS orderProbability
         FROM
-            erp_sales_item si
-                JOIN erp_sales_order_hdr so ON si.so_id = so.so_id
-                JOIN erp_material m ON si.mat_id = m.mat_id
-        WHERE si.so_id = #{soId}
+            erp_item ei
+        WHERE ei.document_id = #{soId} AND ei.document_type = 'sales_order'
     </select>
     <!-- 获取销售订单项目的定价元素 -->
     <select id="getPricingElements" resultType="map">
