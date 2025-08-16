@@ -58,47 +58,34 @@ public class FinanceController {
     }
     
     /**
-     * 处理 incoming payment，更新账单状态并创建付款记录
-     * @param items 请求体（数组格式）
+     * 处理 incoming payment，按照新的数据结构处理客户付款和账单清算
+     * @param requestBody 请求体，包含customerPayment和items数组
      * @return 操作结果
      */
     @PostMapping("/postOpenItems")
-    public Response<Map<String, Object>> postOpenItems(@RequestBody List<Map<String, Object>> items) {
+    public Response<Map<String, Object>> postOpenItems(@RequestBody Map<String, Object> requestBody) {
         try {
-            if (items == null || items.isEmpty()) {
+            if (requestBody == null) {
                 return Response.error("请求体不能为空");
             }
 
-            // 取第一个项目的 journalEntry 作为账单ID
-            Map<String, Object> firstItem = items.get(0);
-            Object journalEntryObj = firstItem.get("journalEntry");
-            if (journalEntryObj == null) {
-                return Response.error("journalEntry字段不能为空");
+            // 解析customerPayment
+            Map<String, Object> customerPayment = (Map<String, Object>) requestBody.get("customerPayment");
+            if (customerPayment == null) {
+                return Response.error("customerPayment字段不能为空");
             }
 
-            String billId = journalEntryObj.toString();
-            if (billId.isEmpty()) {
-                return Response.error("journalEntry字段不能为空");
+            // 解析items数组
+            List<Map<String, Object>> items = (List<Map<String, Object>>) requestBody.get("items");
+            if (items == null || items.isEmpty()) {
+                return Response.error("items字段不能为空");
             }
 
-            // 🔥 检查是否提供了支付金额信息
-            Object paymentAmountObj = firstItem.get("paymentAmount");
-            Object currencyObj = firstItem.get("currency");
-
-            if (paymentAmountObj != null && currencyObj != null) {
-                // 使用新的处理方法（带支付金额）
-                BigDecimal paymentAmount = new BigDecimal(paymentAmountObj.toString());
-                String currency = currencyObj.toString();
-                Map<String, Object> result = financeService.processIncomingPaymentWithAmount(billId, paymentAmount, currency);
-                return Response.success(result);
-            } else {
-                // 使用原有方法（使用开票凭证金额）
-                Map<String, Object> result = financeService.processIncomingPayment(billId);
-                return Response.success(result);
-            }
+            Map<String, Object> result = financeService.processCustomerPaymentAndClearItems(customerPayment, items);
+            return Response.success(result);
         } catch (Exception e) {
             e.printStackTrace();
-            return Response.error("处理incoming payment失败: " + e.getMessage());
+            return Response.error("处理客户付款失败: " + e.getMessage());
         }
     }
 

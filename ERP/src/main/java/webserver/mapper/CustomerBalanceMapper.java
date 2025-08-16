@@ -69,4 +69,17 @@ public interface CustomerBalanceMapper {
      * @return 余额映射表
      */
     Map<String, BigDecimal> getAllBalances();
+
+    /**
+     * 直接设置客户余额（而非累加）
+     * @param customerId 客户ID
+     * @param companyCode 公司代码
+     * @param currency 货币
+     * @param balance 新的余额值
+     * @return 影响行数
+     */
+    int setCustomerBalance(@Param("customerId") Long customerId,
+                          @Param("companyCode") String companyCode,
+                          @Param("currency") String currency,
+                          @Param("balance") BigDecimal balance);
 }

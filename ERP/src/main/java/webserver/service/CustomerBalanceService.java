@@ -43,4 +43,14 @@ public interface CustomerBalanceService {
      * @return 余额总和
      */
     BigDecimal getTotalBalanceByCompanyAndCurrency(String companyCode, String currency);
+
+    /**
+     * 直接设置客户余额（而非累加）
+     * @param customerId 客户ID
+     * @param companyCode 公司代码
+     * @param currency 货币
+     * @param balance 新的余额值
+     * @return 操作结果
+     */
+    boolean setCustomerBalance(String customerId, String companyCode, String currency, BigDecimal balance);
 }

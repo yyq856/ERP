@@ -29,12 +29,21 @@ public class FinanceServiceImpl implements FinanceService {
         double requestBalance = 0;
         String balanceUnit = "EUR"; // 默认货币
 
-        if (request.getBankData() != null && request.getBankData().getAmount() != null) {
-            if (request.getBankData().getAmount().getAmount() != null) {
-                requestBalance = request.getBankData().getAmount().getAmount().doubleValue();
+        // 🔥 使用新的统一方法获取金额和货币单位
+        if (request.getBankData() != null) {
+            try {
+                String amountStr = request.getBankData().getAmountValue();
+                if (amountStr != null && !amountStr.isEmpty()) {
+                    requestBalance = Double.parseDouble(amountStr);
+                }
+            } catch (NumberFormatException e) {
+                System.err.println("解析金额失败: " + request.getBankData().getAmountValue());
+                requestBalance = 0.0;
             }
-            if (request.getBankData().getAmount().getUnit() != null && !request.getBankData().getAmount().getUnit().isEmpty()) {
-                balanceUnit = request.getBankData().getAmount().getUnit();
+
+            String unit = request.getBankData().getAmountUnit();
+            if (unit != null && !unit.isEmpty()) {
+                balanceUnit = unit;
             }
         }
 
@@ -112,6 +121,7 @@ public class FinanceServiceImpl implements FinanceService {
                 String companyCode = "1000"; // 默认公司代码，可以从请求中获取
                 String currency = billInfo.get("currency").toString();
                 BigDecimal amount = new BigDecimal(billInfo.get("amount").toString());
+                // amount = amount.negate();
 
                 // 付款会增加客户余额（正数）
                 boolean balanceUpdated = customerBalanceService.updateCustomerBalance(
@@ -180,7 +190,12 @@ public class FinanceServiceImpl implements FinanceService {
                 String customerId = billInfo.get("customerId").toString();
                 String companyCode = "1000"; // 默认公司代码，可以从请求中获取
 
-                // 4.1 客户付款：增加客户余额（正数）
+                // 🔥 正确的逻辑：+汇款 -账单
+
+                // 获取账单的实际金额
+                BigDecimal billAmount = new BigDecimal(billInfo.get("amount").toString());
+
+                // 4.1 客户付款：增加客户余额（+汇款）
                 boolean paymentUpdated = customerBalanceService.updateCustomerBalance(
                     customerId, companyCode, currency, paymentAmount);
 
@@ -191,17 +206,17 @@ public class FinanceServiceImpl implements FinanceService {
                         customerId, paymentAmount, currency));
                 }
 
-                // 4.2 清算账单：减少客户余额（负数）
-                // 获取账单的实际金额
-                BigDecimal billAmount = new BigDecimal(billInfo.get("amount").toString());
+                // 4.2 清算账单：减少客户余额（-账单）
                 if (billAmount.compareTo(BigDecimal.ZERO) > 0) {
+                    // 🔥 直接用负数，不用negate()方法
+                    BigDecimal negativeBillAmount = new BigDecimal("-" + billAmount.toString());
                     boolean clearingUpdated = customerBalanceService.updateCustomerBalance(
-                        customerId, companyCode, currency, billAmount.negate());
+                        customerId, companyCode, currency, negativeBillAmount);
 
                     if (!clearingUpdated) {
                         System.err.println("更新客户清算余额失败");
                     } else {
-                        System.out.println(String.format("客户 %s 清算余额更新成功: -%s %s",
+                        System.out.println(String.format("客户 %s 清算余额更新成功: %s %s",
                             customerId, billAmount, currency));
                     }
                 }
@@ -285,7 +300,34 @@ public class FinanceServiceImpl implements FinanceService {
             for (Map<String, Object> item : openItems) {
                 if (item.get("journalEntry") != null) {
                     String billId = item.get("journalEntry").toString();
-                    processIncomingPayment(billId);
+
+                    // 🔥 获取付款金额和货币
+                    BigDecimal paymentAmount = BigDecimal.ZERO;
+                    String itemCurrency = "USD";
+
+                    System.out.println("🔥 调试：处理账单 " + billId + "，item数据: " + item);
+
+                    if (item.get("paymentAmount") != null) {
+                        paymentAmount = new BigDecimal(item.get("paymentAmount").toString());
+                        System.out.println("🔥 从paymentAmount获取金额: " + paymentAmount);
+                    } else if (item.get("amount") != null) {
+                        // 如果没有指定付款金额，使用账单金额
+                        paymentAmount = new BigDecimal(item.get("amount").toString());
+                        System.out.println("🔥 从amount获取金额: " + paymentAmount);
+                    }
+
+                    if (item.get("currency") != null) {
+                        itemCurrency = item.get("currency").toString();
+                        System.out.println("🔥 从currency获取货币: " + itemCurrency);
+                    } else if (item.get("amountUnit") != null) {
+                        itemCurrency = item.get("amountUnit").toString();
+                        System.out.println("🔥 从amountUnit获取货币: " + itemCurrency);
+                    }
+
+                    System.out.println("🔥 调用processIncomingPaymentWithAmount: billId=" + billId + ", paymentAmount=" + paymentAmount + ", currency=" + itemCurrency);
+
+                    // 🔥 使用新的方法，包含完整的付款和清算逻辑
+                    processIncomingPaymentWithAmount(billId, paymentAmount, itemCurrency);
                 }
             }
 
@@ -327,6 +369,128 @@ public class FinanceServiceImpl implements FinanceService {
             return updated > 0;
         } catch (Exception e) {
             throw new RuntimeException("更新账单状态为OPEN失败: " + e.getMessage(), e);
+        }
+    }
+
+    @Override
+    public Map<String, Object> processCustomerPaymentAndClearItems(Map<String, Object> customerPayment, List<Map<String, Object>> items) {
+        Map<String, Object> result = new HashMap<>();
+
+        try {
+            // 1. 解析客户付款信息（添加空值检查）
+            Object customerObj = customerPayment.get("customer");
+            Object companyCodeObj = customerPayment.get("companyCode");
+            Object currencyObj = customerPayment.get("currency");
+            Object amountObj = customerPayment.get("amount");
+
+            if (customerObj == null) {
+                result.put("success", false);
+                result.put("message", "customer字段不能为空");
+                return result;
+            }
+            if (companyCodeObj == null) {
+                result.put("success", false);
+                result.put("message", "companyCode字段不能为空（注意大小写）");
+                return result;
+            }
+            if (currencyObj == null) {
+                result.put("success", false);
+                result.put("message", "currency字段不能为空");
+                return result;
+            }
+            if (amountObj == null) {
+                result.put("success", false);
+                result.put("message", "amount字段不能为空");
+                return result;
+            }
+
+            String customerId = customerObj.toString();
+            String companyCode = companyCodeObj.toString();
+            String currency = currencyObj.toString();
+            BigDecimal paymentAmount = new BigDecimal(amountObj.toString());
+
+            System.out.println(String.format("🔥 处理客户付款: 客户=%s, 公司=%s, 货币=%s, 付款金额=%s",
+                customerId, companyCode, currency, paymentAmount));
+
+            // 2. 计算amountDelta = +payment - sum(items)
+            BigDecimal amountDelta = paymentAmount; // 先加上付款金额
+
+            for (Map<String, Object> item : items) {
+                BigDecimal itemAmount = new BigDecimal(item.get("amount").toString());
+                amountDelta = amountDelta.subtract(itemAmount); // 减去每个账单金额
+                System.out.println(String.format("🔥 处理账单项: 金额=%s, 当前delta=%s", itemAmount, amountDelta));
+            }
+
+            System.out.println(String.format("🔥 最终amountDelta: %s", amountDelta));
+
+            // 3. 获取当前余额
+            BigDecimal currentBalance = customerBalanceService.getCustomerBalance(customerId, companyCode, currency);
+            if (currentBalance == null) {
+                currentBalance = BigDecimal.ZERO;
+                System.out.println("🔥 客户余额不存在，初始化为0");
+            }
+            System.out.println(String.format("🔥 当前余额: %s", currentBalance));
+
+            // 4. 计算新余额
+            BigDecimal newBalance = currentBalance.add(amountDelta);
+            System.out.println(String.format("🔥 新余额: %s", newBalance));
+
+            // 5. 检查余额不能为负
+            if (newBalance.compareTo(BigDecimal.ZERO) < 0) {
+                result.put("success", false);
+                result.put("message", String.format("余额不足！当前余额: %s, 需要: %s, 差额: %s",
+                    currentBalance, amountDelta.negate(), newBalance));
+                return result;
+            }
+
+            // 6. 直接设置新余额
+            boolean success = customerBalanceService.setCustomerBalance(customerId, companyCode, currency, newBalance);
+
+            if (success) {
+                // 7. 更新账单状态为CLEAR
+                int clearedBillsCount = 0;
+                for (Map<String, Object> item : items) {
+                    Object journalEntryObj = item.get("journalEntry");
+                    if (journalEntryObj != null) {
+                        String billId = journalEntryObj.toString();
+                        try {
+                            int updated = financeMapper.updateBillStatusToClear(billId);
+                            if (updated > 0) {
+                                clearedBillsCount++;
+                                System.out.println(String.format("🔥 账单 %s 状态已更新为CLEAR", billId));
+                            } else {
+                                System.err.println(String.format("⚠️ 账单 %s 状态更新失败", billId));
+                            }
+                        } catch (Exception e) {
+                            System.err.println(String.format("❌ 更新账单 %s 状态时发生错误: %s", billId, e.getMessage()));
+                        }
+                    }
+                }
+
+                result.put("success", true);
+                result.put("message", "客户付款和账单清算成功");
+                result.put("oldBalance", currentBalance);
+                result.put("newBalance", newBalance);
+                result.put("amountDelta", amountDelta);
+                result.put("paymentAmount", paymentAmount);
+                result.put("itemsCount", items.size());
+                result.put("clearedBillsCount", clearedBillsCount);
+
+                System.out.println(String.format("🔥 处理成功: 余额从 %s 变为 %s (变化: %s), 清算账单数: %d",
+                    currentBalance, newBalance, amountDelta, clearedBillsCount));
+            } else {
+                result.put("success", false);
+                result.put("message", "更新客户余额失败");
+            }
+
+            return result;
+
+        } catch (Exception e) {
+            System.err.println("处理客户付款和清算失败: " + e.getMessage());
+            e.printStackTrace();
+            result.put("success", false);
+            result.put("message", "处理失败: " + e.getMessage());
+            return result;
         }
     }
 

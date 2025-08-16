@@ -68,4 +68,13 @@
         ORDER BY customer_id, company_code, currency
     </select>
 
+    <!-- 直接设置客户余额（而非累加） -->
+    <update id="setCustomerBalance">
+        INSERT INTO erp_customer_balance (customer_id, company_code, currency, balance, last_updated)
+        VALUES (#{customerId}, #{companyCode}, #{currency}, #{balance}, CURRENT_TIMESTAMP)
+        ON DUPLICATE KEY UPDATE
+            balance = #{balance},
+            last_updated = CURRENT_TIMESTAMP
+    </update>
+
 </mapper>

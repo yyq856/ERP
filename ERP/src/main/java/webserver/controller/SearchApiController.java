@@ -522,5 +522,18 @@ public class SearchApiController {
         return ok(list);
     }
 
+    // 其他)
+    // 1. 通过customer获得companyCode
+    @PostMapping("/company-code/customer")
+    public Map<String, Object> companyCodeByCustomer(@RequestBody(required = false) Map<String, Object> body) {
+        StringBuilder sql = new StringBuilder("SELECT company_code AS result FROM erp_customer WHERE 1=1");
+        List<Object> args = new ArrayList<>();
+        if (body != null) {
+            Object v;
+            v = body.get("customer"); if (v != null && !String.valueOf(v).isEmpty()) { sql.append(" AND customer_id = ?"); args.add(v); }
+        }
+        List<Map<String, Object>> list = jdbcTemplate.queryForList(sql.toString(), args.toArray());
+        return ok(list);
+    }
 }
 

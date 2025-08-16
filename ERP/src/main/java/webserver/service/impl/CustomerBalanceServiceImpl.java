@@ -54,7 +54,8 @@ public class CustomerBalanceServiceImpl implements CustomerBalanceService {
         synchronized (this) {
             // 先获取当前余额（可能从数据库读取）
             BigDecimal currentBalance = getCustomerBalance(customerId, companyCode, currency);
-            BigDecimal newBalance = currentBalance.add(amount);
+            // BigDecimal newBalance = currentBalance.add(amount);
+            BigDecimal newBalance = currentBalance.add(amount.negate());
 
             // 防止余额变为负数
             if (newBalance.compareTo(BigDecimal.ZERO) < 0) {
@@ -144,5 +145,25 @@ public class CustomerBalanceServiceImpl implements CustomerBalanceService {
         }
         // 回退到内存版本
         return new ConcurrentHashMap<>(balanceMap);
+    }
+
+    @Override
+    public boolean setCustomerBalance(String customerId, String companyCode, String currency, BigDecimal balance) {
+        try {
+            Long customerIdLong = Long.parseLong(customerId);
+            int result = customerBalanceMapper.setCustomerBalance(customerIdLong, companyCode, currency, balance);
+
+            if (result > 0) {
+                // 同步更新内存缓存
+                String key = customerId + ":" + companyCode + ":" + currency;
+                balanceMap.put(key, balance);
+                System.out.println(String.format("客户余额直接设置: %s, 新余额: %s", key, balance));
+                return true;
+            }
+            return false;
+        } catch (Exception e) {
+            System.err.println("设置客户余额失败: " + e.getMessage());
+            return false;
+        }
     }
 }

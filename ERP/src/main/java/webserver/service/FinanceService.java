@@ -58,4 +58,12 @@ public interface FinanceService {
      */
     boolean updateBillStatusToOpen(String billId);
 
+    /**
+     * 处理客户付款和清算账单项目（新方法）
+     * @param customerPayment 客户付款信息
+     * @param items 要清算的账单项目列表
+     * @return 操作结果
+     */
+    Map<String, Object> processCustomerPaymentAndClearItems(Map<String, Object> customerPayment, List<Map<String, Object>> items);
+
 }

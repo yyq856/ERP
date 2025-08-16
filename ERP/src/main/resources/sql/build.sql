@@ -826,6 +826,13 @@ CREATE TABLE `erp_stock` (
   KEY `erp_stock_ibfk_4` (`storage_loc`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
+DROP TABLE IF EXISTS `erp_pricing_element_key`;
+CREATE TABLE `erp_pricing_element_key` (
+  `id` varchar(10) NOT NULL,
+  `name` varchar(50) COLLATE utf8mb4_general_ci NOT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
 DROP TABLE IF EXISTS `erp_storage_location`;
 CREATE TABLE `erp_storage_location` (
   `loc_id` varchar(10) COLLATE utf8mb4_general_ci NOT NULL,
