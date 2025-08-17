@@ -251,22 +251,23 @@ public class SearchApiController {
         return ok(list);
     }
 
-    // 11) 物料文档（以发货记录gi_id及年份近似）
+    // 11) 物料文档搜索
     @PostMapping("/material-description")
     public Map<String, Object> materialDocument(@RequestBody(required = false) Map<String, Object> body) {
-        StringBuilder sql = new StringBuilder("SELECT gi_id AS result, YEAR(posting_date) AS materialDocumentYear FROM erp_good_issue WHERE 1=1");
+        StringBuilder sql = new StringBuilder("SELECT material_document AS result, material_document_year AS materialDocumentYear, posting_date AS postingDate FROM erp_material_document WHERE 1=1");
         List<Object> args = new ArrayList<>();
         if (body != null && body.get("include") instanceof Map) {
             Map<String, Object> include = (Map<String, Object>) body.get("include");
             Object eq = include.get("equal to");
             if (eq != null && !String.valueOf(eq).isEmpty()) {
-                sql.append(" AND gi_id = ?"); args.add(eq);
+                sql.append(" AND material_document = ?"); args.add(eq);
             }
             Object contains = include.get("contains");
             if (contains != null && !String.valueOf(contains).isEmpty()) {
-                sql.append(" AND CAST(gi_id AS CHAR) LIKE ?"); args.add("%" + contains + "%");
+                sql.append(" AND material_document LIKE ?"); args.add("%" + contains + "%");
             }
         }
+        sql.append(" ORDER BY material_document_id DESC LIMIT 100");
         List<Map<String, Object>> list = jdbcTemplate.queryForList(sql.toString(), args.toArray());
         return ok(list);
     }
@@ -420,25 +421,33 @@ public class SearchApiController {
         List<Object> args = new ArrayList<>();
         if (body != null) {
             Object v;
-            v = body.get("purchaseOrderNumber"); if (v != null && !String.valueOf(v).isEmpty()) { sql.append(" AND cust_ref LIKE ?"); args.add("%" + v + "%"); }
-            v = body.get("soldToParty"); if (v != null && !String.valueOf(v).isEmpty()) { sql.append(" AND sold_tp = ?"); args.add(v); }
-            v = body.get("shipToParty"); if (v != null && !String.valueOf(v).isEmpty()) { sql.append(" AND ship_tp = ?"); args.add(v); }
-            v = body.get("customerRef"); if (v != null && !String.valueOf(v).isEmpty()) { sql.append(" AND cust_ref LIKE ?"); args.add("%" + v + "%"); }
-            v = body.get("customerRefDate"); if (v != null && !String.valueOf(v).isEmpty()) { sql.append(" AND customer_reference_date = ?"); args.add(v); }
+            v = body.get("purchaseOrderNumber"); if (v != null && !String.valueOf(v).trim().isEmpty()) { sql.append(" AND cust_ref LIKE ?"); args.add("%" + v + "%"); }
+            v = body.get("soldToParty"); if (v != null && !String.valueOf(v).trim().isEmpty()) { sql.append(" AND sold_tp = ?"); args.add(v); }
+            v = body.get("shipToParty"); if (v != null && !String.valueOf(v).trim().isEmpty()) { sql.append(" AND ship_tp = ?"); args.add(v); }
+            v = body.get("customerRef"); if (v != null && !String.valueOf(v).trim().isEmpty()) { sql.append(" AND cust_ref LIKE ?"); args.add("%" + v + "%"); }
+            v = body.get("customerRefDate"); if (v != null && !String.valueOf(v).trim().isEmpty()) { sql.append(" AND customer_reference_date = ?"); args.add(v); }
             Object cm = body.get("containMaterials");
             if (cm instanceof List<?> list && !list.isEmpty()) {
-                sql.append(" AND inquiry_id IN (");
-                sql.append("SELECT inquiry_id FROM erp_inquiry_item WHERE ");
-                boolean first = true;
+                // 检查是否有有效的材料ID
+                List<Object> validMaterialIds = new ArrayList<>();
                 for (Object o : list) {
-                    if (o instanceof Map<?, ?> m && m.get("id") != null) {
-                        sql.append(first ? "" : " OR ");
-                        sql.append("mat_id = ?");
-                        args.add(m.get("id"));
-                        first = false;
+                    if (o instanceof Map<?, ?> m && m.get("id") != null && !String.valueOf(m.get("id")).trim().isEmpty()) {
+                        validMaterialIds.add(m.get("id"));
                     }
                 }
-                sql.append(")");
+
+                if (!validMaterialIds.isEmpty()) {
+                    sql.append(" AND inquiry_id IN (");
+                    sql.append("SELECT DISTINCT inquiry_id FROM erp_inquiry_item WHERE ");
+                    boolean first = true;
+                    for (Object matId : validMaterialIds) {
+                        sql.append(first ? "" : " OR ");
+                        sql.append("mat_id = ?");
+                        args.add(matId);
+                        first = false;
+                    }
+                    sql.append(")");
+                }
             }
         }
         sql.append(" ORDER BY inquiry_id DESC LIMIT 200");
@@ -498,23 +507,31 @@ public class SearchApiController {
         List<Object> args = new ArrayList<>();
         if (body != null) {
             Object v;
-            v = body.get("BP1"); if (v != null && !String.valueOf(v).isEmpty()) { sql.append(" AND bp1 = ?"); args.add(v); }
-            v = body.get("BP2"); if (v != null && !String.valueOf(v).isEmpty()) { sql.append(" AND bp2 = ?"); args.add(v); }
-            v = body.get("validFrom"); if (v != null && !String.valueOf(v).isEmpty()) { sql.append(" AND valid_from >= ?"); args.add(v); }
-            v = body.get("validTo"); if (v != null && !String.valueOf(v).isEmpty()) { sql.append(" AND valid_to <= ?"); args.add(v); }
+            v = body.get("BP1"); if (v != null && !String.valueOf(v).trim().isEmpty()) { sql.append(" AND bp1 = ?"); args.add(v); }
+            v = body.get("BP2"); if (v != null && !String.valueOf(v).trim().isEmpty()) { sql.append(" AND bp2 = ?"); args.add(v); }
+            v = body.get("validFrom"); if (v != null && !String.valueOf(v).trim().isEmpty()) { sql.append(" AND valid_from >= ?"); args.add(v); }
+            v = body.get("validTo"); if (v != null && !String.valueOf(v).trim().isEmpty()) { sql.append(" AND valid_to <= ?"); args.add(v); }
             Object cc = body.get("containCategory");
             if (cc instanceof List<?> list && !list.isEmpty()) {
-                sql.append(" AND (");
-                boolean first = true;
+                // 检查是否有有效的关系类型
+                List<Object> validRelations = new ArrayList<>();
                 for (Object o : list) {
-                    if (o instanceof Map<?, ?> m && m.get("relation") != null) {
-                        sql.append(first ? "" : " OR ");
-                        sql.append("rel_category = ?");
-                        args.add(m.get("relation"));
-                        first = false;
+                    if (o instanceof Map<?, ?> m && m.get("relation") != null && !String.valueOf(m.get("relation")).trim().isEmpty()) {
+                        validRelations.add(m.get("relation"));
                     }
                 }
-                sql.append(")");
+
+                if (!validRelations.isEmpty()) {
+                    sql.append(" AND (");
+                    boolean first = true;
+                    for (Object relation : validRelations) {
+                        sql.append(first ? "" : " OR ");
+                        sql.append("rel_category = ?");
+                        args.add(relation);
+                        first = false;
+                    }
+                    sql.append(")");
+                }
             }
         }
         sql.append(" ORDER BY relation_id DESC LIMIT 200");
@@ -548,5 +565,7 @@ public class SearchApiController {
         List<Map<String, Object>> list = jdbcTemplate.queryForList(sql.toString(), args.toArray());
         return ok(list);
     }
+
+
 }
 
