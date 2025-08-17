@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="webserver.mapper.PricingElementKeyMapper">
+
+    <!-- 结果映射 -->
+    <resultMap id="PricingElementKeyResultMap" type="webserver.entity.PricingElementKey">
+        <id column="id" property="id" jdbcType="INTEGER"/>
+        <result column="name" property="name" jdbcType="VARCHAR"/>
+        <result column="description" property="description" jdbcType="VARCHAR"/>
+        <result column="default_unit" property="defaultUnit" jdbcType="VARCHAR"/>
+        <result column="rule" property="rule" jdbcType="VARCHAR"/>
+        <result column="sort_key" property="sortKey" jdbcType="INTEGER"/>
+        <result column="config" property="config" jdbcType="VARCHAR"/>
+    </resultMap>
+
+    <!-- 基础查询字段 -->
+    <sql id="Base_Column_List">
+        id, name, description, default_unit, rule, sort_key, config
+    </sql>
+
+    <!-- 根据ID查询 -->
+    <select id="selectById" resultMap="PricingElementKeyResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM erp_pricing_element_key
+        WHERE id = #{id}
+    </select>
+
+    <!-- 根据名称查询 -->
+    <select id="selectByName" resultMap="PricingElementKeyResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM erp_pricing_element_key
+        WHERE name = #{name}
+    </select>
+
+    <!-- 查询所有 -->
+    <select id="selectAll" resultMap="PricingElementKeyResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM erp_pricing_element_key
+        ORDER BY sort_key ASC
+    </select>
+
+    <!-- 查询所有并返回Map格式 -->
+    <select id="selectAllAsMap" resultMap="PricingElementKeyResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM erp_pricing_element_key
+        ORDER BY sort_key ASC
+    </select>
+
+    <!-- 插入 -->
+    <insert id="insert" parameterType="webserver.entity.PricingElementKey" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO erp_pricing_element_key (
+            name, description, default_unit, rule, sort_key, config
+        ) VALUES (
+            #{name}, #{description}, #{defaultUnit}, #{rule}, #{sortKey}, #{config}
+        )
+    </insert>
+
+    <!-- 更新 -->
+    <update id="update" parameterType="webserver.entity.PricingElementKey">
+        UPDATE erp_pricing_element_key
+        SET name = #{name},
+            description = #{description},
+            default_unit = #{defaultUnit},
+            rule = #{rule},
+            sort_key = #{sortKey},
+            config = #{config}
+        WHERE id = #{id}
+    </update>
+
+    <!-- 根据ID删除 -->
+    <delete id="deleteById">
+        DELETE FROM erp_pricing_element_key
+        WHERE id = #{id}
+    </delete>
+
+    <!-- 根据名称删除 -->
+    <delete id="deleteByName">
+        DELETE FROM erp_pricing_element_key
+        WHERE name = #{name}
+    </delete>
+
+</mapper>

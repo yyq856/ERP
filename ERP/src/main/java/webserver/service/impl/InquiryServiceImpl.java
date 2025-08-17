@@ -627,7 +627,34 @@ public class InquiryServiceImpl implements InquiryService {
             request.setTaxValueUnit(queryItem.getTaxValueUnit());
             request.setPricingDate(queryItem.getPricingDate());
             request.setOrderProbability(queryItem.getOrderProbability());
-            request.setPricingElements(new ArrayList<>()); // 简化处理
+            // 转换定价元素
+            if (queryItem.getPricingElements() != null && !queryItem.getPricingElements().isEmpty()) {
+                List<ItemValidationRequest.PricingElementRequest> pricingElements = new ArrayList<>();
+                for (InquiryItemsTabQueryRequest.PricingElementRequest pe : queryItem.getPricingElements()) {
+                    ItemValidationRequest.PricingElementRequest converted = new ItemValidationRequest.PricingElementRequest();
+                    converted.setCnty(pe.getCnty());
+                    converted.setName(pe.getName());
+                    converted.setAmount(pe.getAmount());
+                    converted.setCity(pe.getCity());
+                    converted.setPer(pe.getPer());
+                    converted.setUom(pe.getUom());
+                    converted.setConditionValue(pe.getConditionValue());
+                    converted.setCurr(pe.getCurr());
+                    converted.setStatus(pe.getStatus());
+                    converted.setNumC(pe.getNumC());
+                    converted.setAtoMtsComponent(pe.getAtoMtsComponent());
+                    converted.setOun(pe.getOun());
+                    converted.setCconDe(pe.getCconDe());
+                    converted.setUn(pe.getUn());
+                    converted.setConditionValue2(pe.getConditionValue2());
+                    converted.setCdCur(pe.getCdCur());
+                    converted.setStat(pe.getStat());
+                    pricingElements.add(converted);
+                }
+                request.setPricingElements(pricingElements);
+            } else {
+                request.setPricingElements(new ArrayList<>());
+            }
             
             requests.add(request);
         }

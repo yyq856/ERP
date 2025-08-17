@@ -321,6 +321,9 @@ public class QuotationServiceImpl implements QuotationService {
                 shipToParty = shipToParty.substring(shipToParty.lastIndexOf("-") + 1);
                 quotation.getBasicInfo().setShipToParty(shipToParty);
             }
+
+            // 注意：QuotationDetailsResponseDTO.BasicInfo中的netValue是float类型，不需要处理逗号
+            // 如果需要处理带逗号的字符串，应该在JSON反序列化阶段处理
         }
         if (quotation.getItemOverview() != null) {
             if ("".equals(quotation.getItemOverview().getValidFrom())) {
@@ -368,10 +371,23 @@ public class QuotationServiceImpl implements QuotationService {
 
             // ItemValidation字段
             frontendItem.put("reqDelivDate", item.getReqDelivDate());
-            frontendItem.put("netValue", item.getNetValue());
+
+            // 处理netValue：移除千分位分隔符
+            String netValue = item.getNetValue();
+            if (netValue != null) {
+                netValue = netValue.replaceAll(",", "");
+            }
+            frontendItem.put("netValue", netValue);
             frontendItem.put("netValueUnit", item.getNetValueUnit());
-            frontendItem.put("taxValue", item.getTaxValue());
+
+            // 处理taxValue：移除千分位分隔符
+            String taxValue = item.getTaxValue();
+            if (taxValue != null) {
+                taxValue = taxValue.replaceAll(",", "");
+            }
+            frontendItem.put("taxValue", taxValue);
             frontendItem.put("taxValueUnit", item.getTaxValueUnit());
+
             frontendItem.put("pricingDate", item.getPricingDate());
             frontendItem.put("orderProbability", item.getOrderProbability());
             frontendItem.put("pricingElements", item.getPricingElements());

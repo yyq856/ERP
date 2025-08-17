@@ -13,12 +13,22 @@ public interface UnifiedItemService {
     /**
      * 更新文档的所有items
      * 删除现有items，按顺序重新分配行号并插入新items
-     * 
+     *
      * @param documentId 文档ID
      * @param documentType 文档类型 (inquiry, quotation, sales_order, billing_doc)
      * @param frontendItems 前端传入的item数据列表
      */
     void updateDocumentItems(Long documentId, String documentType, List<Map<String, Object>> frontendItems);
+
+    /**
+     * 更新文档的所有items（不触发事件）
+     * 删除现有items，按顺序重新分配行号并插入新items，但不发布事件
+     *
+     * @param documentId 文档ID
+     * @param documentType 文档类型 (inquiry, quotation, sales_order, billing_doc)
+     * @param frontendItems 前端传入的item数据列表
+     */
+    void updateDocumentItemsWithoutEvent(Long documentId, String documentType, List<Map<String, Object>> frontendItems);
     
     /**
      * 查询文档的所有items

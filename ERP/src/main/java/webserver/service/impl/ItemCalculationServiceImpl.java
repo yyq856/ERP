@@ -56,9 +56,9 @@ public class ItemCalculationServiceImpl implements ItemCalculationService {
                     BigDecimal netValue = parseDecimalValue(netValueStr);
                     BigDecimal taxValue = parseDecimalValue(taxValueStr);
                     
-                    // 计算该物品的总净值和总税值（数量 × 单价）
-                    BigDecimal itemNetValue = netValue.multiply(BigDecimal.valueOf(quantity));
-                    BigDecimal itemTaxValue = taxValue.multiply(BigDecimal.valueOf(quantity));
+                    // 直接使用物品的净值和税值（已经在ValidateItemsServiceImpl中乘过数量了）
+                    BigDecimal itemNetValue = netValue;
+                    BigDecimal itemTaxValue = taxValue;
                     
                     // 累加到总值
                     totalNetValue = totalNetValue.add(itemNetValue);

@@ -90,6 +90,53 @@ public class UnifiedItemServiceImpl implements UnifiedItemService {
         log.info("统一更新文档items完成，documentId: {}, documentType: {}", documentId, documentType);
     }
 
+    @Override
+    @Transactional
+    public void updateDocumentItemsWithoutEvent(Long documentId, String documentType, List<Map<String, Object>> frontendItems) {
+        log.info("统一更新文档items（不触发事件），documentId: {}, documentType: {}, items数量: {}",
+            documentId, documentType, frontendItems != null ? frontendItems.size() : 0);
+
+        // 1. 删除所有现有的items
+        int deletedCount = itemMapper.deleteItemsByDocumentIdAndType(documentId, documentType);
+        log.info("删除现有items数量: {}", deletedCount);
+
+        // 2. 插入新的items，按顺序重新分配行号
+        if (frontendItems != null && !frontendItems.isEmpty()) {
+            int itemNo = 1; // 从1开始重新分配行号
+            int insertedCount = 0;
+
+            for (Map<String, Object> frontendItem : frontendItems) {
+                // 检查material字段是否有效
+                Object materialObj = frontendItem.get("material");
+                if (materialObj != null && !materialObj.toString().trim().isEmpty()) {
+                    try {
+                        // 转换前端数据为统一的Item实体
+                        Item item = convertFrontendItemToUnifiedItem(documentId, documentType, itemNo++, frontendItem);
+
+                        // 插入新的item
+                        int result = itemMapper.insertItem(item);
+                        if (result > 0) {
+                            insertedCount++;
+                            log.debug("插入item成功: itemNo={}, material={}, netValue={}, taxValue={}",
+                                item.getItemNo(), item.getMaterialCode(), item.getNetValueStr(), item.getTaxValueStr());
+                        } else {
+                            log.warn("插入item失败: itemNo={}, material={}", item.getItemNo(), item.getMaterialCode());
+                        }
+                    } catch (Exception e) {
+                        log.error("处理item失败: {}, 错误: {}", frontendItem, e.getMessage(), e);
+                    }
+                } else {
+                    log.debug("跳过material为空的item: {}", frontendItem);
+                }
+            }
+
+            log.info("成功插入items数量: {}", insertedCount);
+        }
+
+        // 🔥 注意：这个方法不发布事件，不会触发金额重新计算
+        log.info("统一更新文档items完成（不触发事件），documentId: {}, documentType: {}", documentId, documentType);
+    }
+
     /**
      * 监听销售订单明细更新事件，在事务提交后触发金额重新计算
      */
