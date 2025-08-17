@@ -522,6 +522,19 @@ public class SearchApiController {
         return ok(list);
     }
 
+    // 25) 定价元素，input为空
+    @PostMapping("/pricing-element-key")
+    public Map<String, Object> pricingElementKey(@RequestBody(required = false) Map<String, Object> body) {
+        List<Map<String, Object>> rows = jdbcTemplate.queryForList("SELECT name, description FROM erp_pricing_element_key");
+        List<Map<String, Object>> list = rows.stream().map(r -> {
+            Map<String, Object> m = new HashMap<>();
+            m.put("result", r.get("name"));
+            m.put("description", r.get("description"));
+            return m;
+        }).collect(Collectors.toList());
+        return ok(list);
+    }
+
     // 其他)
     // 1. 通过customer获得companyCode
     @PostMapping("/company-code/customer")
