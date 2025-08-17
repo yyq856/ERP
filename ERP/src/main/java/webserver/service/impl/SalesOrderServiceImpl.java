@@ -252,21 +252,15 @@ public class SalesOrderServiceImpl implements SalesOrderService {
                 // 转换为统一的前端数据格式
                 List<Map<String, Object>> frontendItems = convertSalesOrderItemsToFrontendFormat(request.getItemOverview().getItems());
 
-                // 调用统一服务
+                // 调用统一服务（pricingElements已经包含在frontendItems中，不需要单独插入）
                 unifiedItemService.updateDocumentItems(soId, "sales_order", frontendItems);
-
-                // 6. 插入定价元素
-                insertPricingElements(soId, request.getItemOverview().getItems());
             }
 
             // 7. 构建成功响应
             Map<String, Object> data = new HashMap<>();
             data.put("so_id", soId.toString());
             log.info("销售订单创建成功，订单ID: {}", soId);
-            Map<String, Object> successResponse = new HashMap<>();
-            successResponse.put("message", "Sales Order created successfully!");
-            successResponse.put("data", data);
-            return Response.success(successResponse);
+            return Response.success("Sales Order " + soId + " created successfully!", data);
 
         } catch (Exception e) {
             log.error("创建销售订单失败: ", e);
@@ -510,55 +504,7 @@ public class SalesOrderServiceImpl implements SalesOrderService {
 
     // insertOrderItems方法已删除，现在使用UnifiedItemService
 
-    /**
-     * 插入定价元素
-     * @param soId 销售订单ID
-     * @param items 订单项目列表
-     */
-    private void insertPricingElements(Long soId, List<SalesOrderCreateRequest.Item> items) {
-        log.info("开始插入定价元素，订单ID: {}, 项目数量: {}", soId, items.size());
 
-        for (int i = 0; i < items.size(); i++) {
-            SalesOrderCreateRequest.Item item = items.get(i);
-
-            // 如果项目包含定价元素，则插入它们
-            if (item.getPricingElements() != null && !item.getPricingElements().isEmpty()) {
-                for (SalesOrderCreateRequest.PricingElement pricingElement : item.getPricingElements()) {
-                    PricingElement element = new PricingElement();
-                    element.setDocumentType("sales_order");
-                    element.setDocumentId(soId);
-                    element.setItemNo(i + 1);
-                    element.setCnty(pricingElement.getCnty());
-                    element.setConditionName(pricingElement.getName());
-                    element.setAmount(pricingElement.getAmount());
-                    element.setCity(pricingElement.getCity());
-                    element.setPerValue(pricingElement.getPer());
-                    element.setUom(pricingElement.getUom());
-                    element.setConditionValue(pricingElement.getConditionValue());
-                    element.setCurrency(pricingElement.getCurr());
-                    element.setStatus(pricingElement.getStatus());
-                    element.setNumC(pricingElement.getNumC());
-                    element.setAtoMtsComponent(pricingElement.getAtoMtsComponent());
-                    element.setOun(pricingElement.getOun());
-                    element.setCconDe(pricingElement.getCconDe());
-                    element.setUn(pricingElement.getUn());
-                    element.setConditionValue2(pricingElement.getConditionValue2());
-                    element.setCdCur(pricingElement.getCdCur());
-                    element.setStat(pricingElement.getStat());
-
-                    int result = salesOrderMapper.insertPricingElement(element);
-                    if (result <= 0) {
-                        log.error("插入定价元素失败: 订单ID={}, 项目号={}, 条件名称={}",
-                                soId, i + 1, pricingElement.getName());
-                        throw new RuntimeException("插入定价元素失败: " + pricingElement.getName());
-                    }
-
-                    log.debug("定价元素插入成功: 订单ID={}, 项目号={}, 条件名称={}",
-                            soId, i + 1, pricingElement.getName());
-                }
-            }
-        }
-    }
 
     /**
      * 解析带前缀的ID
