@@ -3,6 +3,7 @@ package webserver.service.impl;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 import webserver.mapper.MaterialDocumentMapper;
 import webserver.pojo.*;
@@ -10,8 +11,10 @@ import webserver.service.MaterialDocumentService;
 import webserver.util.DateUtil;
 
 import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -211,35 +214,103 @@ public class MaterialDocumentServiceImpl implements MaterialDocumentService {
         
         List<MaterialDocumentDetailResponse.ProcessFlowDetail> processFlowDetails = new ArrayList<>();
         
-        // 基础物料凭证信息
-        MaterialDocumentDetailResponse.ProcessFlowDetail materialDocDetail = 
-            new MaterialDocumentDetailResponse.ProcessFlowDetail();
-        materialDocDetail.setMaterialDocument(materialDocument.getMaterialDocumentId().toString());
-        materialDocDetail.setDlvId(null);
-        materialDocDetail.setBillId(null);
-        processFlowDetails.add(materialDocDetail);
-        
-        // 如果有关联的业务流程信息
+        // 如果有关联的业务流程信息，直接使用业务流程数据
         if (processFlow != null) {
-            if (processFlow.getDlvId() != null) {
-                MaterialDocumentDetailResponse.ProcessFlowDetail dlvDetail = 
-                    new MaterialDocumentDetailResponse.ProcessFlowDetail();
-                dlvDetail.setDlvId(processFlow.getDlvId().toString());
-                dlvDetail.setMaterialDocument(materialDocument.getMaterialDocumentId().toString());
-                dlvDetail.setBillId(null);
-                processFlowDetails.add(dlvDetail);
-            }
-            
-            if (processFlow.getBillId() != null) {
-                MaterialDocumentDetailResponse.ProcessFlowDetail billDetail = 
-                    new MaterialDocumentDetailResponse.ProcessFlowDetail();
-                billDetail.setDlvId(null);
-                billDetail.setMaterialDocument(materialDocument.getMaterialDocumentId().toString());
-                billDetail.setBillId(processFlow.getBillId().toString());
-                processFlowDetails.add(billDetail);
-            }
+            // 主记录：包含Material Document和关联的交货单/账单信息
+            MaterialDocumentDetailResponse.ProcessFlowDetail mainDetail =
+                new MaterialDocumentDetailResponse.ProcessFlowDetail();
+            mainDetail.setMaterialDocument(materialDocument.getMaterialDocumentId().toString());
+            mainDetail.setDlvId(processFlow.getDlvId() != null ? processFlow.getDlvId().toString() : null);
+            mainDetail.setBillId(processFlow.getBillId() != null ? processFlow.getBillId().toString() : null);
+            processFlowDetails.add(mainDetail);
+        } else {
+            // 如果没有业务流程信息，创建基础记录
+            MaterialDocumentDetailResponse.ProcessFlowDetail materialDocDetail =
+                new MaterialDocumentDetailResponse.ProcessFlowDetail();
+            materialDocDetail.setMaterialDocument(materialDocument.getMaterialDocumentId().toString());
+            materialDocDetail.setDlvId(null);
+            materialDocDetail.setBillId(null);
+            processFlowDetails.add(materialDocDetail);
         }
         
         return processFlowDetails;
+    }
+
+    @Override
+    @Transactional
+    public Long generateMaterialDocumentFromDelivery(String deliveryId) {
+        try {
+            log.info("开始为交货单 {} 生成物料凭证", deliveryId);
+
+            // 1. 获取交货单信息
+            Map<String, Object> deliveryInfo = materialDocumentMapper.getDeliveryInfoForMaterialDocument(deliveryId);
+            if (deliveryInfo == null) {
+                throw new RuntimeException("交货单不存在: " + deliveryId);
+            }
+
+            // 2. 获取交货单项目信息
+            List<Map<String, Object>> deliveryItems = materialDocumentMapper.getDeliveryItemsForMaterialDocument(deliveryId);
+            if (deliveryItems.isEmpty()) {
+                throw new RuntimeException("交货单没有已过账的项目: " + deliveryId);
+            }
+
+            // 3. 生成物料凭证号（基于全局主键ID，确保唯一性）
+            String currentYear = String.valueOf(LocalDate.now().getYear());
+            String materialDocumentNumber = materialDocumentMapper.generateNextMaterialDocumentNumber();
+
+            // 4. 创建物料凭证头记录
+            MaterialDocument materialDocument = new MaterialDocument();
+            materialDocument.setMaterialDocument(materialDocumentNumber);
+            materialDocument.setMaterialDocumentYear(currentYear);
+            materialDocument.setPlantId((Long) deliveryInfo.get("plant_id"));
+            materialDocument.setPostingDate(LocalDate.now());
+            materialDocument.setDocumentDate(LocalDate.now());
+            materialDocument.setCreatedBy("system");
+
+            int inserted = materialDocumentMapper.insertMaterialDocument(materialDocument);
+            if (inserted == 0) {
+                throw new RuntimeException("创建物料凭证失败");
+            }
+
+            Long materialDocumentId = materialDocument.getMaterialDocumentId();
+            log.info("创建物料凭证成功，ID: {}, 凭证号: {}", materialDocumentId, materialDocumentNumber);
+
+            // 5. 创建物料凭证项目记录
+            for (Map<String, Object> item : deliveryItems) {
+                materialDocumentMapper.insertMaterialDocumentItem(materialDocumentId, item);
+            }
+            log.info("创建物料凭证项目成功，共 {} 个项目", deliveryItems.size());
+
+            // 6. 创建业务流程关联记录
+            Long dlvId = Long.valueOf(deliveryId);
+            Long soId = (Long) deliveryInfo.get("so_id");
+            materialDocumentMapper.insertMaterialDocumentProcess(materialDocumentId, dlvId, soId);
+            log.info("创建业务流程关联成功");
+
+            return materialDocumentId;
+
+        } catch (Exception e) {
+            log.error("为交货单 {} 生成物料凭证失败: {}", deliveryId, e.getMessage(), e);
+            throw new RuntimeException("生成物料凭证失败: " + e.getMessage(), e);
+        }
+    }
+
+    @Override
+    @Transactional
+    public void updateBillingAssociation(Long materialDocumentId, Long billId) {
+        try {
+            log.info("更新物料凭证 {} 的账单关联: {}", materialDocumentId, billId);
+
+            int updated = materialDocumentMapper.updateBillingAssociation(materialDocumentId, billId);
+            if (updated == 0) {
+                log.warn("未找到物料凭证业务流程记录: {}", materialDocumentId);
+            } else {
+                log.info("更新账单关联成功");
+            }
+
+        } catch (Exception e) {
+            log.error("更新物料凭证账单关联失败: {}", e.getMessage(), e);
+            throw new RuntimeException("更新账单关联失败: " + e.getMessage(), e);
+        }
     }
 }

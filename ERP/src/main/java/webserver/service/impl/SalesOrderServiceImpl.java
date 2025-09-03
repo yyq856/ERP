@@ -11,6 +11,7 @@ import webserver.mapper.OutboundDeliveryMapper;
 import webserver.mapper.SalesOrderMapper;
 import webserver.pojo.*;
 import webserver.service.SalesOrderService;
+import webserver.service.SalesOrderCalculationService;
 import webserver.service.ValidateItemsService;
 import webserver.service.UnifiedItemService;
 
@@ -35,6 +36,9 @@ public class SalesOrderServiceImpl implements SalesOrderService {
 
     @Autowired
     private UnifiedItemService unifiedItemService;
+
+    @Autowired
+    private SalesOrderCalculationService salesOrderCalculationService;
 
     @Override
     public Response<?> searchSalesOrders(SalesOrderSearchRequest request) {
@@ -248,21 +252,15 @@ public class SalesOrderServiceImpl implements SalesOrderService {
                 // 转换为统一的前端数据格式
                 List<Map<String, Object>> frontendItems = convertSalesOrderItemsToFrontendFormat(request.getItemOverview().getItems());
 
-                // 调用统一服务
+                // 调用统一服务（pricingElements已经包含在frontendItems中，不需要单独插入）
                 unifiedItemService.updateDocumentItems(soId, "sales_order", frontendItems);
-
-                // 6. 插入定价元素
-                insertPricingElements(soId, request.getItemOverview().getItems());
             }
 
             // 7. 构建成功响应
             Map<String, Object> data = new HashMap<>();
             data.put("so_id", soId.toString());
             log.info("销售订单创建成功，订单ID: {}", soId);
-            Map<String, Object> successResponse = new HashMap<>();
-            successResponse.put("message", "Sales Order created successfully!");
-            successResponse.put("data", data);
-            return Response.success(successResponse);
+            return Response.success("Sales Order " + soId + " created successfully!", data);
 
         } catch (Exception e) {
             log.error("创建销售订单失败: ", e);
@@ -412,57 +410,101 @@ public class SalesOrderServiceImpl implements SalesOrderService {
         return order;
     }
 
-    // insertOrderItems方法已删除，现在使用UnifiedItemService
-
     /**
-     * 插入定价元素
-     * @param soId 销售订单ID
-     * @param items 订单项目列表
+     * 从请求构建销售订单对象（不设置金额，金额将通过计算服务设置）
+     * @param request 请求参数
+     * @return 销售订单对象
      */
-    private void insertPricingElements(Long soId, List<SalesOrderCreateRequest.Item> items) {
-        log.info("开始插入定价元素，订单ID: {}, 项目数量: {}", soId, items.size());
+    private SalesOrder buildSalesOrderFromRequestWithoutAmount(SalesOrderCreateRequest request) {
+        SalesOrder order = new SalesOrder();
 
-        for (int i = 0; i < items.size(); i++) {
-            SalesOrderCreateRequest.Item item = items.get(i);
-
-            // 如果项目包含定价元素，则插入它们
-            if (item.getPricingElements() != null && !item.getPricingElements().isEmpty()) {
-                for (SalesOrderCreateRequest.PricingElement pricingElement : item.getPricingElements()) {
-                    PricingElement element = new PricingElement();
-                    element.setDocumentType("sales_order");
-                    element.setDocumentId(soId);
-                    element.setItemNo(i + 1);
-                    element.setCnty(pricingElement.getCnty());
-                    element.setConditionName(pricingElement.getName());
-                    element.setAmount(pricingElement.getAmount());
-                    element.setCity(pricingElement.getCity());
-                    element.setPerValue(pricingElement.getPer());
-                    element.setUom(pricingElement.getUom());
-                    element.setConditionValue(pricingElement.getConditionValue());
-                    element.setCurrency(pricingElement.getCurr());
-                    element.setStatus(pricingElement.getStatus());
-                    element.setNumC(pricingElement.getNumC());
-                    element.setAtoMtsComponent(pricingElement.getAtoMtsComponent());
-                    element.setOun(pricingElement.getOun());
-                    element.setCconDe(pricingElement.getCconDe());
-                    element.setUn(pricingElement.getUn());
-                    element.setConditionValue2(pricingElement.getConditionValue2());
-                    element.setCdCur(pricingElement.getCdCur());
-                    element.setStat(pricingElement.getStat());
-
-                    int result = salesOrderMapper.insertPricingElement(element);
-                    if (result <= 0) {
-                        log.error("插入定价元素失败: 订单ID={}, 项目号={}, 条件名称={}",
-                                soId, i + 1, pricingElement.getName());
-                        throw new RuntimeException("插入定价元素失败: " + pricingElement.getName());
-                    }
-
-                    log.debug("定价元素插入成功: 订单ID={}, 项目号={}, 条件名称={}",
-                            soId, i + 1, pricingElement.getName());
-                }
+        // 1. 处理报价单ID（可选）
+        if (StringUtils.hasText(request.getBasicInfo().getQuotation_id())) {
+            try {
+                order.setQuotationId(Long.valueOf(request.getBasicInfo().getQuotation_id()));
+                log.debug("设置报价单ID: {}", order.getQuotationId());
+            } catch (NumberFormatException e) {
+                log.warn("报价单ID格式不正确: {}", request.getBasicInfo().getQuotation_id());
             }
         }
+        // 处理新的报价单ID字段名
+        else if (StringUtils.hasText(request.getBasicInfo().getSalesQuotationId())) {
+            try {
+                order.setQuotationId(Long.valueOf(request.getBasicInfo().getSalesQuotationId()));
+                log.debug("设置报价单ID: {}", order.getQuotationId());
+            } catch (NumberFormatException e) {
+                log.warn("报价单ID格式不正确: {}", request.getBasicInfo().getSalesQuotationId());
+            }
+        }
+
+        // 2. 设置售达方和送达方客户ID（必需）
+        try {
+            // 售达方处理 (soldToParty)
+            if (StringUtils.hasText(request.getBasicInfo().getSoldToParty())) {
+                String soldToParty = request.getBasicInfo().getSoldToParty();
+                Long customerId = parseIdWithPrefix(soldToParty, "CUST-");
+                order.setSoldTp(customerId);  // 使用新的sold_tp字段
+                log.debug("设置售达方ID: {}", customerId);
+            } else {
+                throw new IllegalArgumentException("soldToParty不能为空");
+            }
+
+            // 送达方处理 (shipToParty)
+            if (StringUtils.hasText(request.getBasicInfo().getShipToParty())) {
+                String shipToParty = request.getBasicInfo().getShipToParty();
+                Long customerId = parseIdWithPrefix(shipToParty, "CUST-");
+                order.setShipTp(customerId);  // 使用新的ship_tp字段
+                log.debug("设置送达方ID: {}", customerId);
+            } else {
+                throw new IllegalArgumentException("shipToParty不能为空");
+            }
+        } catch (Exception e) {
+            log.error("售达方或送达方ID解析失败: ", e);
+            throw new IllegalArgumentException("售达方或送达方ID格式不正确", e);
+        }
+
+        // 3. 日期处理
+        try {
+            if (StringUtils.hasText(request.getItemOverview().getReqDelivDate())) {
+                try {
+                    LocalDate reqDeliveryDate = webserver.util.DateUtil.parseDate(request.getItemOverview().getReqDelivDate());
+                    order.setReqDeliveryDate(reqDeliveryDate);
+                    log.debug("设置要求交货日期: {}", reqDeliveryDate);
+                } catch (Exception e) {
+                    log.error("请求交货日期格式错误: {}", e.getMessage());
+                    throw new RuntimeException("请求交货日期格式不正确: " + e.getMessage());
+                }
+            } else {
+                // 默认为当前日期
+                order.setReqDeliveryDate(LocalDate.now());
+                log.debug("使用默认交货日期: {}", order.getReqDeliveryDate());
+            }
+        } catch (Exception e) {
+            log.error("交货日期解析失败: ", e);
+            throw new IllegalArgumentException("交货日期格式不正确", e);
+        }
+
+        // 4. 设置货币信息
+        String currency = request.getBasicInfo().getNetValueUnit();
+        if (!StringUtils.hasText(currency)) {
+            currency = "USD"; // 默认货币
+        }
+        order.setCurrency(currency);
+        log.debug("设置货币: {}", currency);
+
+        // 注意：不设置金额字段，这些将通过 SalesOrderCalculationService 计算和设置
+        log.debug("金额字段将通过计算服务设置，不使用前端传来的数据");
+
+        // 5. 设置默认值
+        order.setIncoterms("EXW"); // 默认贸易条款
+        order.setPaymentTerms("0001"); // 默认付款条件
+
+        return order;
     }
+
+    // insertOrderItems方法已删除，现在使用UnifiedItemService
+
+
 
     /**
      * 解析带前缀的ID
@@ -558,50 +600,44 @@ public class SalesOrderServiceImpl implements SalesOrderService {
     public Response<?> updateSalesOrder(String soId, SalesOrderCreateRequest request) {
         try {
             log.info("开始修改销售订单: {}", soId);
-            
+
             // 1. 验证请求数据
             if (request == null || request.getBasicInfo() == null) {
                 log.warn("修改销售订单请求数据为空");
                 return Response.error("请求数据不能为空");
             }
-            
 
-            
-            if (!StringUtils.hasText(request.getBasicInfo().getSo_id()) || 
+
+
+            if (!StringUtils.hasText(request.getBasicInfo().getSo_id()) ||
                 !request.getBasicInfo().getSo_id().equals(soId)) {
                 log.warn("basicInfo.so_id和请求路径ID不一致");
                 return Response.error("basicInfo.so_id和请求路径ID不一致");
             }
-            
-            // 3. 构建销售订单对象
+
+            // 3. 构建销售订单对象（使用前端传来的netValue）
             SalesOrder order = buildSalesOrderFromRequest(request);
             order.setSoId(Long.valueOf(soId)); // 设置要更新的订单ID
-            
-            // 4. 更新订单头
+
+            // 4. 先更新订单头（包含前端传来的金额）
             int result = salesOrderMapper.updateSalesOrder(order);
             if (result <= 0) {
                 log.error("更新订单头失败: {}", soId);
                 return Response.error("更新订单头失败");
             }
-            
-            // 5. 更新订单项目 - 使用统一方法
+
+            // 5. 更新订单项目 - 使用统一方法（但不触发金额重新计算）
             if (request.getItemOverview() != null && request.getItemOverview().getItems() != null) {
                 // 转换为统一的前端数据格式
                 List<Map<String, Object>> frontendItems = convertSalesOrderItemsToFrontendFormat(request.getItemOverview().getItems());
 
-                // 调用统一服务（会自动删除现有items并重新插入）
-                unifiedItemService.updateDocumentItems(order.getSoId(), "sales_order", frontendItems);
-
-                // 6. 删除原有的定价元素
-                deletePricingElements(order.getSoId());
-
-                // 8. 插入新的定价元素
-                insertPricingElements(order.getSoId(), request.getItemOverview().getItems());
+                // 调用统一服务，但禁用事件触发以避免金额被重新计算
+                unifiedItemService.updateDocumentItemsWithoutEvent(order.getSoId(), "sales_order", frontendItems);
             }
-            
+
             log.info("销售订单修改成功: {}", soId);
-            return Response.success("Sales Order saved successfully!");
-            
+            return Response.success("Sales Order SO-" + soId + " updated successfully!");
+
         } catch (Exception e) {
             log.error("修改销售订单失败: ", e);
             return Response.error("Operation failed.");

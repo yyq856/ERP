@@ -5,17 +5,26 @@
 
 <mapper namespace="webserver.mapper.OutboundDeliveryMapper">
 
-    <!-- 插入主表 -->
+    <!-- 插入主表 - 从销售订单创建出库交货单 -->
     <insert id="insertOutboundDeliveryFromSalesOrder" parameterType="string">
         INSERT INTO erp_outbound_delivery (
-        so_id, ship_tp, shipping_point, pick_date_plan, status
+            so_id, ship_tp, shipping_point, posted, ready_to_post,
+            planned_gi_date, loading_date, delivery_date,
+            picking_status, overall_status, gi_status, priority
         )
         SELECT
-        so.so_id,
-        so.ship_tp,
-        NULL,
-        CURDATE(),
-        'OPEN'
+            so.so_id,
+            so.ship_tp,
+            NULL,
+            0,
+            0,
+            so.req_delivery_date,
+            so.req_delivery_date,
+            so.req_delivery_date,
+            'IN_PROGRESS',
+            'IN_PROGRESS',
+            'IN_PROGRESS',
+            'Normal Items'
         FROM erp_sales_order_hdr so
         WHERE so.so_id = #{soId}
     </insert>
@@ -24,158 +33,311 @@
         SELECT LAST_INSERT_ID()
     </select>
 
+    <!-- 获取销售订单的统一item记录，用于创建outbound item -->
     <select id="getSalesItemsBySalesOrderId" parameterType="string" resultType="webserver.pojo.SalesItemDTO">
         SELECT
             item_no AS itemNo,
             mat_id AS matId,
-            quantity AS pickQuantity,
-            plt_id AS plantId,
-            storage_loc AS storageLoc
-        FROM erp_sales_item
-        WHERE so_id = #{soId}
+            order_quantity_str AS pickQuantity,
+            plant_id AS plantId,
+            order_quantity_unit AS storageUnit
+        FROM erp_item
+        WHERE document_id = #{soId} AND document_type = 'sales'
+        ORDER BY item_no
     </select>
 
-    <!-- 单条插入明细 -->
-    <insert id="insertOutboundDeliveryItem">
-        INSERT INTO erp_outbound_delivery_item (
-            dlv_id, item_no, mat_id, pick_quantity, plant_id, storage_loc, confirm_status
+    <!-- 批量插入出库物品明细 - 引用销售订单的erp_item记录 -->
+    <insert id="insertOutboundItem">
+        INSERT INTO erp_outbound_item (
+            dlv_id, item_no, ref_document_id, ref_document_type, ref_item_no,
+            picking_quantity, picking_status, confirmation_status, item_type, conversion_rate,
+            gross_weight, gross_weight_unit, net_weight, net_weight_unit, volume, volume_unit
         )
-        VALUES (
-                   #{dlvId},
-                   #{item.itemNo},
-                   #{item.matId},
-                   #{item.pickQuantity},
-                   #{item.plantId},
-                   #{item.storageLoc},
-                   'Not Completed'
-               )
+        SELECT
+            #{dlvId},
+            ei.item_no,
+            ei.document_id,
+            ei.document_type,
+            ei.item_no,
+            CAST(ei.order_quantity_str AS DECIMAL(13,3)),
+            'Completed',
+            'Not Confirmed',
+            'Standard',
+            1.000,
+            COALESCE(m.base_gross_weight * CAST(ei.order_quantity_str AS DECIMAL(13,3)), 0),
+            m.base_gross_weight_unit,
+            COALESCE(m.base_net_weight * CAST(ei.order_quantity_str AS DECIMAL(13,3)), 0),
+            m.base_net_weight_unit,
+            COALESCE(m.base_volume * CAST(ei.order_quantity_str AS DECIMAL(13,3)), 0),
+            m.base_volume_unit
+        FROM erp_item ei
+        LEFT JOIN erp_material m ON ei.mat_id = m.mat_id
+        WHERE ei.document_id = #{soId} AND ei.document_type = 'sales_order'
+        ORDER BY ei.item_no
     </insert>
 
     <select id="getDeliverySummaries" resultType="webserver.pojo.OutboundDeliverySummaryDTO">
         SELECT
             d.dlv_id AS outboundDelivery,
-            d.pick_date_plan AS pickingDate,
-            d.status AS pickingStatus,
-            CASE
-                WHEN EXISTS (
-                    SELECT 1
-                    FROM erp_good_issue gi
-                    WHERE gi.dlv_id = d.dlv_id
-                ) THEN 'Completed'
-                ELSE 'Not Started'
-                END AS giStatus
-        FROM
-            erp_outbound_delivery d
-        WHERE
-            (#{overallStatus} IS NULL OR d.status = #{overallStatus})
+            d.planned_gi_date AS pickingDate,
+            d.picking_status AS pickingStatus,
+            d.gi_status AS giStatus,
+            d.overall_status AS overallStatus
+        FROM erp_outbound_delivery d
+        WHERE (#{overallStatus} IS NULL OR #{overallStatus} = '' OR d.overall_status = #{overallStatus})
+        ORDER BY d.dlv_id DESC
+    </select>
+
+    <!-- 获取单个交货单摘要信息 -->
+    <select id="getDeliverySummaryById" parameterType="string" resultType="webserver.pojo.OutboundDeliverySummaryDTO">
+        SELECT
+            d.dlv_id AS outboundDelivery,
+            d.planned_gi_date AS pickingDate,
+            d.picking_status AS pickingStatus,
+            d.gi_status AS giStatus,
+            d.overall_status AS overallStatus
+        FROM erp_outbound_delivery d
+        WHERE d.dlv_id = #{deliveryId}
     </select>
 
     <!-- 获取出库交货单详情，返回 RawDTO -->
     <select id="getOutboundDeliveryDetail" parameterType="string" resultType="webserver.pojo.OutboundDeliveryDetailRawDTO">
         SELECT
             od.dlv_id AS id,
-            od.pick_date_plan AS plannedGIDate,
-            od.gi_date AS actualGIDate,
+            od.posted,
+            od.ready_to_post AS readyToPost,
+            od.actual_gi_date AS actualGIDate,
+            od.planned_gi_date AS plannedGIDate,
+            od.actual_date AS actualDate,
+            od.loading_date AS loadingDate,
+            od.delivery_date AS deliveryDate,
+            od.picking_status AS pickingStatus,
+            od.overall_status AS overallStatus,
+            od.gi_status AS giStatus,
             od.so_id,
             od.ship_tp AS shipToParty,
+            c.name AS shipToPartyName,
             od.shipping_point AS shippingPoint,
-            od.status AS pickingStatus,
-            CASE
-                WHEN EXISTS (
-                    SELECT 1 FROM erp_good_issue gi WHERE gi.dlv_id = od.dlv_id
-                ) THEN 'In Progress'
-                ELSE 'Not Started'
-                END AS giStatus
+            od.address,
+            od.gross_weight AS grossWeight,
+            od.gross_weight_unit AS grossWeightUnit,
+            od.net_weight AS netWeight,
+            od.net_weight_unit AS netWeightUnit,
+            od.volume,
+            od.volume_unit AS volumeUnit,
+            od.priority
         FROM erp_outbound_delivery od
+        LEFT JOIN erp_customer c ON od.ship_tp = c.customer_id
         WHERE od.dlv_id = #{deliveryId}
     </select>
 
 
-    <!-- 获取出库交货单明细项 -->
+    <!-- 获取出库交货单明细项 - 返回前端格式，包含冗余字段 -->
     <select id="getDeliveryItems" parameterType="string" resultType="webserver.pojo.OutboundDeliveryItemDTO">
         SELECT
-            CAST(odi.item_no AS CHAR) AS item,
-            odi.mat_id AS material,
-            m.mat_desc AS materialDescription,
-            odi.pick_quantity AS pickingQuantity,
-            odi.plant_id AS plant,
-            p.plant_name AS plantName,
-            odi.storage_loc AS storageLocation,
-            s.name AS storageLocationDescription
-        FROM erp_outbound_delivery_item odi
-                 LEFT JOIN erp_material m ON odi.mat_id = m.mat_id
-                 LEFT JOIN erp_plant_name p ON odi.plant_id = p.plant_id
-                 LEFT JOIN erp_storage_location s ON odi.storage_loc = s.loc_id
-        WHERE odi.dlv_id = #{deliveryId}
+            oi.dlv_id AS dlvId,
+            CAST(oi.item_no AS CHAR) AS item,
+            ei.material_code AS material,
+            ei.order_quantity_str AS deliveryQuantity,
+            ei.order_quantity_unit AS deliveryQuantityUnit,
+            oi.picking_quantity AS pickingQuantity,
+            ei.order_quantity_unit AS pickingQuantityUnit,
+            oi.picking_status AS pickingStatus,
+            oi.confirmation_status AS confirmationStatus,
+            CONCAT('SO-', ei.document_id) AS salesOrder,
+            oi.item_type AS itemType,
+            CONCAT(ei.order_quantity_str, ' ', ei.order_quantity_unit) AS originalDelivertyQuantity,
+            oi.conversion_rate AS conversionRate,
+            CONCAT('1 ', ei.order_quantity_unit) AS baseUnitDeliveryQuantity,
+            CONCAT(oi.gross_weight, ' ', oi.gross_weight_unit) AS grossWeight,
+            CONCAT(oi.net_weight, ' ', oi.net_weight_unit) AS netWeight,
+            CONCAT(oi.volume, ' ', oi.volume_unit) AS volume,
+            ei.plant_id AS plant,
+            oi.storage_loc AS storageLocation,
+            sl.name AS storageLocationDescription,
+            oi.storage_bin AS storageBin,
+            ei.req_deliv_date AS materialAvailability
+        FROM erp_outbound_item oi
+        LEFT JOIN erp_item ei ON oi.ref_document_id = ei.document_id
+                               AND oi.ref_document_type = ei.document_type
+                               AND oi.ref_item_no = ei.item_no
+        LEFT JOIN erp_storage_location sl ON oi.storage_loc = sl.loc_id
+        WHERE oi.dlv_id = #{deliveryId}
+        ORDER BY oi.item_no
     </select>
 
-    <select id="findItemByMaterialAndPlant" resultType="webserver.pojo.OutboundDeliveryItemDTO">
+    <!-- 根据物品号获取特定物品 -->
+    <select id="getDeliveryItemsByItemNo" resultType="webserver.pojo.OutboundDeliveryItemDTO">
         SELECT
-            odi.item_no AS item,
-            odi.mat_id AS material,
-            m.mat_desc AS materialDescription,
-            odi.pick_quantity AS pickingQuantity,
-            odi.plant_id AS plant,
-            p.plant_name AS plantName,
-            odi.storage_loc AS storageLocation,
-            sl.name AS storageLocationDescription
-        FROM erp_outbound_delivery_item odi
-                 LEFT JOIN erp_material m ON odi.mat_id = m.mat_id
-                 LEFT JOIN erp_plant_name p ON odi.plant_id = p.plant_id
-                 LEFT JOIN erp_storage_location sl ON odi.storage_loc = sl.loc_id
-        WHERE odi.mat_id = #{material}
-          AND odi.plant_id = #{plant}
-            LIMIT 1
+            oi.dlv_id AS dlvId,
+            CAST(oi.item_no AS CHAR) AS item,
+            ei.material_code AS material,
+            ei.order_quantity_str AS deliveryQuantity,
+            ei.order_quantity_unit AS deliveryQuantityUnit,
+            oi.picking_quantity AS pickingQuantity,
+            ei.order_quantity_unit AS pickingQuantityUnit,
+            oi.picking_status AS pickingStatus,
+            oi.confirmation_status AS confirmationStatus,
+            CONCAT('SO-', ei.document_id) AS salesOrder,
+            oi.item_type AS itemType,
+            CONCAT(ei.order_quantity_str, ' ', ei.order_quantity_unit) AS originalDelivertyQuantity,
+            oi.conversion_rate AS conversionRate,
+            CONCAT('1 ', ei.order_quantity_unit) AS baseUnitDeliveryQuantity,
+            CONCAT(oi.gross_weight, ' ', oi.gross_weight_unit) AS grossWeight,
+            CONCAT(oi.net_weight, ' ', oi.net_weight_unit) AS netWeight,
+            CONCAT(oi.volume, ' ', oi.volume_unit) AS volume,
+            ei.plant_id AS plant,
+            oi.storage_loc AS storageLocation,
+            sl.name AS storageLocationDescription,
+            oi.storage_bin AS storageBin,
+            ei.req_deliv_date AS materialAvailability
+        FROM erp_outbound_item oi
+        LEFT JOIN erp_item ei ON oi.ref_document_id = ei.document_id
+                               AND oi.ref_document_type = ei.document_type
+                               AND oi.ref_item_no = ei.item_no
+        LEFT JOIN erp_storage_location sl ON oi.storage_loc = sl.loc_id
+        WHERE oi.dlv_id = #{deliveryId} AND oi.item_no = #{itemNo}
     </select>
 
-    <update id="updateGIStatusToPosted" parameterType="string">
-        UPDATE erp_outbound_delivery
+    <!-- 新增：单个更新出库物品 - 用于items-tab-query接口 -->
+    <update id="updateOutboundItem" parameterType="webserver.pojo.OutboundDeliveryItemDTO">
+        UPDATE erp_outbound_item
         SET
-            gi_date = NOW(),
-            status = 'COMPLETED'
-        WHERE dlv_id = #{deliveryId}
-    </update>
-
-    <select id="getDeliverySummary" resultType="webserver.pojo.OutboundDeliverySummaryDTO">
-        SELECT
-            od.dlv_id AS outboundDelivery,
-            od.gi_date AS pickingDate,
-            od.status AS pickingStatus,
-            CASE
-                WHEN EXISTS (
-                    SELECT 1 FROM erp_good_issue gi WHERE gi.dlv_id = od.dlv_id
+            picking_quantity = #{pickingQuantity},
+            item_type = #{itemType},
+            storage_loc = #{storageLocation},
+            storage_bin = #{storageBin},
+            confirmation_status = #{confirmationStatus},
+            conversion_rate = #{conversionRate},
+            picking_status = CASE
+                WHEN #{pickingQuantity} &lt; (
+                    SELECT CAST(ei.order_quantity_str AS DECIMAL(13,3))
+                    FROM erp_item ei
+                    WHERE ei.document_id = ref_document_id
+                      AND ei.document_type = ref_document_type
+                      AND ei.item_no = ref_item_no
                 ) THEN 'In Progress'
-                ELSE 'Not Started'
-                END AS giStatus
-        FROM erp_outbound_delivery od
-        WHERE od.dlv_id = #{deliveryId}
-    </select>
+                ELSE 'Completed'
+            END,
+            updated_time = NOW()
+        WHERE dlv_id = #{dlvId} AND item_no = #{item}
+    </update>
 
-    <update id="updateDeliveryDetailForPostGI" parameterType="string">
+    <!-- 更新交货单状态 - 根据物品状态动态计算 -->
+    <update id="updateDeliveryStatuses" parameterType="string">
+        UPDATE erp_outbound_delivery od
+        SET
+            picking_status = (
+                SELECT CASE
+                    WHEN COUNT(*) = SUM(CASE WHEN oi.picking_status = 'Completed' THEN 1 ELSE 0 END)
+                    THEN 'Completed'
+                    ELSE 'In Progress'
+                END
+                FROM erp_outbound_item oi WHERE oi.dlv_id = od.dlv_id
+            ),
+            overall_status = (
+                SELECT CASE
+                    WHEN COUNT(*) = SUM(CASE WHEN oi.confirmation_status IN ('Confirmed', 'Posted') THEN 1 ELSE 0 END)
+                    THEN 'Completed'
+                    ELSE 'In Progress'
+                END
+                FROM erp_outbound_item oi WHERE oi.dlv_id = od.dlv_id
+            ),
+            gi_status = (
+                SELECT CASE
+                    WHEN COUNT(*) = SUM(CASE WHEN oi.confirmation_status IN ('Confirmed', 'Posted') THEN 1 ELSE 0 END)
+                    THEN 'Completed'
+                    ELSE 'In Progress'
+                END
+                FROM erp_outbound_item oi WHERE oi.dlv_id = od.dlv_id
+            ),
+            ready_to_post = (
+                SELECT CASE
+                    WHEN COUNT(*) = SUM(CASE WHEN oi.storage_loc IS NOT NULL THEN 1 ELSE 0 END)
+                    THEN 1
+                    ELSE 0
+                END
+                FROM erp_outbound_item oi WHERE oi.dlv_id = od.dlv_id
+            ),
+            updated_time = NOW()
+        WHERE od.dlv_id = #{deliveryId}
+    </update>
+
+    <!-- 更新交货单重量体积合计 -->
+    <update id="updateDeliveryWeightVolume" parameterType="string">
+        UPDATE erp_outbound_delivery od
+        SET
+            gross_weight = (
+                SELECT COALESCE(SUM(oi.gross_weight), 0)
+                FROM erp_outbound_item oi WHERE oi.dlv_id = od.dlv_id
+            ),
+            gross_weight_unit = (
+                SELECT oi.gross_weight_unit
+                FROM erp_outbound_item oi WHERE oi.dlv_id = od.dlv_id LIMIT 1
+            ),
+            net_weight = (
+                SELECT COALESCE(SUM(oi.net_weight), 0)
+                FROM erp_outbound_item oi WHERE oi.dlv_id = od.dlv_id
+            ),
+            net_weight_unit = (
+                SELECT oi.net_weight_unit
+                FROM erp_outbound_item oi WHERE oi.dlv_id = od.dlv_id LIMIT 1
+            ),
+            volume = (
+                SELECT COALESCE(SUM(oi.volume), 0)
+                FROM erp_outbound_item oi WHERE oi.dlv_id = od.dlv_id
+            ),
+            volume_unit = (
+                SELECT oi.volume_unit
+                FROM erp_outbound_item oi WHERE oi.dlv_id = od.dlv_id LIMIT 1
+            ),
+            updated_time = NOW()
+        WHERE od.dlv_id = #{deliveryId}
+    </update>
+
+    <!-- Post GI - 过账发货 -->
+    <update id="postGIByDeliveryId" parameterType="string">
         UPDATE erp_outbound_delivery
         SET
-            gi_date = NOW(),
-            status = 'COMPLETED'
+            posted = 1,
+            actual_gi_date = CURDATE(),
+            actual_date = CURDATE(),
+            updated_time = NOW()
+        WHERE dlv_id = #{deliveryId} AND ready_to_post = 1
+    </update>
+
+    <!-- 更新物品确认状态为已过账 -->
+    <update id="updateItemsConfirmStatusToPosted" parameterType="string">
+        UPDATE erp_outbound_item
+        SET confirmation_status = 'Posted', updated_time = NOW()
         WHERE dlv_id = #{deliveryId}
     </update>
 
-    <!-- 更新该交货单所有明细的确认状态 -->
-    <update id="updateItemsConfirmStatusToPosted" parameterType="string">
-        UPDATE erp_outbound_delivery_item
-        SET confirm_status = 'Posted'
-        WHERE dlv_id = #{id}
-    </update>
-
-
-    <update id="updateItemPostStatus">
-        UPDATE erp_outbound_delivery_item
-        SET confirm_status = 'Posted'
-        WHERE dlv_id = #{deliveryId} AND item_no = #{item}
-    </update>
-
-    <!-- 新增：根据交货单ID获取 ship_to_party（bp_id） -->
+    <!-- 根据交货单ID获取 ship_to_party（bp_id） -->
     <select id="getShipToByDeliveryId" parameterType="long" resultType="long">
         SELECT ship_tp FROM erp_outbound_delivery WHERE dlv_id = #{dlvId}
     </select>
+
+    <!-- 检查交货单是否准备好过账 -->
+    <select id="checkReadyToPost" parameterType="string" resultType="boolean">
+        SELECT ready_to_post FROM erp_outbound_delivery WHERE dlv_id = #{deliveryId}
+    </select>
+
+    <!-- 批量更新出库物品 - 用于post-gis接口 -->
+    <update id="updateOutboundItems" parameterType="list">
+        <foreach collection="list" item="item" separator=" ">
+            UPDATE erp_outbound_item
+            SET
+                picking_quantity = #{item.pickingQuantity},
+                item_type = #{item.itemType},
+                storage_loc = #{item.storageLocation},
+                storage_bin = #{item.storageBin},
+                confirmation_status = #{item.confirmationStatus},
+                conversion_rate = #{item.conversionRate},
+                picking_status = #{item.pickingStatus},
+                updated_time = NOW()
+            WHERE dlv_id = #{item.dlvId} AND item_no = #{item.item};
+        </foreach>
+    </update>
 
 </mapper>

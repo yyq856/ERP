@@ -18,6 +18,15 @@ public interface FinanceMapper {
     List<Map<String, Object>> searchOpenItems(SearchOpenItemsRequest request);
 
     /**
+     * 搜索未清项（按货币过滤）
+     * @param request 搜索请求参数
+     * @param currency 货币过滤
+     * @return 未清项列表
+     */
+    List<Map<String, Object>> searchOpenItems(@Param("generalInformation") SearchOpenItemsRequest.GeneralInformation generalInformation,
+                                            @Param("currency") String currency);
+
+    /**
      * 根据客户ID查询未清算的账单
      * @param accountId 客户ID
      * @return 未清算的账单列表
@@ -30,6 +39,13 @@ public interface FinanceMapper {
      * @return 更新记录数
      */
     int updateBillStatusToClear(@Param("billId") String billId);
+
+    /**
+     * 更新账单状态为UNCLEAR
+     * @param billId 账单ID
+     * @return 更新记录数
+     */
+    int updateBillStatusToUnclear(@Param("billId") String billId);
     
     /**
      * 获取账单详细信息用于创建付款记录
@@ -44,5 +60,18 @@ public interface FinanceMapper {
      * @return 插入记录数
      */
     int insertPayment(Map<String, Object> payment);
+
+    /**
+     * 根据账户ID获取客户ID
+     * @param accountId 账户ID
+     * @return 客户ID
+     */
+    Long getCustomerIdByAccountId(@Param("accountId") String accountId);
+
+    /**
+     * 调试方法：获取所有账单信息
+     * @return 所有账单列表
+     */
+    List<Map<String, Object>> getAllBillsForDebug();
 
 }

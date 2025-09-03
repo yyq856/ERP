@@ -6,6 +6,7 @@ import org.springframework.transaction.annotation.Transactional;
 import webserver.common.Response;
 import webserver.pojo.*;
 import webserver.service.OutboundDeliveryService;
+import webserver.service.MaterialDocumentService;
 import webserver.mapper.OutboundDeliveryMapper;
 
 import java.math.BigDecimal;
@@ -22,6 +23,9 @@ public class OutboundDeliveryServiceImpl implements OutboundDeliveryService {
 
     @Autowired
     private OutboundDeliveryMapper outboundDeliveryMapper;
+
+    @Autowired
+    private MaterialDocumentService materialDocumentService;
 
     private final SimpleDateFormat dateFormat = new SimpleDateFormat("MM/dd/yyyy");
 
@@ -250,6 +254,15 @@ public class OutboundDeliveryServiceImpl implements OutboundDeliveryService {
                             // 过账完成后重新计算状态
                             outboundDeliveryMapper.updateDeliveryStatuses(deliveryId);
 
+                            // 🔥 新增：自动生成Material Document
+                            try {
+                                Long materialDocumentId = materialDocumentService.generateMaterialDocumentFromDelivery(deliveryId);
+                                System.out.println("为交货单 " + deliveryId + " 自动生成物料凭证，ID: " + materialDocumentId);
+                            } catch (Exception e) {
+                                System.err.println("为交货单 " + deliveryId + " 生成物料凭证失败: " + e.getMessage());
+                                // 不影响过账流程，只记录错误
+                            }
+
                             isSuccess = true;
                         }
                     }
@@ -381,6 +394,15 @@ public class OutboundDeliveryServiceImpl implements OutboundDeliveryService {
                                 // 过账完成后重新计算状态
                                 System.out.println("过账完成，重新计算交货单状态...");
                                 outboundDeliveryMapper.updateDeliveryStatuses(deliveryId);
+
+                                // 🔥 新增：自动生成Material Document
+                                try {
+                                    Long materialDocumentId = materialDocumentService.generateMaterialDocumentFromDelivery(deliveryId);
+                                    System.out.println("为交货单 " + deliveryId + " 自动生成物料凭证，ID: " + materialDocumentId);
+                                } catch (Exception e) {
+                                    System.err.println("为交货单 " + deliveryId + " 生成物料凭证失败: " + e.getMessage());
+                                    // 不影响过账流程，只记录错误
+                                }
 
                                 System.out.println("成功过账交货单: " + deliveryId);
                                 successCount++;

@@ -10,4 +10,6 @@ public class OrderSummary {
     private String shippingPoint; // 发货处
     private String shipToParty;
     private String grossWeight;
+    private String netValue;    // 新增：净值
+    private String currency;    // 新增：货币
 }

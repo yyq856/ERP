@@ -5,6 +5,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 import webserver.mapper.ValidateItemsMapper;
+import webserver.mapper.PricingElementKeyMapper;
+import webserver.entity.PricingElementKey;
+import webserver.util.PricingRuleEngine;
 import webserver.pojo.ItemValidationRequest;
 import webserver.pojo.ItemValidationResponse;
 import webserver.pojo.ItemsTabQueryRequest;
@@ -27,6 +30,9 @@ public class ValidateItemsServiceImpl implements ValidateItemsService {
 
     @Autowired
     private ValidateItemsMapper validateItemsMapper;
+
+    @Autowired
+    private PricingElementKeyMapper pricingElementKeyMapper;
 
     @Override
     public ItemValidationResponse validateItems(List<ItemValidationRequest> request) {
@@ -175,33 +181,23 @@ public class ValidateItemsServiceImpl implements ValidateItemsService {
             }
             breakdown.setOrderQuantity(userQuantity);
             
-            // 创建定价元素列表
-            List<ItemValidationResponse.PricingElementBreakdown> pricingElements = new ArrayList<>();
-            
-            // 添加基础价格定价元素
-            ItemValidationResponse.PricingElementBreakdown basePriceElement = createBasePricingElementForValidation(
-                    standardPrice, quantity, breakdown.getOrderQuantityUnit());
-            pricingElements.add(basePriceElement);
-            
-            // 处理用户输入的定价元素
-            if (item.getPricingElements() != null && !item.getPricingElements().isEmpty()) {
-                for (ItemValidationRequest.PricingElementRequest reqElement : item.getPricingElements()) {
-                    ItemValidationResponse.PricingElementBreakdown element = convertPricingElementFromValidationRequest(
-                            reqElement, breakdown.getOrderQuantityUnit(), standardPrice, quantity);
-                    pricingElements.add(element);
-                }
-            }
-            
+            // 处理定价元素并计算价格
+            List<ItemValidationResponse.PricingElementBreakdown> pricingElements =
+                processPricingElementsWithNewLogic(item, breakdown, standardPrice, quantity);
+
             // 计算净值和税值
-            BigDecimal netValue = calculateNetValueFromValidationPricingElements(pricingElements);
-            breakdown.setNetValue(netValue.doubleValue());
-            breakdown.setNetValueUnit("CNY");
-            
-            // 计算税值 (净值 * 13%)
+            BigDecimal unitNetValue = calculateNetValueFromValidationPricingElements(pricingElements);
+            BigDecimal totalNetValue = unitNetValue.multiply(quantity);
+            breakdown.setNetValue(totalNetValue.doubleValue());
+            breakdown.setNetValueUnit(breakdown.getNetValueUnit() != null ? breakdown.getNetValueUnit() : "CNY");
+
+            log.info("🔥 价格计算完成: 单价={}, 数量={}, 总净值={}", unitNetValue, quantity, totalNetValue);
+
+            // 计算税值 (总净值 * 13%)
             BigDecimal taxRate = new BigDecimal("0.13");
-            BigDecimal taxValue = netValue.multiply(taxRate);
+            BigDecimal taxValue = totalNetValue.multiply(taxRate);
             breakdown.setTaxValue(taxValue.doubleValue());
-            breakdown.setTaxValueUnit("CNY");
+            breakdown.setTaxValueUnit(breakdown.getNetValueUnit() != null ? breakdown.getNetValueUnit() : "CNY");
             
             breakdown.setPricingElements(pricingElements);
             
@@ -598,5 +594,237 @@ public class ValidateItemsServiceImpl implements ValidateItemsService {
         target.setCdCur(source.getCdCur());
         target.setStat(source.getStat());
         return target;
+    }
+
+    /**
+     * 按照新逻辑处理定价元素
+     * @param item 物品验证请求
+     * @param breakdown 物品明细
+     * @param standardPrice 标准价格
+     * @param quantity 数量
+     * @return 处理后的定价元素列表
+     */
+    private List<ItemValidationResponse.PricingElementBreakdown> processPricingElementsWithNewLogic(
+            ItemValidationRequest item, ItemValidationResponse.ItemBreakdown breakdown,
+            BigDecimal standardPrice, BigDecimal quantity) {
+
+        log.info("🔥 开始处理定价元素，用户传入元素数量: {}",
+            item.getPricingElements() != null ? item.getPricingElements().size() : 0);
+
+        try {
+            // 设置默认值
+            String netValueUnit = breakdown.getNetValueUnit() != null ? breakdown.getNetValueUnit() : "CNY";
+            String orderQuantityUnit = breakdown.getOrderQuantityUnit() != null ? breakdown.getOrderQuantityUnit() : "EA";
+
+            log.info("🔥 使用货币单位: {}, 数量单位: {}", netValueUnit, orderQuantityUnit);
+
+            // 获取所有定价元素类型配置
+            List<PricingElementKey> allPricingKeys = pricingElementKeyMapper.selectAll();
+            log.info("🔥 加载定价元素配置: {} 个", allPricingKeys.size());
+
+            // 处理用户输入的定价元素列表
+            List<ItemValidationRequest.PricingElementRequest> userPricingElements =
+                item.getPricingElements() != null ? item.getPricingElements() : new ArrayList<>();
+
+            List<ItemValidationResponse.PricingElementBreakdown> validPricingElements = new ArrayList<>();
+            List<ItemValidationRequest.PricingElementRequest> failedElements = new ArrayList<>();
+
+            // 验证和补全用户输入的定价元素
+            for (ItemValidationRequest.PricingElementRequest p : userPricingElements) {
+                log.info("🔥 处理定价元素: cnty={}, amount={}, name={}, city={}",
+                    p.getCnty(), p.getAmount(), p.getName(), p.getCity());
+
+                // 检查是否为完全空行（除了status和stat之外的所有字段都为空）
+                if (isCompletelyEmptyPricingElement(p)) {
+                    log.info("🔥 跳过完全空的定价元素行");
+                    continue;
+                }
+
+                // 如果cnty为空但其他字段不为空，放到失败列表中
+                if (!StringUtils.hasText(p.getCnty())) {
+                    log.warn("⚠️ 定价元素cnty为空但有其他数据，放入失败列表");
+                    failedElements.add(p);
+                    continue;
+                }
+
+                if (StringUtils.hasText(p.getStatus())) { // 说明是用户新传来的，需要补全数据
+                    PricingElementKey keyConfig = findPricingElementKeyByName(allPricingKeys, p.getCnty());
+
+                    if (keyConfig == null) {
+                        log.warn("⚠️ 定价元素类型无效: {}", p.getCnty());
+                        failedElements.add(p);
+                        continue;
+                    }
+
+                    log.info("🔥 找到定价元素配置: {}", keyConfig.getDescription());
+
+                    // 补全数据：name和city强制覆盖（后端优先级高），其他字段只在用户没有输入时补全
+                    // name字段：强制使用后端配置的描述
+                    p.setName(keyConfig.getDescription());
+
+                    // city字段：强制使用后端配置的默认单位
+                    p.setCity(keyConfig.getDefaultUnit() != null ? keyConfig.getDefaultUnit() : netValueUnit);
+
+                    // 其他字段：只在用户没有输入时补全
+                    if (!StringUtils.hasText(p.getPer())) {
+                        p.setPer("1");
+                    }
+                    if (!StringUtils.hasText(p.getUom())) {
+                        p.setUom(orderQuantityUnit);
+                    }
+
+                    // 强制设置货币（如果用户没有输入）
+                    if (!StringUtils.hasText(p.getCurr())) {
+                        p.setCurr(netValueUnit);
+                    }
+
+                    log.info("🔥 定价元素补全完成: cnty={}, name={}, amount={}, city={}",
+                        p.getCnty(), p.getName(), p.getAmount(), p.getCity());
+
+                    // 检查是否有amount来判断能否参与计算
+                    if (!StringUtils.hasText(p.getAmount())) {
+                        log.warn("⚠️ 定价元素金额为空，无法参与计算: {}", p.getCnty());
+                        failedElements.add(p); // status保持原样，让用户继续输入
+                        continue;
+                    }
+                }
+
+                // 只有不在失败列表中的元素才能参与计算
+                if (!failedElements.contains(p)) {
+                    validPricingElements.add(convertToValidationPricingElement(p));
+                    log.info("🔥 添加有效定价元素: {}", p.getCnty());
+                } else {
+                    log.warn("⚠️ 跳过失败的定价元素: {}", p.getCnty());
+                }
+            }
+
+            // 如果没有BASE元素，自动添加
+            boolean hasBase = validPricingElements.stream()
+                .anyMatch(pe -> "BASE".equals(pe.getCnty()));
+
+            if (!hasBase) {
+                ItemValidationResponse.PricingElementBreakdown baseElement = createBasePricingElementForValidation(
+                    standardPrice, quantity, orderQuantityUnit);
+                validPricingElements.add(0, baseElement); // 添加到开头
+            }
+
+            // 按照 sort_key 排序
+            validPricingElements.sort((a, b) -> {
+                PricingElementKey keyA = findPricingElementKeyByName(allPricingKeys, a.getCnty());
+                PricingElementKey keyB = findPricingElementKeyByName(allPricingKeys, b.getCnty());
+                int sortA = keyA != null ? keyA.getSortKey() : 999;
+                int sortB = keyB != null ? keyB.getSortKey() : 999;
+                return Integer.compare(sortA, sortB);
+            });
+
+            // 执行价格计算逻辑
+            BigDecimal amount = BigDecimal.ZERO;
+            for (ItemValidationResponse.PricingElementBreakdown element : validPricingElements) {
+                PricingElementKey keyConfig = findPricingElementKeyByName(allPricingKeys, element.getCnty());
+                if (keyConfig != null) {
+                    try {
+                        BigDecimal elementAmount = new BigDecimal(element.getAmount());
+                        BigDecimal per = new BigDecimal(element.getPer());
+
+                        // 使用规则计算新金额
+                        BigDecimal newAmount = PricingRuleEngine.useRule(keyConfig.getRule(), amount, elementAmount, per);
+                        BigDecimal conditionValue = newAmount.subtract(amount);
+
+                        // 保留两位小数
+                        element.setConditionValue(conditionValue.setScale(2, BigDecimal.ROUND_HALF_UP).toString());
+                        amount = newAmount;
+                        element.setStatus(""); // 标志着补全完成
+
+                        log.info("🔥 定价元素计算: {} -> 条件值: {}, 累计金额: {}",
+                            element.getCnty(), conditionValue, amount);
+                    } catch (Exception e) {
+                        log.error("❌ 定价元素计算失败: {}, 错误: {}", element.getCnty(), e.getMessage());
+                        element.setConditionValue("0");
+                    }
+                } else {
+                    element.setConditionValue("0");
+                }
+            }
+
+            // 将失败的元素（保持原有status）添加到结果最后，按原来的相对顺序
+            List<ItemValidationResponse.PricingElementBreakdown> allPricingElements = new ArrayList<>(validPricingElements);
+            for (ItemValidationRequest.PricingElementRequest failedElement : failedElements) {
+                ItemValidationResponse.PricingElementBreakdown failedBreakdown = convertToValidationPricingElement(failedElement);
+                allPricingElements.add(failedBreakdown);
+                log.info("🔥 添加失败元素到结果末尾: cnty={}, status={}", failedElement.getCnty(), failedElement.getStatus());
+            }
+
+            log.info("🔥 定价元素处理完成，有效元素: {}, 失败元素: {}, 最终金额: {}, 总返回元素: {}",
+                validPricingElements.size(), failedElements.size(), amount, allPricingElements.size());
+
+            return allPricingElements;
+
+        } catch (Exception e) {
+            log.error("❌ 处理定价元素时发生错误: {}", e.getMessage(), e);
+            // 返回基础价格元素作为后备
+            List<ItemValidationResponse.PricingElementBreakdown> fallbackElements = new ArrayList<>();
+            fallbackElements.add(createBasePricingElementForValidation(standardPrice, quantity, "EA"));
+            return fallbackElements;
+        }
+    }
+
+    /**
+     * 检查定价元素是否为完全空行（除了status和stat之外的所有字段都为空）
+     */
+    private boolean isCompletelyEmptyPricingElement(ItemValidationRequest.PricingElementRequest p) {
+        return !StringUtils.hasText(p.getCnty()) &&
+               !StringUtils.hasText(p.getName()) &&
+               !StringUtils.hasText(p.getAmount()) &&
+               !StringUtils.hasText(p.getCity()) &&
+               !StringUtils.hasText(p.getPer()) &&
+               !StringUtils.hasText(p.getUom()) &&
+               !StringUtils.hasText(p.getConditionValue()) &&
+               !StringUtils.hasText(p.getCurr()) &&
+               !StringUtils.hasText(p.getNumC()) &&
+               !StringUtils.hasText(p.getAtoMtsComponent()) &&
+               !StringUtils.hasText(p.getOun()) &&
+               !StringUtils.hasText(p.getCconDe()) &&
+               !StringUtils.hasText(p.getUn()) &&
+               !StringUtils.hasText(p.getConditionValue2()) &&
+               !StringUtils.hasText(p.getCdCur());
+               // 注意：不检查status和stat字段
+    }
+
+    /**
+     * 根据名称查找定价元素配置
+     */
+    private PricingElementKey findPricingElementKeyByName(List<PricingElementKey> allKeys, String name) {
+        if (name == null || allKeys == null) {
+            return null;
+        }
+        return allKeys.stream()
+            .filter(key -> name.equals(key.getName()))
+            .findFirst()
+            .orElse(null);
+    }
+
+    /**
+     * 转换请求中的定价元素到响应格式
+     */
+    private ItemValidationResponse.PricingElementBreakdown convertToValidationPricingElement(
+            ItemValidationRequest.PricingElementRequest request) {
+        ItemValidationResponse.PricingElementBreakdown element = new ItemValidationResponse.PricingElementBreakdown();
+        element.setCnty(request.getCnty());
+        element.setName(request.getName());
+        element.setAmount(request.getAmount());
+        element.setCity(request.getCity());
+        element.setPer(request.getPer());
+        element.setUom(request.getUom());
+        element.setConditionValue(request.getConditionValue());
+        element.setCurr(request.getCurr());
+        element.setStatus(request.getStatus());
+        element.setNumC(request.getNumC());
+        element.setAtoMtsComponent(request.getAtoMtsComponent());
+        element.setOun(request.getOun());
+        element.setCconDe(request.getCconDe());
+        element.setConditionValue2(request.getConditionValue2());
+        element.setCdCur(request.getCdCur());
+        element.setStat(request.getStat());
+        return element;
     }
 }

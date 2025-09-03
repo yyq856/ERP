@@ -1,0 +1,109 @@
+{
+  "meta": {
+    "id": ""
+  },
+  "basicInfo": {
+    "salesQuotationId": "66",
+    "so_id": "",
+    "soldToParty": "1",
+    "shipToParty": "1",
+    "customerReference": "",
+    "netValue": 3720,
+    "netValueUnit": "USD",
+    "customerReferenceDate": null
+  },
+  "itemOverview": {
+    "reqDelivDate": "",
+    "items": [
+      {
+        "item": "1",
+        "material": "2",
+        "orderQuantity": "1",
+        "orderQuantityUnit": "EA",
+        "description": "Standard Electronic Component",
+        "reqDelivDate": "2025-08-17",
+        "netValue": "720",
+        "netValueUnit": "CNY",
+        "taxValue": "93.6",
+        "taxValueUnit": "CNY",
+        "pricingDate": "2025-08-17",
+        "orderProbability": "100",
+        "pricingElements": [
+          {
+            "cnty": "BASE",
+            "name": "Base Price",
+            "amount": "800.0",
+            "city": "CNY",
+            "per": "1",
+            "uom": "EA",
+            "numC": "",
+            "conditionValue": "800.00",
+            "curr": "CNY",
+            "status": "",
+            "atoMtsComponent": "",
+            "oun": "",
+            "cconDe": "",
+            "un": null,
+            "conditionValue2": "",
+            "cdCur": "",
+            "stat": true
+          },
+          {
+            "cnty": "DCBP",
+            "name": "Percentage Discount",
+            "amount": "10",
+            "city": "%",
+            "per": "1",
+            "uom": "EA",
+            "numC": null,
+            "conditionValue": "-80.00",
+            "curr": "%",
+            "status": "",
+            "atoMtsComponent": null,
+            "oun": null,
+            "cconDe": null,
+            "un": null,
+            "conditionValue2": null,
+            "cdCur": null,
+            "stat": false
+          }
+        ]
+      },
+      {
+        "item": "2",
+        "material": "1",
+        "orderQuantity": "2",
+        "orderQuantityUnit": "EA",
+        "description": "High Quality Electronic Component",
+        "reqDelivDate": "2025-08-17",
+        "netValue": "3000",
+        "netValueUnit": "CNY",
+        "taxValue": "390",
+        "taxValueUnit": "CNY",
+        "pricingDate": "2025-08-17",
+        "orderProbability": "100",
+        "pricingElements": [
+          {
+            "cnty": "BASE",
+            "name": "Base Price",
+            "amount": "1500.0",
+            "city": "CNY",
+            "per": "1",
+            "uom": "EA",
+            "numC": "",
+            "conditionValue": "1500.00",
+            "curr": "CNY",
+            "status": "",
+            "atoMtsComponent": "",
+            "oun": "",
+            "cconDe": "",
+            "un": null,
+            "conditionValue2": "",
+            "cdCur": "",
+            "stat": true
+          }
+        ]
+      }
+    ]
+  }
+}

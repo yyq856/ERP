@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="webserver.mapper.SalesOrderCalculationMapper">
+
+    <!-- 计算销售订单的金额汇总 -->
+    <select id="calculateSalesOrderAmounts" resultType="map">
+        SELECT
+            so.so_id AS soId,
+            so.customer_no AS customerId,
+            COALESCE(so.currency, 'USD') AS currency,
+            COALESCE(SUM(ei.quantity * CAST(REPLACE(ei.net_value_str, ',', '') AS DECIMAL(15,2))), 0.0) AS calculatedNetValue,
+            COALESCE(SUM(ei.quantity * CAST(REPLACE(ei.tax_value_str, ',', '') AS DECIMAL(15,2))), 0.0) AS calculatedTaxValue,
+            COALESCE(SUM(ei.quantity * (CAST(REPLACE(ei.net_value_str, ',', '') AS DECIMAL(15,2)) + CAST(REPLACE(ei.tax_value_str, ',', '') AS DECIMAL(15,2)))), 0.0) AS calculatedGrossValue,
+            COUNT(ei.item_no) AS itemCount,
+            so.net_value AS currentNetValue,
+            so.tax_value AS currentTaxValue,
+            so.gross_value AS currentGrossValue
+        FROM erp_sales_order_hdr so
+        LEFT JOIN erp_item ei ON so.so_id = ei.document_id AND ei.document_type = 'sales_order'
+        WHERE so.so_id = #{soId}
+        GROUP BY so.so_id, so.customer_no, so.currency, so.net_value, so.tax_value, so.gross_value
+    </select>
+
+    <!-- 更新销售订单头表的金额 -->
+    <update id="updateSalesOrderAmounts">
+        UPDATE erp_sales_order_hdr
+        SET
+            net_value = #{netValue},
+            tax_value = #{taxValue},
+            gross_value = #{grossValue},
+            currency = #{currency}
+        WHERE so_id = #{soId}
+    </update>
+
+    <!-- 获取所有销售订单ID -->
+    <select id="getAllSalesOrderIds" resultType="long">
+        SELECT DISTINCT so_id
+        FROM erp_sales_order_hdr
+        ORDER BY so_id
+    </select>
+
+    <!-- 获取销售订单基本信息 -->
+    <select id="getSalesOrderInfo" resultType="map">
+        SELECT
+            so.so_id AS soId,
+            so.customer_no AS customerId,
+            c.name AS customerName,
+            so.currency AS currency,
+            so.net_value AS netValue,
+            so.tax_value AS taxValue,
+            so.gross_value AS grossValue,
+            so.status AS status,
+            DATE_FORMAT(so.doc_date, '%Y-%m-%d') AS orderDate,
+            COUNT(ei.item_no) AS itemCount
+        FROM erp_sales_order_hdr so
+        LEFT JOIN erp_customer c ON so.customer_no = c.customer_id
+        LEFT JOIN erp_item ei ON so.so_id = ei.document_id AND ei.document_type = 'sales_order'
+        WHERE so.so_id = #{soId}
+        GROUP BY so.so_id, so.customer_no, c.name, so.currency, so.net_value, so.tax_value, so.gross_value, so.status, so.doc_date
+    </select>
+
+</mapper>

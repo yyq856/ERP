@@ -5,14 +5,14 @@ import webserver.pojo.MaterialDocumentSearchResponse;
 import webserver.pojo.MaterialDocumentDetailResponse;
 
 public interface MaterialDocumentService {
-    
+
     /**
      * 搜索物料凭证
      * @param request 搜索条件
      * @return 搜索结果
      */
     MaterialDocumentSearchResponse searchMaterialDocuments(MaterialDocumentSearchRequest request);
-    
+
     /**
      * 根据ID查询物料凭证详情
      * @param materialDocumentId 物料凭证ID
@@ -26,4 +26,18 @@ public interface MaterialDocumentService {
      * @return 物料凭证详情
      */
     MaterialDocumentDetailResponse getMaterialDocumentDetail(String materialDocument);
+
+    /**
+     * 根据交货单ID自动生成物料凭证
+     * @param deliveryId 交货单ID
+     * @return 生成的物料凭证ID
+     */
+    Long generateMaterialDocumentFromDelivery(String deliveryId);
+
+    /**
+     * 更新物料凭证的账单关联
+     * @param materialDocumentId 物料凭证ID
+     * @param billId 账单ID
+     */
+    void updateBillingAssociation(Long materialDocumentId, Long billId);
 }

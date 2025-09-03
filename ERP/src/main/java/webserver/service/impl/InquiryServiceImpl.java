@@ -369,7 +369,20 @@ public class InquiryServiceImpl implements InquiryService {
             }
 
             inquiry.setCustRef(basicInfo.getCustomerReference());
-            inquiry.setNetValue(basicInfo.getNetValue() != null ? basicInfo.getNetValue().floatValue() : 0.0f);
+
+            // 处理netValue - 支持千分位分隔符的字符串
+            if (StringUtils.hasText(basicInfo.getNetValue())) {
+                try {
+                    // 移除千分位分隔符后解析
+                    String netValueStr = basicInfo.getNetValue().replaceAll(",", "");
+                    inquiry.setNetValue(Float.parseFloat(netValueStr));
+                } catch (NumberFormatException e) {
+                    log.warn("netValue解析失败: {}, 使用默认值0.0", basicInfo.getNetValue());
+                    inquiry.setNetValue(0.0f);
+                }
+            } else {
+                inquiry.setNetValue(0.0f);
+            }
 
             // 新增支持 netValueUnit
             if (StringUtils.hasText(basicInfo.getNetValueUnit())) {
@@ -424,12 +437,8 @@ public class InquiryServiceImpl implements InquiryService {
 
         // 支持概率和状态的更新
         if (basicInfo != null) {
-            // 概率
-            if (basicInfo.getNetValue() != null) {
-                inquiry.setProbability(basicInfo.getNetValue().floatValue()); // 你可根据实际字段调整
-            } else {
-                inquiry.setProbability(95.0f);
-            }
+            // 概率 - 这里应该使用专门的概率字段，暂时使用固定值
+            inquiry.setProbability(95.0f);
             // 状态
             if (StringUtils.hasText(basicInfo.getStatus())) {
                 inquiry.setStatus(basicInfo.getStatus());
@@ -618,7 +627,34 @@ public class InquiryServiceImpl implements InquiryService {
             request.setTaxValueUnit(queryItem.getTaxValueUnit());
             request.setPricingDate(queryItem.getPricingDate());
             request.setOrderProbability(queryItem.getOrderProbability());
-            request.setPricingElements(new ArrayList<>()); // 简化处理
+            // 转换定价元素
+            if (queryItem.getPricingElements() != null && !queryItem.getPricingElements().isEmpty()) {
+                List<ItemValidationRequest.PricingElementRequest> pricingElements = new ArrayList<>();
+                for (InquiryItemsTabQueryRequest.PricingElementRequest pe : queryItem.getPricingElements()) {
+                    ItemValidationRequest.PricingElementRequest converted = new ItemValidationRequest.PricingElementRequest();
+                    converted.setCnty(pe.getCnty());
+                    converted.setName(pe.getName());
+                    converted.setAmount(pe.getAmount());
+                    converted.setCity(pe.getCity());
+                    converted.setPer(pe.getPer());
+                    converted.setUom(pe.getUom());
+                    converted.setConditionValue(pe.getConditionValue());
+                    converted.setCurr(pe.getCurr());
+                    converted.setStatus(pe.getStatus());
+                    converted.setNumC(pe.getNumC());
+                    converted.setAtoMtsComponent(pe.getAtoMtsComponent());
+                    converted.setOun(pe.getOun());
+                    converted.setCconDe(pe.getCconDe());
+                    converted.setUn(pe.getUn());
+                    converted.setConditionValue2(pe.getConditionValue2());
+                    converted.setCdCur(pe.getCdCur());
+                    converted.setStat(pe.getStat());
+                    pricingElements.add(converted);
+                }
+                request.setPricingElements(pricingElements);
+            } else {
+                request.setPricingElements(new ArrayList<>());
+            }
             
             requests.add(request);
         }

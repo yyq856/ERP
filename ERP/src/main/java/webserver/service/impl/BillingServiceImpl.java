@@ -6,8 +6,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import webserver.mapper.BillingMapper;
+import webserver.mapper.MaterialDocumentMapper;
 import webserver.pojo.*;
 import webserver.service.BillingService;
+import webserver.service.MaterialDocumentService;
+import webserver.service.SalesOrderCalculationService;
 import webserver.service.UnifiedItemService;
 import webserver.service.ValidateItemsService;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -27,6 +30,15 @@ public class BillingServiceImpl implements BillingService {
 
     @Autowired
     private ValidateItemsService validateItemsService;
+
+    @Autowired
+    private MaterialDocumentService materialDocumentService;
+
+    @Autowired
+    private MaterialDocumentMapper materialDocumentMapper;
+
+    @Autowired
+    private SalesOrderCalculationService salesOrderCalculationService;
     
     @Override
     public Map<String, Object> initializeBilling(BillingInitializeRequest request) {
@@ -86,8 +98,44 @@ public class BillingServiceImpl implements BillingService {
         basicInfo.put("type", "Invoice");
         basicInfo.put("id", "");
         basicInfo.put("deliveryId", deliveryId != null ? deliveryId : "");
-        basicInfo.put("netValue", "0.00");
-        basicInfo.put("netValueUnit", "USD");
+
+        // 🔥 从销售订单获取 netValue 和 currency
+        String netValue = "0.00";
+        String currency = "USD";
+        if (deliveryId != null && !deliveryId.isEmpty()) {
+            Map<String, Object> deliveryInfo = billingMapper.getDeliveryById(deliveryId);
+            if (deliveryInfo != null) {
+                Object salesOrderIdObj = deliveryInfo.get("salesOrderId");
+                if (salesOrderIdObj != null) {
+                    try {
+                        Long soId;
+                        if (salesOrderIdObj instanceof Long) {
+                            soId = (Long) salesOrderIdObj;
+                        } else {
+                            soId = Long.parseLong(salesOrderIdObj.toString());
+                        }
+                        // 获取销售订单的金额信息
+                        Map<String, Object> salesOrderInfo = salesOrderCalculationService.getSalesOrderInfo(soId);
+                        if (salesOrderInfo != null) {
+                            Object netValueObj = salesOrderInfo.get("netValue");
+                            Object currencyObj = salesOrderInfo.get("currency");
+                            if (netValueObj != null) {
+                                netValue = String.format("%.2f", ((Number) netValueObj).doubleValue());
+                            }
+                            if (currencyObj != null) {
+                                currency = currencyObj.toString();
+                            }
+                            log.info("从销售订单 {} 获取金额信息: netValue={}, currency={}", soId, netValue, currency);
+                        }
+                    } catch (Exception e) {
+                        log.warn("获取销售订单金额信息失败: {}", e.getMessage());
+                    }
+                }
+            }
+        }
+
+        basicInfo.put("netValue", netValue);
+        basicInfo.put("netValueUnit", currency);
         basicInfo.put("payer", customer != null ? customer.get("name") : (soldToParty != null ? soldToParty : ""));
         basicInfo.put("billingDate", billingDate != null ? billingDate : java.time.LocalDate.now().toString());
         result.put("basicInfo", basicInfo);
@@ -292,10 +340,21 @@ public class BillingServiceImpl implements BillingService {
                 
                 log.debug("创建新开票凭证，交货单ID: {}", basicInfo.getDeliveryId());
                 billingMapper.createBilling(request);
-                
+
                 // 获取生成的ID
                 billingId = String.valueOf(request.getBasicInfo().getId());
                 log.debug("生成开票凭证ID: {}", billingId);
+
+                // 🔥 新增：关联Material Document
+                if (basicInfo.getDeliveryId() != null && !basicInfo.getDeliveryId().trim().isEmpty()) {
+                    try {
+                        updateMaterialDocumentBillingAssociation(basicInfo.getDeliveryId(), Long.parseLong(billingId));
+                    } catch (Exception e) {
+                        log.warn("关联Material Document失败，交货单ID: {}, 账单ID: {}, 错误: {}",
+                                basicInfo.getDeliveryId(), billingId, e.getMessage());
+                        // 不影响账单创建流程，只记录警告
+                    }
+                }
             }
             
             // 插入项目到erp_billing_item表
@@ -716,5 +775,32 @@ public class BillingServiceImpl implements BillingService {
         }
 
         return frontendItems;
+    }
+
+    /**
+     * 更新Material Document的账单关联
+     * @param deliveryId 交货单ID
+     * @param billId 账单ID
+     */
+    private void updateMaterialDocumentBillingAssociation(String deliveryId, Long billId) {
+        try {
+            log.info("开始关联Material Document，交货单ID: {}, 账单ID: {}", deliveryId, billId);
+
+            // 查找与该交货单关联的Material Document
+            Long dlvId = Long.valueOf(deliveryId);
+            Long materialDocumentId = materialDocumentMapper.findMaterialDocumentIdByDeliveryId(dlvId);
+
+            if (materialDocumentId != null) {
+                // 更新Material Document的账单关联
+                materialDocumentService.updateBillingAssociation(materialDocumentId, billId);
+                log.info("成功关联Material Document {} 与账单 {}", materialDocumentId, billId);
+            } else {
+                log.warn("未找到交货单 {} 对应的Material Document", deliveryId);
+            }
+
+        } catch (Exception e) {
+            log.error("更新Material Document账单关联失败: {}", e.getMessage(), e);
+            throw e;
+        }
     }
 }

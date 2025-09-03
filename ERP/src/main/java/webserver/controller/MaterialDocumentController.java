@@ -3,6 +3,7 @@ package webserver.controller;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
+import webserver.common.Response;
 import webserver.pojo.MaterialDocumentDetailResponse;
 import webserver.pojo.MaterialDocumentSearchRequest;
 import webserver.pojo.MaterialDocumentSearchResponse;
@@ -104,6 +105,24 @@ public class MaterialDocumentController {
         } catch (Exception e) {
             log.error("原始调试接口异常: {}", e.getMessage(), e);
             return "Raw Debug Error: " + e.getMessage() + "\nStackTrace: " + e.getStackTrace()[0];
+        }
+    }
+
+    /**
+     * 调试接口：根据交货单ID生成Material Document
+     */
+    @PostMapping("/api/material/debug/generateFromDelivery/{deliveryId}")
+    @CrossOrigin(origins = "*")
+    public Response<String> debugGenerateFromDelivery(@PathVariable String deliveryId) {
+        try {
+            log.info("调试：为交货单 {} 生成物料凭证", deliveryId);
+
+            Long materialDocumentId = materialDocumentService.generateMaterialDocumentFromDelivery(deliveryId);
+
+            return Response.success("成功生成物料凭证，ID: " + materialDocumentId);
+        } catch (Exception e) {
+            log.error("生成物料凭证失败: {}", e.getMessage(), e);
+            return Response.error("生成物料凭证失败: " + e.getMessage());
         }
     }
 }

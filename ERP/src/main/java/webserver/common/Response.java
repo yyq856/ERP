@@ -19,6 +19,14 @@ public class Response<T> {
         return new Response<>(200, "success",true ,data);
     }
 
+    public static <T> Response<T> success(String message, T data) {
+        return new Response<>(200, message, true, data);
+    }
+
+    public static Response<String> success(String message) {
+        return new Response<>(200, message, true, null);
+    }
+
     public static <T> Response<T> error(String message) {
         return new Response<>(500, message,false, null);
     }

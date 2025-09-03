@@ -112,15 +112,18 @@ public interface SalesOrderMapper {
             "SELECT " +
             "CAST(so.so_id AS CHAR) AS id, " +
             "DATE_FORMAT(so.req_delivery_date, '%Y-%m-%d') AS plannedCreationDate, " +
-            "DATE_FORMAT(DATE_ADD(so.req_delivery_date, INTERVAL 7 DAY), '%Y-%m-%d') AS plannedGIDate, " +  // 注意逗号
-            "CAST(so.customer_no AS CHAR) AS shipToParty, " +
-            "CAST(so.customer_no AS CHAR) AS shippingPoint, " +
-            "CAST(so.gross_value AS CHAR) AS grossWeight " +
+            "DATE_FORMAT(DATE_ADD(so.req_delivery_date, INTERVAL 7 DAY), '%Y-%m-%d') AS plannedGIDate, " +
+            "COALESCE(so.incoterms, '1000') AS shippingPoint, " +  // 使用 incoterms 作为发货处，默认 1000
+            "COALESCE(c2.name, CAST(so.ship_tp AS CHAR)) AS shipToParty, " +  // 使用客户名称，回退到ID
+            "CAST(so.gross_value AS CHAR) AS grossWeight, " +
+            "FORMAT(so.net_value, 2) AS netValue, " +  // 新增：净值
+            "so.currency AS currency " +  // 新增：货币
             "FROM erp_sales_order_hdr so " +
+            "LEFT JOIN erp_customer c2 ON so.ship_tp = c2.customer_id " +  // 关联送达方客户
             "LEFT JOIN erp_outbound_delivery od ON so.so_id = od.so_id " +
             "<where> " +
             "   <if test='shipToParty != null and shipToParty != \"\"'> " +
-            "       AND so.customer_no = #{shipToParty} " +
+            "       AND so.ship_tp = #{shipToParty} " +  // 修正：使用 ship_tp 而不是 customer_no
             "   </if> " +
             "   <if test='plannedCreationDate != null and plannedCreationDate != \"\"'> " +
             "       AND so.req_delivery_date = #{plannedCreationDate} " +

@@ -826,6 +826,25 @@ CREATE TABLE `erp_stock` (
   KEY `erp_stock_ibfk_4` (`storage_loc`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
+DROP TABLE IF EXISTS `erp_pricing_element_key`;
+CREATE TABLE `erp_pricing_element_key` (
+  `id` int NOT NULL AUTO_INCREMENT COMMENT '主键ID',
+  `name` varchar(50) COLLATE utf8mb4_general_ci NOT NULL COMMENT '定价元素名称代码',
+  `description` varchar(100) COLLATE utf8mb4_general_ci NOT NULL COMMENT '描述',
+  `default_unit` varchar(10) COLLATE utf8mb4_general_ci DEFAULT NULL COMMENT '默认单位，NULL时跟随物品的netValueUnit',
+  `rule` varchar(500) COLLATE utf8mb4_general_ci NOT NULL COMMENT '计算规则，前序遍历表达式',
+  `sort_key` int NOT NULL COMMENT '排序键，数字小的先计算',
+  `config` json DEFAULT ('{}') COMMENT '配置信息JSON',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_pricing_element_name` (`name`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci COMMENT='定价元素类型配置表';
+
+-- 插入默认的定价元素类型
+INSERT INTO `erp_pricing_element_key` (`id`, `name`, `description`, `default_unit`, `rule`, `sort_key`, `config`) VALUES
+(1, 'BASE', '基础价格', NULL, '/{d}{p}', 1, '{}'),
+(2, 'DCBV', '按数值减价', NULL, '-{x}/{d}{p}', 2, '{}'),
+(3, 'DCBP', '百分比减价', '%', '*{x}-{1}/{d}{100}', 3, '{}');
+
 DROP TABLE IF EXISTS `erp_storage_location`;
 CREATE TABLE `erp_storage_location` (
   `loc_id` varchar(10) COLLATE utf8mb4_general_ci NOT NULL,
