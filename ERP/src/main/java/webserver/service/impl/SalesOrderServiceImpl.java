@@ -98,10 +98,14 @@ public class SalesOrderServiceImpl implements SalesOrderService {
             if (orderData == null || orderData.isEmpty()) {
                 return Response.error("Sales order not found");
             }
-            
-            List<Map<String, Object>> itemsData = salesOrderMapper.getSalesOrderItems(soId);
 
-            SalesOrderDetailDTO orderDetail = buildSalesOrderDetail(orderData, itemsData);
+            // ✅ 使用统一服务读取items并转换为前端格式
+            List<Map<String, Object>> frontendItems = unifiedItemService.getDocumentItemsAsFrontendFormat(Long.parseLong(soId), "sales_order");
+
+            // ✅ 转换前端格式为SalesOrderDetailDTO.Item
+            List<SalesOrderDetailDTO.Item> salesOrderItems = convertFrontendItemsToSalesOrderItems(frontendItems);
+
+            SalesOrderDetailDTO orderDetail = buildSalesOrderDetail(orderData, salesOrderItems);
             return Response.success(orderDetail);
         } catch (Exception e) {
             log.error("Error getting sales order details: ", e);
@@ -110,7 +114,7 @@ public class SalesOrderServiceImpl implements SalesOrderService {
     }
     
     // 方法访问权限从 private 改为 public
-    public SalesOrderDetailDTO buildSalesOrderDetail(Map<String, Object> orderData, List<Map<String, Object>> itemsData) {
+    public SalesOrderDetailDTO buildSalesOrderDetail(Map<String, Object> orderData, List<SalesOrderDetailDTO.Item> items) {
         SalesOrderDetailDTO result = new SalesOrderDetailDTO();
 
         // 构建meta部分 - 使用物料ID列表
@@ -135,65 +139,8 @@ public class SalesOrderServiceImpl implements SalesOrderService {
         // 构建itemOverview部分
         result.getItemOverview().setReqDelivDate(convertToString(orderData.get("reqDeliveryDate")));
 
-        // 构建items部分
-        List<SalesOrderDetailDTO.Item> items = itemsData.stream()
-                .map(item -> {
-                    SalesOrderDetailDTO.Item itemDTO = new SalesOrderDetailDTO.Item();
-                    itemDTO.setItem(convertToString(item.get("item")));
-                    itemDTO.setMaterial(convertToString(item.get("material")));
-                    itemDTO.setOrderQuantity(convertToString(item.get("orderQuantity")));
-                    itemDTO.setOrderQuantityUnit(convertToString(item.get("orderQuantityUnit")));
-                    itemDTO.setDescription(convertToString(item.get("description")));
-                    itemDTO.setReqDelivDate(convertToString(item.get("reqDelivDate")));
-                    itemDTO.setNetValue(convertToString(item.get("netValue")));
-                    itemDTO.setNetValueUnit(convertToString(item.get("netValueUnit")));
-                    itemDTO.setTaxValue(convertToString(item.get("taxValue")));
-                    itemDTO.setTaxValueUnit(convertToString(item.get("taxValueUnit")));
-                    itemDTO.setPricingDate(convertToString(item.get("pricingDate")));
-                    itemDTO.setOrderProbability(convertToString(item.get("orderProbability")));
-
-                    // 获取定价元素信息
-                    Long soId = Long.valueOf(convertToString(orderData.get("soId")));
-                    Integer itemNo = Integer.valueOf(convertToString(item.get("item")));
-                    List<Map<String, Object>> pricingElementsData = salesOrderMapper.getPricingElements(soId, itemNo);
-
-                    List<SalesOrderDetailDTO.PricingElement> pricingElements = pricingElementsData.stream()
-                            .map(pe -> {
-                                SalesOrderDetailDTO.PricingElement pricingElement = new SalesOrderDetailDTO.PricingElement();
-                                pricingElement.setCnty(convertToString(pe.get("cnty")));
-                                pricingElement.setName(convertToString(pe.get("name")));
-                                pricingElement.setAmount(convertToString(pe.get("amount")));
-                                pricingElement.setCity(convertToString(pe.get("city")));
-                                pricingElement.setPer(convertToString(pe.get("per")));
-                                pricingElement.setUom(convertToString(pe.get("uom")));
-                                pricingElement.setConditionValue(convertToString(pe.get("conditionValue")));
-                                pricingElement.setCurr(convertToString(pe.get("curr")));
-                                pricingElement.setStatus(convertToString(pe.get("status")));
-                                pricingElement.setNumC(convertToString(pe.get("numC")));
-                                pricingElement.setAtoMtsComponent(convertToString(pe.get("atoMtsComponent")));
-                                pricingElement.setOun(convertToString(pe.get("oun")));
-                                pricingElement.setCconDe(convertToString(pe.get("cconDe")));
-                                pricingElement.setUn(convertToString(pe.get("un")));
-                                pricingElement.setConditionValue2(convertToString(pe.get("conditionValue2")));
-                                pricingElement.setCdCur(convertToString(pe.get("cdCur")));
-
-                                Object stat = pe.get("stat");
-                                if (stat instanceof Boolean) {
-                                    pricingElement.setStat((Boolean) stat);
-                                } else if (stat instanceof Number) {
-                                    pricingElement.setStat(((Number) stat).intValue() != 0);
-                                } else {
-                                    pricingElement.setStat(Boolean.valueOf(convertToString(stat)));
-                                }
-
-                                return pricingElement;
-                            })
-                            .toList();
-
-                    itemDTO.setPricingElements(pricingElements);
-                    return itemDTO;
-                })
-                .toList();
+        // ✅ 直接使用已经转换好的SalesOrderDetailDTO.Item列表
+        // 统一服务已经处理了所有字段映射和JSON解析
 
         result.getItemOverview().setItems(items);
 
@@ -644,20 +591,7 @@ public class SalesOrderServiceImpl implements SalesOrderService {
         }
     }
 
-    /**
-     * 删除销售订单的定价元素
-     * @param soId 销售订单ID
-     */
-    private void deletePricingElements(Long soId) {
-        log.info("开始删除销售订单的定价元素: {}", soId);
-        try {
-            salesOrderMapper.deletePricingElements("sales_order", soId);
-            log.info("定价元素删除成功: {}", soId);
-        } catch (Exception e) {
-            log.error("删除定价元素失败: {}", soId, e);
-            throw new RuntimeException("删除定价元素失败", e);
-        }
-    }
+
 
     @Override
     public SalesOrdersResponse getSalesOrders(SalesOrdersRequest request) {
@@ -777,6 +711,92 @@ public class SalesOrderServiceImpl implements SalesOrderService {
         }
 
         return data;
+    }
+
+    /**
+     * 将前端格式的items转换为SalesOrderDetailDTO.Item列表
+     */
+    private List<SalesOrderDetailDTO.Item> convertFrontendItemsToSalesOrderItems(List<Map<String, Object>> frontendItems) {
+        List<SalesOrderDetailDTO.Item> items = new ArrayList<>();
+
+        for (Map<String, Object> frontendItem : frontendItems) {
+            SalesOrderDetailDTO.Item item = new SalesOrderDetailDTO.Item();
+
+            // 基础字段
+            item.setItem(getString(frontendItem, "item"));
+            item.setMaterial(getString(frontendItem, "material"));
+            item.setOrderQuantity(getString(frontendItem, "orderQuantity"));
+            item.setOrderQuantityUnit(getString(frontendItem, "orderQuantityUnit"));
+            item.setDescription(getString(frontendItem, "description"));
+
+            // ItemValidation字段
+            item.setReqDelivDate(getString(frontendItem, "reqDelivDate"));
+            item.setNetValue(getString(frontendItem, "netValue"));
+            item.setNetValueUnit(getString(frontendItem, "netValueUnit"));
+            item.setTaxValue(getString(frontendItem, "taxValue"));
+            item.setTaxValueUnit(getString(frontendItem, "taxValueUnit"));
+            item.setPricingDate(getString(frontendItem, "pricingDate"));
+            item.setOrderProbability(getString(frontendItem, "orderProbability"));
+
+            // pricingElements - ✅ 使用独立的PricingElementDTO类，与QuotationServiceImpl保持一致
+            Object pricingElementsObj = frontendItem.get("pricingElements");
+            if (pricingElementsObj instanceof List) {
+                @SuppressWarnings("unchecked")
+                List<Map<String, Object>> pricingElementMaps = (List<Map<String, Object>>) pricingElementsObj;
+                List<PricingElementDTO> pricingElements = new ArrayList<>();
+
+                for (Map<String, Object> elementMap : pricingElementMaps) {
+                    PricingElementDTO element = new PricingElementDTO();
+                    element.setCnty(getString(elementMap, "cnty"));
+                    element.setName(getString(elementMap, "name"));
+                    element.setAmount(getString(elementMap, "amount"));
+                    element.setCity(getString(elementMap, "city"));
+                    element.setPer(getString(elementMap, "per"));
+                    element.setUom(getString(elementMap, "uom"));
+                    element.setConditionValue(getString(elementMap, "conditionValue"));
+                    element.setCurr(getString(elementMap, "curr"));
+                    element.setStatus(getString(elementMap, "status"));
+                    element.setNumC(getString(elementMap, "numC"));
+                    element.setAtoMtsComponent(getString(elementMap, "atoMtsComponent"));
+                    element.setOun(getString(elementMap, "oun"));
+                    element.setCconDe(getString(elementMap, "cconDe"));
+                    element.setUn(getString(elementMap, "un"));
+                    element.setConditionValue2(getString(elementMap, "conditionValue2"));
+                    element.setCdCur(getString(elementMap, "cdCur"));
+
+                    Object statObj = elementMap.get("stat");
+                    element.setStat(statObj instanceof Boolean ? (Boolean) statObj : false);
+
+                    pricingElements.add(element);
+                }
+
+                item.setPricingElements(pricingElements);
+            } else {
+                item.setPricingElements(new ArrayList<>());
+            }
+
+            items.add(item);
+        }
+
+        return items;
+    }
+
+    /**
+     * 安全地从Map中获取字符串值
+     */
+    private String getString(Map<String, Object> map, String key) {
+        return getString(map, key, null);
+    }
+
+    /**
+     * 安全地从Map中获取字符串值，带默认值
+     */
+    private String getString(Map<String, Object> map, String key, String defaultValue) {
+        Object value = map.get(key);
+        if (value == null) {
+            return defaultValue;
+        }
+        return value.toString();
     }
 
 }

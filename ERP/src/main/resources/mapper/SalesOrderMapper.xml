@@ -53,55 +53,13 @@
             DATE_FORMAT(so.req_delivery_date, '%Y-%m-%d') AS reqDeliveryDate,
             FORMAT(so.net_value, 2) AS netValue,
             so.currency,
-            (SELECT GROUP_CONCAT(si.mat_id) FROM erp_sales_item si WHERE si.so_id = so.so_id) AS materialIds
+            (SELECT GROUP_CONCAT(ei.mat_id) FROM erp_item ei WHERE ei.document_id = so.so_id AND ei.document_type = 'sales_order') AS materialIds
         FROM
             erp_sales_order_hdr so
                 LEFT JOIN erp_customer c ON so.sold_tp = c.customer_id
                 LEFT JOIN erp_quotation q ON so.quote_id = q.quotation_id
         WHERE so.so_id = #{soId}
     </select>
-    <!-- ✅ 新增销售订单项目查询 -->
-    <select id="getSalesOrderItems" resultType="map">
-        SELECT
-            ei.item_no AS item,
-            ei.mat_id AS material,
-            ei.quantity AS orderQuantity,
-            ei.su AS orderQuantityUnit,
-            ei.description,
-            DATE_FORMAT(ei.req_deliv_date, '%Y-%m-%d') AS reqDelivDate,
-            ei.net_value_str AS netValue,
-            ei.net_value_unit AS netValueUnit,
-            ei.tax_value_str AS taxValue,
-            ei.tax_value_unit AS taxValueUnit,
-            DATE_FORMAT(ei.pricing_date, '%Y-%m-%d') AS pricingDate,
-            ei.order_probability AS orderProbability
-        FROM
-            erp_item ei
-        WHERE ei.document_id = #{soId} AND ei.document_type = 'sales_order'
-    </select>
-    <!-- 获取销售订单项目的定价元素 -->
-    <select id="getPricingElements" resultType="map">
-        SELECT
-            pe.cnty AS cnty,
-            pe.condition_name AS name,
-            pe.amount AS amount,
-            pe.city AS city,
-            pe.per_value AS per,
-            pe.uom AS uom,
-            pe.condition_value AS conditionValue,
-            pe.currency AS curr,
-            pe.status AS status,
-            pe.numC AS numC,
-            pe.ato_mts_component AS atoMtsComponent,
-            pe.oun AS oun,
-            pe.ccon_de AS cconDe,
-            pe.un AS un,
-            pe.condition_value2 AS conditionValue2,
-            pe.cd_cur AS cdCur,
-            pe.stat AS stat
-        FROM erp_pricing_element pe
-        WHERE pe.document_type = 'sales_order' AND pe.document_id = #{soId} AND pe.item_no = #{itemNo}
-        ORDER BY pe.element_id
-    </select>
+
 
 </mapper>

@@ -12,12 +12,6 @@ public interface SalesOrderMapper {
     
     // ✅ 新增方法：获取销售订单详情
     Map<String, Object> getSalesOrderDetails(@Param("soId") String soId);
-    
-    // ✅ 新增方法：获取销售订单项目列表
-    List<Map<String, Object>> getSalesOrderItems(@Param("soId") String soId);
-
-    // ✅ 新增方法：获取销售订单项目的定价元素
-    List<Map<String, Object>> getPricingElements(@Param("soId") Long soId, @Param("itemNo") Integer itemNo);
 
     // ✅ 新增方法：获取询价单项目的定价元素
     List<Map<String, Object>> getInquiryPricingElements(@Param("inquiryId") Long inquiryId, @Param("itemNo") Integer itemNo);
@@ -34,32 +28,9 @@ public interface SalesOrderMapper {
     @Options(useGeneratedKeys = true, keyProperty = "soId")
     int insertSalesOrder(SalesOrder order);
 
-    @Insert("INSERT INTO erp_item (" +
-            "document_type, document_id, item_no, mat_id, plant_id, quantity, su, net_price, net_value_str, net_value_unit, " +
-            "tax_value_str, tax_value_unit, description, req_deliv_date, pricing_date, order_probability" +
-            ") VALUES (" +
-            "'sales_order', #{soId}, #{itemNo}, #{matId}, #{plantId}, #{quantity}, #{unit}, #{netPrice}, " +
-            "CAST(#{netPrice} * #{quantity} AS CHAR), 'USD', CAST(#{netPrice} * #{quantity} * 0.1 AS CHAR), 'USD', " +
-            "(SELECT mat_desc FROM erp_material WHERE mat_id = #{matId}), NOW(), NOW(), '100%')")
-    int insertSalesOrderItem(@Param("soId") Long soId,
-                             @Param("itemNo") int itemNo,
-                             @Param("matId") Long matId,
-                             @Param("plantId") Long plantId,
-                             @Param("storageLocation") String storageLocation,
-                             @Param("quantity") int quantity,
-                             @Param("unit") String unit,
-                             @Param("netPrice") double netPrice);
 
-    @Insert("INSERT INTO erp_pricing_element (" +
-            "document_type, document_id, item_no, cnty, condition_name, amount, city, per_value, " +
-            "uom, condition_value, currency, status, numC, ato_mts_component, oun, ccon_de, un, " +
-            "condition_value2, cd_cur, stat" +
-            ") VALUES (" +
-            "'sales_order', #{documentId}, #{itemNo}, #{cnty}, #{conditionName}, #{amount}, #{city}, #{perValue}, " +
-            "#{uom}, #{conditionValue}, #{currency}, #{status}, #{numC}, #{atoMtsComponent}, #{oun}, #{cconDe}, #{un}, " +
-            "#{conditionValue2}, #{cdCur}, #{stat}" +
-            ")")
-    int insertPricingElement(PricingElement pricingElement);
+
+
 
     @Update("UPDATE erp_sales_order_hdr SET " +
             "quote_id = #{quotationId}, sold_tp = #{soldTp}, ship_tp = #{shipTp}, " +
@@ -69,24 +40,9 @@ public interface SalesOrderMapper {
             "WHERE so_id = #{soId}")
     int updateSalesOrder(SalesOrder order);
     
-    @Update("UPDATE erp_sales_item SET " +
-            "mat_id = #{matId}, plt_id = #{plantId}, storage_loc = #{storageLocation}, " +
-            "quantity = #{quantity}, su = #{unit}, net_price = #{netPrice} " +
-            "WHERE so_id = #{soId} AND item_no = #{itemNo}")
-    int updateSalesOrderItem(@Param("soId") Long soId,
-                             @Param("itemNo") int itemNo,
-                             @Param("matId") Long matId,
-                             @Param("plantId") Long plantId,
-                             @Param("storageLocation") String storageLocation,
-                             @Param("quantity") int quantity,
-                             @Param("unit") String unit,
-                             @Param("netPrice") double netPrice);
-                             
-    @Delete("DELETE FROM erp_item WHERE document_type = 'sales_order' AND document_id = #{soId}")
-    int deleteSalesOrderItemsBySoId(@Param("soId") Long soId);
 
-    @Delete("DELETE FROM erp_pricing_element WHERE document_type = #{documentType} AND document_id = #{documentId}")
-    int deletePricingElements(@Param("documentType") String documentType, @Param("documentId") Long documentId);
+                             
+
 
     @Select("<script>" +
             "SELECT so.so_id AS soId, c.name AS customerName, c.name AS contactName, " +
